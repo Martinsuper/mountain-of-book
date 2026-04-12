@@ -25,10 +25,7 @@ posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
               })}
             </time>
             <h2 class="text-xl font-semibold mt-2">
-              <a
-                href={`/posts/${post.id}/`
-                class="hover:text-blue-600 dark:hover:text-blue-400"
-              >
+              <a href={`/posts/${post.id}/`} class="hover:text-blue-600 dark:hover:text-blue-400">
                 {post.data.title}
               </a>
             </h2>

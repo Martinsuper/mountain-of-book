@@ -16,6 +16,7 @@ interface Props {
 }
 
 const { post } = Astro.props;
+const { Content } = await post.render();
 ---
 
 <BaseLayout title={post.data.title}>
