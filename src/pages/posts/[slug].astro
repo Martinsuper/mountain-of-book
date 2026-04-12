@@ -1,0 +1,49 @@
+---
+// src/pages/posts/[slug].astro
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post }
+  }));
+}
+
+interface Props {
+  post: any;
+}
+
+const { post } = Astro.props;
+---
+
+<BaseLayout title={post.data.title}>
+  <article class="prose dark:prose-invert max-w-none">
+    <header class="mb-8">
+      <h1 class="text-4xl font-bold mb-4">{post.data.title}</h1>
+      <div class="flex items-center gap-4 text-gray-500">
+        <time>
+          {post.data.date.toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+        </time>
+        {post.data.tags && (
+          <div class="flex gap-2">
+            {post.data.tags.map((tag) => (
+              <a
+                href={`/tags/${tag}/`}
+                class="hover:text-blue-600"
+              >
+                #{tag}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </header>
+    <Content />
+  </article>
+</BaseLayout>

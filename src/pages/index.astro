@@ -1,0 +1,57 @@
+---
+// src/pages/index.astro
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+---
+
+<BaseLayout>
+  <h1 class="text-3xl font-bold mb-8">最新文章</h1>
+
+  {posts.length === 0 ? (
+    <p class="text-gray-500">还没有文章，快去写一篇吧！</p>
+  ) : (
+    <ul class="space-y-6">
+      {posts.map((post) => (
+        <li>
+          <article class="border-b border-gray-200 dark:border-gray-800 pb-6">
+            <time class="text-sm text-gray-500">
+              {post.data.date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </time>
+            <h2 class="text-xl font-semibold mt-2">
+              <a
+                href={`/posts/${post.id}/`
+                class="hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                {post.data.title}
+              </a>
+            </h2>
+            {post.data.description && (
+              <p class="text-gray-600 dark:text-gray-400 mt-2">
+                {post.data.description}
+              </p>
+            )}
+            {post.data.tags && (
+              <div class="flex gap-2 mt-3">
+                {post.data.tags.map((tag) => (
+                  <a
+                    href={`/tags/${tag}/`}
+                    class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
+                  >
+                    #{tag}
+                  </a>
+                ))}
+              </div>
+            )}
+          </article>
+        </li>
+      ))}
+    </ul>
+  )}
+</BaseLayout>
