@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>博客后台管理</title>
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <script>
+      // 本地开发时使用 decap-server
+      window.CMS_CONFIG = {
+        backend: {
+          name: 'git-gateway',
+          branch: 'main',
+          api_root: 'http://localhost:8081/git'
+        }
+      };
+    </script>
   </head>
   <body>
     <!-- Decap CMS 自动挂载 -->
