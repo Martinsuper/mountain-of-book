@@ -1,7 +1,53 @@
 ---
-// Decap CMS Admin Page - 使用 raw 输出
+// Decap CMS Admin Page
 ---
-<iframe
-  srcdoc='<!DOCTYPE html><html><head><meta charset=\"UTF-8\" /><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\" /><title>Blog Admin</title><script src=\"https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js\"></script></head><body><div id=\"root\"></div><script>var config={backend:{name:\"git-gateway\",branch:\"main\",api_root:\"http://localhost:8081/git\"},media_folder:\"src/assets/images\",public_folder:\"/assets/images\",collections:[{name:\"posts\",label:\"Posts\",folder:\"src/content/posts\",create:true,slug:\"{{slug}}\",fields:[{label:\"Title\",name:\"title\",widget:\"string\"},{label:\"Description\",name:\"description\",widget:\"string\",required:!1},{label:\"Date\",name:\"date\",widget:\"datetime\"},{label:\"Tags\",name:\"tags\",widget:\"list\",default:[]},{label:\"Draft\",name:\"draft\",widget:\"boolean\",default:!1},{label:\"Body\",name:\"body\",widget:\"markdown\"}]}]};CMS.registerPreviewTemplate(\"posts\",function(e){return React.createElement(\"div\",null,React.createElement(\"h1\",null,e.get(\"title\")),React.createElement(\"div\",null,e.get(\"body\")))});CMS.init({config:config});<\/script></body></html>'
-  style="width:100%;height:100vh;border:none;"
-/>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>博客后台管理</title>
+    <link rel="stylesheet" href="/admin/admin.css" />
+    <!-- 必须在 CMS 加载前阻止自动初始化 -->
+    <script is:inline>
+      window.CMS_MANUAL_INIT = true;
+    </script>
+    <!-- 加载 CMS -->
+    <script is:inline src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- 手动初始化 CMS -->
+    <script is:inline>
+      // 等待 CMS 加载完成
+      if (window.CMS) {
+        CMS.init({
+          config: {
+            backend: {
+              name: 'git-gateway',
+              branch: 'main'
+            },
+            local_backend: true,
+            media_folder: 'src/assets/images',
+            public_folder: '/assets/images',
+            collections: [{
+              name: 'posts',
+              label: '文章',
+              folder: 'src/content/posts',
+              create: true,
+              slug: '{{slug}}',
+              fields: [
+                { label: '标题', name: 'title', widget: 'string' },
+                { label: '描述', name: 'description', widget: 'string', required: false },
+                { label: '发布日期', name: 'date', widget: 'datetime' },
+                { label: '标签', name: 'tags', widget: 'list', default: [] },
+                { label: '草稿', name: 'draft', widget: 'boolean', default: false },
+                { label: '正文', name: 'body', widget: 'markdown' }
+              ]
+            }]
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
