@@ -1,7 +1,7 @@
 ---
-// Decap CMS Admin Page - 使用 raw HTML 输出
-Astro.response.headers.set('Content-Type', 'text/html');
-
-// 直接输出原始 HTML，绕过 Astro 处理
+// Decap CMS Admin Page - 使用 raw 输出
 ---
-<iframe srcdoc='<!doctype html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Blog Admin</title><script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"><\/script></head><body><script>CMS.init({config:{backend:{name:"git-gateway",branch:"main",api_root:"http://localhost:8081/git"},media_folder:"src/assets/images",public_folder:"/assets/images",collections:[{name:"posts",label:"Posts",folder:"src/content/posts",create:true,slug:"{{slug}}",fields:[{label:"Title",name:"title",widget:"string"},{label:"Description",name:"description",widget:"string",required:false},{label:"Date",name:"date",widget:"datetime"},{label:"Tags",name:"tags",widget:"list",default:[]},{label:"Draft",name:"draft",widget:"boolean",default:false},{label:"Body",name:"body",widget:"markdown"}]}]}});<\/script></body></html>' style="width:100%;height:100vh;border:none;"></iframe>
+<iframe
+  srcdoc='<!DOCTYPE html><html><head><meta charset=\"UTF-8\" /><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\" /><title>Blog Admin</title><script src=\"https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js\"></script></head><body><div id=\"root\"></div><script>var config={backend:{name:\"git-gateway\",branch:\"main\",api_root:\"http://localhost:8081/git\"},media_folder:\"src/assets/images\",public_folder:\"/assets/images\",collections:[{name:\"posts\",label:\"Posts\",folder:\"src/content/posts\",create:true,slug:\"{{slug}}\",fields:[{label:\"Title\",name:\"title\",widget:\"string\"},{label:\"Description\",name:\"description\",widget:\"string\",required:!1},{label:\"Date\",name:\"date\",widget:\"datetime\"},{label:\"Tags\",name:\"tags\",widget:\"list\",default:[]},{label:\"Draft\",name:\"draft\",widget:\"boolean\",default:!1},{label:\"Body\",name:\"body\",widget:\"markdown\"}]}]};CMS.registerPreviewTemplate(\"posts\",function(e){return React.createElement(\"div\",null,React.createElement(\"h1\",null,e.get(\"title\")),React.createElement(\"div\",null,e.get(\"body\")))});CMS.init({config:config});<\/script></body></html>'
+  style="width:100%;height:100vh;border:none;"
+/>
