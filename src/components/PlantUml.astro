@@ -1,0 +1,24 @@
+---
+// src/components/PlantUml.astro
+import { encodePlantUml } from '../lib/plantuml';
+
+interface Props {
+  code: string;
+  alt?: string;
+}
+
+const { code, alt = "PlantUML diagram" } = Astro.props;
+const svgUrl = encodePlantUml(code);
+---
+
+<figure class="my-8">
+  <img
+    src={svgUrl}
+    alt={alt}
+    class="max-w-full h-auto border rounded-lg"
+    loading="lazy"
+  />
+  <figcaption class="text-center text-gray-500 text-sm mt-2">
+    {alt}
+  </figcaption>
+</figure>
