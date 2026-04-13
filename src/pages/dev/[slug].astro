@@ -158,8 +158,8 @@ const { Content } = await post.render();
         const data = await res.json();
 
         if (data.success) {
-          // 跳转到新文章预览页
-          window.location.href = `/dev/${data.slug}/`;
+          // 跳转到入口页，让 Astro 重新加载内容集合
+          window.location.href = `/dev/?created=${encodeURIComponent(title)}`;
         } else {
           alert('创建失败: ' + data.error);
           button.textContent = '新建';

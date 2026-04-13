@@ -8,14 +8,28 @@ allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
 const firstPost = allPosts[0];
 
-if (firstPost) {
+// 检测是否刚创建了新文章
+const createdTitle = Astro.url.searchParams.get('created');
+
+// 如果刚创建文章，不自动跳转，让用户看到提示
+if (firstPost && !createdTitle) {
   return Astro.redirect(`/dev/${firstPost.id}/`);
 }
 ---
 
 <BaseLayout title="开发预览">
   <div class="max-w-md mx-auto py-20">
-    <p class="text-center text-gray-500 mb-6">还没有文章，创建第一篇吧！</p>
+    {createdTitle && (
+      <div class="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded mb-6">
+        <p class="font-medium">✓ 文章创建成功！</p>
+        <p class="text-sm mt-1">「{createdTitle}」已保存到 src/content/posts/</p>
+        <p class="text-sm mt-2 text-green-600">请等待页面自动刷新，然后从左侧列表点击查看。</p>
+      </div>
+    )}
+
+    {!createdTitle && (
+      <p class="text-center text-gray-500 mb-6">还没有文章，创建第一篇吧！</p>
+    )}
 
     <!-- 新建文章表单 -->
     <form id="new-post-form" class="flex gap-2">
@@ -33,6 +47,30 @@ if (firstPost) {
         新建
       </button>
     </form>
+
+    <!-- 文章列表（创建后显示） -->
+    {createdTitle && allPosts.length > 0 && (
+      <div class="mt-6 border-t border-gray-200 pt-4">
+        <h3 class="text-sm font-semibold text-gray-500 mb-2">文章列表</h3>
+        <ul class="space-y-2">
+          {allPosts.map((p) => (
+            <li>
+              <a
+                href={`/dev/${p.id}/`}
+                class="block px-3 py-2 bg-gray-50 rounded hover:bg-gray-100 text-sm"
+              >
+                <span class="flex items-center gap-2">
+                  {p.data.draft && (
+                    <span class="text-xs bg-yellow-100 text-yellow-700 px-1 rounded">草稿</span>
+                  )}
+                  <span>{p.data.title}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
   </div>
 
   <script>
@@ -57,7 +95,7 @@ if (firstPost) {
         const data = await res.json();
 
         if (data.success) {
-          window.location.href = `/dev/${data.slug}/`;
+          window.location.href = `/dev/?created=${encodeURIComponent(title)}`;
         } else {
           alert('创建失败: ' + data.error);
           button.textContent = '新建';
