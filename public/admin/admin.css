@@ -340,3 +340,188 @@ nav[class*="Nav"] {
   background: var(--text-primary);
   color: var(--bg-primary);
 }
+
+/* ===== 编辑器区域 ===== */
+/* 编辑器容器 */
+[class*="Editor"],
+[class*="EntryEditor"],
+[class*="ControlPane"] {
+  background: var(--bg-primary);
+  padding: 24px;
+}
+
+/* 分栏布局 */
+[class*="Editor"] [class*="Pane"],
+[class*="EditorPane"] {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 编辑区 */
+[class*="Editor"] [class*="LeftPane"],
+[class*="EditorPane"][class*="visual"] {
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
+}
+
+/* 预览区 */
+[class*="Editor"] [class*="RightPane"],
+[class*="PreviewPane"] {
+  background: var(--bg-secondary);
+  padding: 24px;
+}
+
+/* 预览区标签 */
+[class*="PreviewPane"]::before {
+  content: '预览';
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+
+/* Markdown 工具栏 */
+[class*="Toolbar"],
+[class*="MarkdownToolbar"],
+[class*="EditorToolbar"] {
+  display: flex;
+  gap: 4px;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+[class*="Toolbar"] button,
+[class*="MarkdownToolbar"] button {
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+[class*="Toolbar"] button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* 编辑文本区 */
+[class*="Editor"] textarea,
+[class*="Markdown"] textarea,
+[class*="RawMarkdown"] textarea {
+  width: 100%;
+  min-height: 400px;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  resize: none;
+  outline: none;
+}
+
+/* 预览内容样式 */
+[class*="PreviewPane"] [class*="Prose"],
+[class*="PreviewPane"] .prose {
+  max-width: 100%;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+[class*="PreviewPane"] h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+[class*="PreviewPane"] h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+[class*="PreviewPane"] h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+[class*="PreviewPane"] p {
+  margin-bottom: 12px;
+}
+
+[class*="PreviewPane"] code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+[class*="PreviewPane"] pre {
+  background: var(--bg-tertiary);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+[class*="PreviewPane"] pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* 底部操作栏 */
+[class*="EditorFooter"],
+[class*="EntryEditor"] [class*="Footer"] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  position: sticky;
+  bottom: 0;
+}
+
+[class*="EditorFooter"] button {
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+/* 保存按钮 */
+[class*="EditorFooter"] button[type="submit"],
+[class*="EditorFooter"] button[class*="Save"] {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border: none;
+}
+
+[class*="EditorFooter"] button[type="submit"]:hover,
+[class*="EditorFooter"] button[class*="Save"]:hover {
+  background: var(--text-secondary);
+}
+
+/* 取消按钮 */
+[class*="EditorFooter"] button[class*="Cancel"],
+[class*="EditorFooter"] button:not([type="submit"]) {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+[class*="EditorFooter"] button[class*="Cancel"]:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
