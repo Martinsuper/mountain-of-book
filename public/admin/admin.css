@@ -826,3 +826,184 @@ nav[class*="Nav"] {
     transform: translateY(-10px);
   }
 }
+
+/* ===== 加载状态 ===== */
+[class*="Loader"],
+[class*="Spinner"],
+[class*="Loading"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+}
+
+[class*="Loader"] svg,
+[class*="Spinner"] svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== 空状态 ===== */
+[class*="Empty"],
+[class*="NoEntries"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text-tertiary);
+}
+
+[class*="Empty"] svg,
+[class*="NoEntries"] svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+[class*="Empty"] p,
+[class*="NoEntries"] p {
+  font-size: 14px;
+}
+
+/* ===== 分割线 ===== */
+hr,
+[class*="Divider"],
+[class*="Separator"] {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 24px 0;
+}
+
+/* ===== 下拉菜单 ===== */
+[class*="Dropdown"],
+[class*="Menu"] {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+}
+
+[class*="Dropdown"] a,
+[class*="Dropdown"] button,
+[class*="Menu"] a,
+[class*="Menu"] button {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: var(--transition-fast);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+[class*="Dropdown"] a:hover,
+[class*="Dropdown"] button:hover,
+[class*="Menu"] a:hover,
+[class*="Menu"] button:hover {
+  background: var(--bg-secondary);
+}
+
+/* ===== 工具提示 ===== */
+[class*="Tooltip"] {
+  font-size: 12px;
+  padding: 6px 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* ===== 入场动画 ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[class*="EntryCard"],
+[class*="Entry"] {
+  animation: fadeInUp 0.2s ease forwards;
+}
+
+/* ===== 响应式 ===== */
+/* 平板 - 侧栏折叠 */
+@media (max-width: 768px) {
+  [class*="Sidebar"] {
+    width: var(--sidebar-collapsed);
+  }
+
+  [class*="Sidebar"] [class*="NavItem"] span,
+  [class*="Sidebar"] a span {
+    display: none;
+  }
+
+  [class*="Sidebar"] [class*="NavItem"] svg,
+  [class*="Sidebar"] a svg {
+    margin-right: 0;
+  }
+
+  /* 编辑器单列 */
+  [class*="Editor"] [class*="Pane"] {
+    flex-direction: column;
+  }
+
+  [class*="PreviewPane"] {
+    display: none;
+  }
+}
+
+/* 手机 - 全屏编辑 */
+@media (max-width: 480px) {
+  [class*="CollectionTop"],
+  [class*="CollectionHeader"] {
+    padding: 12px 16px;
+  }
+
+  [class*="CollectionTop"] h1 {
+    font-size: 18px;
+  }
+
+  [class*="EntryCard"],
+  [class*="Entry"] {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+  }
+
+  [class*="Editor"],
+  [class*="EntryEditor"] {
+    padding: 16px;
+  }
+
+  [class*="EditorFooter"] {
+    padding: 12px 16px;
+  }
+
+  [class*="Modal"],
+  [class*="Dialog"] {
+    width: 95%;
+    padding: 16px;
+  }
+
+  [class*="Toast"],
+  [class*="Notification"] {
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+}
