@@ -88,3 +88,57 @@ html {
   font-display: swap;
   src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCpbKn4lIb9Gj.woff2') format('woff2');
 }
+
+/* ===== 顶部导航栏 ===== */
+[class*="AppHeader"],
+[class*="TopBar"],
+nav[class*="Nav"] {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  height: var(--topbar-height);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Logo 区域 */
+[class*="AppHeader"] [class*="Logo"],
+[class*="TopBar"] [class*="Logo"] {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+[class*="AppHeader"] a,
+[class*="TopBar"] a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* 右侧按钮区 */
+[class*="AppHeader"] [class*="QuickNav"],
+[class*="AppHeader"] button,
+[class*="TopBar"] button {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+[class*="AppHeader"] button:hover,
+[class*="TopBar"] button:hover {
+  background: var(--bg-tertiary);
+}
+
+[class*="AppHeader"] button svg,
+[class*="TopBar"] button svg {
+  color: var(--text-primary);
+}
