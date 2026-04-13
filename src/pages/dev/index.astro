@@ -1,0 +1,119 @@
+---
+// 开发预览页面 - 仅用于本地编辑预览
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+// 获取所有文章（包括草稿）
+const allPosts = await getCollection('posts');
+allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+// 获取当前预览的文章（通过 URL 参数）
+const previewSlug = Astro.url.searchParams.get('post');
+const currentPost = previewSlug ? allPosts.find(p => p.id === previewSlug) : allPosts[0];
+
+// 渲染当前文章
+const { Content } = currentPost ? await currentPost.render() : { Content: null };
+---
+
+<BaseLayout title="开发预览 - 本地编辑">
+  <div class="flex gap-6" style="min-height: calc(100vh - 120px);">
+    <!-- 左侧：文章列表 -->
+    <aside class="w-64 shrink-0 border-r border-gray-200 overflow-y-auto">
+      <div class="sticky top-0 bg-white pb-2 pt-2">
+        <h2 class="text-sm font-semibold text-gray-500 mb-2">文章列表 ({allPosts.length})</h2>
+      </div>
+      <ul class="space-y-1">
+        {allPosts.map((post) => (
+          <li>
+            <a
+              href={`/dev/?post=${post.id}`}
+              class={`block px-3 py-2 rounded text-sm transition-colors ${
+                currentPost?.id === post.id
+                  ? 'bg-blue-100 text-blue-700 font-medium'
+                  : 'hover:bg-gray-100 text-gray-700'
+              }`}
+            >
+              <span class="flex items-center gap-2">
+                {post.data.draft && (
+                  <span class="text-xs bg-yellow-100 text-yellow-700 px-1 rounded">草稿</span>
+                )}
+                <span class="truncate">{post.data.title}</span>
+              </span>
+              <span class="text-xs text-gray-400 mt-1 block">
+                {post.data.date.toLocaleDateString('zh-CN')}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+
+    <!-- 右侧：预览区域 -->
+    <main class="flex-1 min-w-0">
+      {currentPost ? (
+        <div>
+          <!-- 文件信息栏 -->
+          <div class="bg-gray-50 border border-gray-200 rounded p-3 mb-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-700">{currentPost.data.title}</p>
+                <p class="text-xs text-gray-500 mt-1">
+                  文件路径：<code class="bg-gray-200 px-1 rounded">src/content/posts/{currentPost.id}.md</code>
+                </p>
+              </div>
+              <div class="flex gap-2">
+                <a
+                  href={`/posts/${currentPost.id}/`}
+                  class="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                  target="_blank"
+                >
+                  查看正式页面
+                </a>
+                <span class="text-xs text-gray-400">
+                  {currentPost.data.date.toLocaleDateString('zh-CN')}
+                </span>
+              </div>
+            </div>
+            {currentPost.data.tags && (
+              <div class="flex gap-1 mt-2">
+                {currentPost.data.tags.map((tag: string) => (
+                  <span class="text-xs bg-gray-200 px-2 py-1 rounded">#{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <!-- 文章预览 -->
+          <article class="prose prose-gray max-w-none">
+            <h1>{currentPost.data.title}</h1>
+            {currentPost.data.description && (
+              <p class="text-gray-600 italic">{currentPost.data.description}</p>
+            )}
+            <div class="mt-6">
+              {Content && <Content />}
+            </div>
+          </article>
+        </div>
+      ) : (
+        <div class="text-center text-gray-500 py-20">
+          <p>没有文章</p>
+          <p class="text-sm mt-2">在 src/content/posts/ 目录创建 .md 文件</p>
+        </div>
+      )}
+    </main>
+  </div>
+
+  <!-- 底部快捷操作栏 -->
+  <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4">
+    <div class="max-w-4xl mx-auto flex items-center justify-between text-sm">
+      <div class="text-gray-500">
+        <span class="mr-4">💡 提示：编辑 Markdown 文件后自动刷新预览</span>
+        <span class="text-xs">开发模式</span>
+      </div>
+      <div class="flex gap-4">
+        <a href="/" class="text-blue-500 hover:underline">返回首页</a>
+        <a href="/tags/" class="text-gray-500 hover:underline">所有标签</a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
