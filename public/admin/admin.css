@@ -142,3 +142,70 @@ nav[class*="Nav"] {
 [class*="TopBar"] button svg {
   color: var(--text-primary);
 }
+
+/* ===== 可折叠侧栏 ===== */
+/* 侧栏容器 */
+[class*="Sidebar"] {
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
+  width: var(--sidebar-width);
+  height: calc(100vh - var(--topbar-height));
+  padding: 16px 12px;
+  transition: width var(--transition-slow);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* 折叠状态 - 通过 CSS 无法直接控制折叠，但预留样式 */
+[class*="Sidebar"][class*="collapsed"],
+.sidebar-collapsed {
+  width: var(--sidebar-collapsed);
+}
+
+/* 导航项 */
+[class*="Sidebar"] [class*="NavItem"],
+[class*="Sidebar"] a {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+[class*="Sidebar"] [class*="NavItem"]:hover,
+[class*="Sidebar"] a:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+[class*="Sidebar"] [class*="NavItem"][class*="active"],
+[class*="Sidebar"] a[class*="active"],
+[class*="Sidebar"] a[aria-current="page"] {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* 导航图标 */
+[class*="Sidebar"] [class*="NavItem"] svg,
+[class*="Sidebar"] a svg {
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+/* 折叠时的图标样式 */
+.sidebar-collapsed [class*="NavItem"] svg,
+.sidebar-collapsed a svg {
+  margin-right: 0;
+}
+
+.sidebar-collapsed [class*="NavItem"] span,
+.sidebar-collapsed a span {
+  display: none;
+}
