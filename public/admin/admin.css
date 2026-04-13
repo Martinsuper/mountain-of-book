@@ -209,3 +209,131 @@ nav[class*="Nav"] {
 .sidebar-collapsed a span {
   display: none;
 }
+
+/* ===== 卡片列表 ===== */
+/* 列表容器 */
+[class*="Collection"] {
+  padding: 24px;
+  background: var(--bg-primary);
+}
+
+/* 集合顶部 */
+[class*="CollectionTop"],
+[class*="CollectionHeader"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+[class*="CollectionTop"] h1,
+[class*="CollectionHeader"] h1,
+[class*="CollectionTop"] h2,
+[class*="CollectionHeader"] h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+/* 新建按钮 */
+[class*="CollectionTop"] button,
+[class*="CollectionHeader"] button {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+[class*="CollectionTop"] button:hover {
+  background: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+/* 卡片项 */
+[class*="EntryCard"],
+[class*="EntryListing"] [class*="Card"],
+[class*="EntriesList"] > div,
+[class*="Entry"] {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  transition: var(--transition-normal);
+  cursor: pointer;
+}
+
+[class*="EntryCard"]:hover,
+[class*="Entry"]:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* 卡片标题 */
+[class*="EntryCard"] h3,
+[class*="Entry"] h3,
+[class*="EntryCard"] [class*="EntryTitle"],
+[class*="Entry"] [class*="EntryTitle"] {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 卡片摘要/描述 */
+[class*="EntryCard"] p,
+[class*="Entry"] p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-line-clamp: 2;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* 元信息 */
+[class*="EntryCard"] [class*="EntryMeta"],
+[class*="Entry"] [class*="EntryMeta"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* 状态徽章 */
+[class*="EntryCard"] [class*="Status"],
+[class*="Entry"] [class*="Status"],
+[class*="Badge"] {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+[class*="EntryCard"] [class*="Status"][class*="draft"] {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+[class*="EntryCard"] [class*="Status"][class*="published"] {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
