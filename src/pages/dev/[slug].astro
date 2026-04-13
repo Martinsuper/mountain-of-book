@@ -3,16 +3,13 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-// 获取所有文章（包括草稿）
-const allPosts = await getCollection('posts');
-allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
-
 // 生成静态路径
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
+  posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
   return posts.map((post) => ({
     params: { slug: post.id },
-    props: { post, allPosts }
+    props: { post, allPosts: posts }
   }));
 }
 
