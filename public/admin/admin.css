@@ -1,47 +1,45 @@
-/* Decap CMS 自定义样式 - Vercel/Baoyu.io 风格 */
-/* 黑白极简主义，现代设计 */
+/* Decap CMS 现代简约风格 - 黑白极简主义 */
 
+/* ===== CSS 变量 ===== */
 :root {
+  /* 配色 */
   --bg-primary: #ffffff;
-  --bg-secondary: #f9f9f9;
-  --bg-tertiary: #eaeaea;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
   --text-primary: #000000;
   --text-secondary: #666666;
   --text-tertiary: #999999;
-  --border-color: #eaeaea;
-  --accent-color: #000000;
-  --accent-hover: #333333;
+  --border-color: #e5e5e5;
+  --border-hover: #000000;
+
+  /* 尺寸 */
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --sidebar-width: 220px;
+  --sidebar-collapsed: 56px;
+  --topbar-height: 56px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+  /* 动画 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* 字体 */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
 }
 
-/* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #0d0d0d;
-    --bg-secondary: #1a1a1a;
-    --bg-tertiary: #2a2a2a;
-    --text-primary: #ffffff;
-    --text-secondary: #a1a1a1;
-    --text-tertiary: #666666;
-    --border-color: #2a2a2a;
-    --accent-color: #ffffff;
-    --accent-hover: #cccccc;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
-  }
-}
-
-/* 全局重置 */
+/* ===== 全局重置 ===== */
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -53,403 +51,40 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===== 登录页面 ===== */
-[class*="LoginPage"],
-[class*="AuthPage"] {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-[class*="Login"] {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  padding: 48px;
-  width: 100%;
-  max-width: 420px;
-  border: 1px solid var(--border-color);
-}
-
-[class*="Login"] h1 {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
-  color: var(--text-primary);
-}
-
-[class*="Login"] p {
-  color: var(--text-secondary);
-  font-size: 14px;
-  margin-bottom: 32px;
-}
-
-/* 输入框 */
-input[type="email"],
-input[type="password"],
-input[type="text"] {
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 14px;
-  font-family: var(--font-sans);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  transition: all 0.15s ease;
-  margin-bottom: 16px;
-}
-
-input[type="email"]:focus,
-input[type="password"]:focus,
-input[type="text"]:focus {
-  outline: none;
-  border-color: var(--text-primary);
-  box-shadow: 0 0 0 2px var(--bg-tertiary);
-}
-
-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-/* 按钮 */
-button[type="submit"],
-[class*="Button"] {
-  background: var(--accent-color);
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: var(--font-sans);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  width: 100%;
-}
-
-button[type="submit"]:hover,
-[class*="Button"]:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-button[type="submit"]:active,
-[class*="Button"]:active {
-  transform: translateY(0);
-}
-
-/* ===== 顶部导航栏 ===== */
-[class*="TopBar"],
-[class*="Header"] {
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 12px 24px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-[class*="TopBar"] a,
-[class*="TopBar"] span,
-[class*="TopBar"] button {
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-[class*="TopBar"] [class*="Logo"] {
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-}
-
-/* ===== 侧边栏 ===== */
-[class*="Sidebar"],
-[class*="Nav"] {
-  background: var(--bg-primary);
-  border-right: 1px solid var(--border-color);
-  padding: 16px 12px;
-  width: 240px;
-}
-
-[class*="Sidebar"] [class*="NavItem"] a,
-[class*="Sidebar"] a {
-  display: flex;
-  align-items: center;
-  padding: 10px 14px;
-  margin-bottom: 4px;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.12s ease;
-}
-
-[class*="Sidebar"] [class*="NavItem"] a:hover,
-[class*="Sidebar"] a:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-
-[class*="Sidebar"] [class*="NavItem"] a[aria-current="page"],
-[class*="Sidebar"] a[aria-current="page"],
-[class*="Sidebar"] [class*="NavItem"] a.active {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-/* ===== 主内容区 ===== */
-[class*="Main"],
-[class*="Content"] {
-  background: var(--bg-primary);
-}
-
-/* 集合顶部栏 */
-[class*="CollectionTop"] {
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 20px 24px;
-}
-
-[class*="CollectionTop"] h1 {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-}
-
-/* ===== 卡片/列表项 ===== */
-[class*="Card"],
-[class*="ListItem"],
-[class*="Entry"] {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px 20px;
-  margin-bottom: 12px;
-  transition: all 0.15s ease;
-}
-
-[class*="Card"]:hover,
-[class*="ListItem"]:hover,
-[class*="Entry"]:hover {
-  border-color: var(--text-tertiary);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-[class*="Card"] h3,
-[class*="ListItem"] h3 {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-}
-
-[class*="Card"] p,
-[class*="ListItem"] p {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-/* ===== 表单字段 ===== */
-[class*="Field"],
-[class*="Control"] {
-  margin-bottom: 24px;
-}
-
-[class*="Field"] label,
-[class*="Control"] label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  letter-spacing: -0.01em;
-}
-
-[class*="Field"] input:not([type="checkbox"]),
-[class*="Field"] textarea,
-[class*="Field"] select {
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 14px;
-  font-family: var(--font-sans);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  transition: all 0.15s ease;
-}
-
-[class*="Field"] input:focus,
-[class*="Field"] textarea:focus,
-[class*="Field"] select:focus {
-  outline: none;
-  border-color: var(--text-primary);
-  box-shadow: 0 0 0 2px var(--bg-tertiary);
-}
-
-[class*="Field"] textarea {
-  min-height: 200px;
-  resize: vertical;
-  line-height: 1.7;
-}
-
-/* Markdown 编辑器 */
-[class*="Markdown"],
-[class*="Editor"] {
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-}
-
-[class*="Markdown"]:focus-within,
-[class*="Editor"]:focus-within {
-  border-color: var(--text-primary);
-  box-shadow: 0 0 0 2px var(--bg-tertiary);
-}
-
-/* ===== 通知/提示 ===== */
-[class*="Notification"],
-[class*="Toast"] {
-  border-radius: var(--radius-sm);
-  padding: 14px 18px;
-  font-size: 14px;
-  border: 1px solid var(--border-color);
-}
-
-[class*="Notification"].success,
-[class*="Toast"].success {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border-color: var(--text-primary);
-}
-
-[class*="Notification"].error,
-[class*="Toast"].error {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
-}
-
-/* ===== 加载状态 ===== */
-[class*="Loading"],
-[class*="Spinner"] {
-  color: var(--text-primary);
-}
-
-/* ===== 模态框 ===== */
-[class*="Modal"],
-[class*="Dialog"] {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-lg);
-}
-
-[class*="Modal"] h2,
-[class*="Dialog"] h2 {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
-}
-
-[class*="Modal"] p,
-[class*="Dialog"] p {
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-/* ===== 下拉菜单 ===== */
-[class*="Dropdown"] {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-md);
-  padding: 6px;
-}
-
-[class*="Dropdown"] a,
-[class*="Dropdown"] button {
-  padding: 10px 14px;
-  font-size: 14px;
-  color: var(--text-primary);
-  border-radius: 4px;
-  transition: all 0.12s ease;
-}
-
-[class*="Dropdown"] a:hover,
-[class*="Dropdown"] button:hover {
-  background: var(--bg-secondary);
-}
-
-/* ===== 徽章/标签 ===== */
-[class*="Badge"],
-[class*="Tag"] {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-
-/* ===== 分割线 ===== */
-[class*="Divider"],
-hr {
-  border: none;
-  border-top: 1px solid var(--border-color);
-  margin: 24px 0;
-}
-
-/* ===== 工具提示 ===== */
-[class*="Tooltip"] {
-  font-size: 12px;
-  padding: 6px 10px;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border-radius: 6px;
-}
-
-/* ===== 响应式 ===== */
-@media (max-width: 768px) {
-  [class*="Sidebar"] {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    padding: 12px;
-  }
-
-  [class*="Login"] {
-    padding: 32px 24px;
-  }
-
-  [class*="TopBar"],
-  [class*="Header"] {
-    padding: 12px 16px;
-  }
-}
-
-/* ===== 动画 ===== */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-[class*="Entry"],
-[class*="Card"] {
-  animation: fadeIn 0.2s ease forwards;
-}
-
 /* 平滑滚动 */
 html {
   scroll-behavior: smooth;
+}
+
+/* ===== 加载 Inter 字体 ===== */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCpbKn1lIb9Gj.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCpbKn2lIb9Gj.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCpbKn3lIb9Gj.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCpbKn4lIb9Gj.woff2') format('woff2');
 }
