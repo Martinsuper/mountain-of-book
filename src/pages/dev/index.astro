@@ -116,4 +116,16 @@ const { Content } = currentPost ? await currentPost.render() : { Content: null }
       </div>
     </div>
   </div>
+
+  <!-- 强制刷新脚本 -->
+  <script>
+    // 监听左侧导航点击，强制完整页面刷新
+    document.querySelectorAll('aside a[href^="/dev/?post="]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        window.location.href = href;
+      });
+    });
+  </script>
 </BaseLayout>
