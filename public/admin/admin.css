@@ -693,3 +693,136 @@ nav[class*="Nav"] {
   background-position: right 12px center;
   padding-right: 40px;
 }
+
+/* ===== 模态框 ===== */
+[class*="Modal"],
+[class*="Dialog"],
+[class*="Overlay"] {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 480px;
+  width: 90%;
+  padding: 24px;
+}
+
+[class*="Modal"] h2,
+[class*="Dialog"] h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+[class*="Modal"] p,
+[class*="Dialog"] p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+[class*="Modal"] [class*="Footer"],
+[class*="Dialog"] [class*="Footer"] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+[class*="Modal"] button,
+[class*="Dialog"] button {
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+/* 确认按钮 */
+[class*="Modal"] button[type="submit"],
+[class*="Modal"] button[class*="Confirm"],
+[class*="Modal"] button[class*="Primary"] {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border: none;
+}
+
+[class*="Modal"] button[type="submit"]:hover {
+  background: var(--text-secondary);
+}
+
+/* 取消按钮 */
+[class*="Modal"] button[class*="Cancel"],
+[class*="Modal"] button:not([type="submit"]):not([class*="Primary"]) {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+[class*="Modal"] button[class*="Cancel"]:hover {
+  background: var(--bg-secondary);
+}
+
+/* ===== 通知 Toast ===== */
+[class*="Toast"],
+[class*="Notification"],
+[class*="Snackbar"] {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: toastIn 0.2s ease, toastOut 0.2s ease 2.8s forwards;
+}
+
+[class*="Toast"] svg,
+[class*="Notification"] svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 成功状态 */
+[class*="Toast"][class*="success"],
+[class*="Notification"][class*="success"] {
+  background: var(--text-primary);
+}
+
+/* 错误状态 */
+[class*="Toast"][class*="error"],
+[class*="Notification"][class*="error"] {
+  background: #dc2626;
+}
+
+/* Toast 动画 */
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
