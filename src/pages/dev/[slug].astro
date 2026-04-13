@@ -80,12 +80,37 @@ const { Content } = await post.render();
         <div class="bg-gray-50 border border-gray-200 rounded p-3 mb-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-700">{post.data.title}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-medium text-gray-700">{post.data.title}</p>
+                {post.data.draft ? (
+                  <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">草稿</span>
+                ) : (
+                  <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">已发布</span>
+                )}
+              </div>
               <p class="text-xs text-gray-500 mt-1">
                 文件路径：<code class="bg-gray-200 px-1 rounded">src/content/posts/{post.id}.md</code>
               </p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+              <!-- 发布/取消发布按钮 -->
+              {post.data.draft ? (
+                <button
+                  id="publish-btn"
+                  data-slug={post.id}
+                  class="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                >
+                  发布
+                </button>
+              ) : (
+                <button
+                  id="unpublish-btn"
+                  data-slug={post.id}
+                  class="text-xs bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
+                >
+                  取消发布
+                </button>
+              )}
               <a
                 href={`/posts/${post.id}/`}
                 class="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
@@ -98,7 +123,7 @@ const { Content } = await post.render();
               </span>
             </div>
           </div>
-          {post.data.tags && (
+          {post.data.tags && post.data.tags.length > 0 && (
             <div class="flex gap-1 mt-2">
               {post.data.tags.map((tag: string) => (
                 <span class="text-xs bg-gray-200 px-2 py-1 rounded">#{tag}</span>
@@ -137,6 +162,7 @@ const { Content } = await post.render();
 
   <!-- 新建文章脚本 -->
   <script>
+    // 新建文章
     document.getElementById('new-post-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
@@ -158,7 +184,6 @@ const { Content } = await post.render();
         const data = await res.json();
 
         if (data.success) {
-          // 跳转到入口页，让 Astro 重新加载内容集合
           window.location.href = `/dev/?created=${encodeURIComponent(title)}`;
         } else {
           alert('创建失败: ' + data.error);
@@ -168,6 +193,73 @@ const { Content } = await post.render();
       } catch (err) {
         alert('请求失败，请确保开发服务器正在运行');
         button.textContent = '新建';
+        button.disabled = false;
+      }
+    });
+
+    // 发布文章
+    document.getElementById('publish-btn')?.addEventListener('click', async (e) => {
+      const button = e.target as HTMLButtonElement;
+      const slug = button.dataset.slug;
+
+      if (!slug) return;
+
+      button.textContent = '发布中...';
+      button.disabled = true;
+
+      try {
+        const res = await fetch('/api/publish-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // 刷新页面显示新状态
+          window.location.reload();
+        } else {
+          alert('发布失败: ' + data.error);
+          button.textContent = '发布';
+          button.disabled = false;
+        }
+      } catch (err) {
+        alert('请求失败，请确保开发服务器正在运行');
+        button.textContent = '发布';
+        button.disabled = false;
+      }
+    });
+
+    // 取消发布
+    document.getElementById('unpublish-btn')?.addEventListener('click', async (e) => {
+      const button = e.target as HTMLButtonElement;
+      const slug = button.dataset.slug;
+
+      if (!slug) return;
+
+      button.textContent = '处理中...';
+      button.disabled = true;
+
+      try {
+        const res = await fetch('/api/unpublish-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert('取消发布失败: ' + data.error);
+          button.textContent = '取消发布';
+          button.disabled = false;
+        }
+      } catch (err) {
+        alert('请求失败，请确保开发服务器正在运行');
+        button.textContent = '取消发布';
         button.disabled = false;
       }
     });
