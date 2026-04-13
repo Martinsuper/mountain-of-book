@@ -10,11 +10,6 @@ const firstPost = allPosts[0];
 
 // 检测是否刚创建了新文章
 const createdTitle = Astro.url.searchParams.get('created');
-
-// 如果刚创建文章，不自动跳转，让用户看到提示
-if (firstPost && !createdTitle) {
-  return Astro.redirect(`/dev/${firstPost.id}/`);
-}
 ---
 
 <BaseLayout title="开发预览">
@@ -23,11 +18,10 @@ if (firstPost && !createdTitle) {
       <div class="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded mb-6">
         <p class="font-medium">✓ 文章创建成功！</p>
         <p class="text-sm mt-1">「{createdTitle}」已保存到 src/content/posts/</p>
-        <p class="text-sm mt-2 text-green-600">请等待页面自动刷新，然后从左侧列表点击查看。</p>
       </div>
     )}
 
-    {!createdTitle && (
+    {!createdTitle && !firstPost && (
       <p class="text-center text-gray-500 mb-6">还没有文章，创建第一篇吧！</p>
     )}
 
@@ -48,8 +42,8 @@ if (firstPost && !createdTitle) {
       </button>
     </form>
 
-    <!-- 文章列表（创建后显示） -->
-    {createdTitle && allPosts.length > 0 && (
+    <!-- 文章列表（创建后显示或没有自动跳转时） -->
+    {allPosts.length > 0 && (
       <div class="mt-6 border-t border-gray-200 pt-4">
         <h3 class="text-sm font-semibold text-gray-500 mb-2">文章列表</h3>
         <ul class="space-y-2">
@@ -72,6 +66,14 @@ if (firstPost && !createdTitle) {
       </div>
     )}
   </div>
+
+  <!-- 自动跳转脚本（解决中文URL问题） -->
+  {firstPost && !createdTitle && (
+    <script define:var={{ firstPostId: firstPost.id }}>
+      // 使用客户端跳转，支持中文URL
+      window.location.href = `/dev/${firstPostId}/`;
+    </script>
+  )}
 
   <script>
     document.getElementById('new-post-form')?.addEventListener('submit', async (e) => {
