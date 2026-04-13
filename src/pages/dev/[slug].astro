@@ -27,7 +27,25 @@ const { Content } = await post.render();
     <!-- 左侧：文章列表 -->
     <aside class="w-64 shrink-0 border-r border-gray-200 overflow-y-auto">
       <div class="sticky top-0 bg-white pb-2 pt-2 z-10">
-        <h2 class="text-sm font-semibold text-gray-500 mb-2">文章列表 ({allPosts.length})</h2>
+        <!-- 新建文章 -->
+        <div class="mb-4 px-2">
+          <form id="new-post-form" class="flex gap-2">
+            <input
+              type="text"
+              name="title"
+              placeholder="输入文章标题..."
+              class="flex-1 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400"
+              required
+            />
+            <button
+              type="submit"
+              class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 whitespace-nowrap"
+            >
+              新建
+            </button>
+          </form>
+        </div>
+        <h2 class="text-sm font-semibold text-gray-500 mb-2 px-2">文章列表 ({allPosts.length})</h2>
       </div>
       <ul class="space-y-1">
         {allPosts.map((p) => (
@@ -116,4 +134,42 @@ const { Content } = await post.render();
       </div>
     </div>
   </div>
+
+  <!-- 新建文章脚本 -->
+  <script>
+    document.getElementById('new-post-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const title = (form.querySelector('input[name="title"]') as HTMLInputElement).value.trim();
+
+      if (!title) return;
+
+      const button = form.querySelector('button') as HTMLButtonElement;
+      button.textContent = '创建中...';
+      button.disabled = true;
+
+      try {
+        const res = await fetch('/api/create-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // 跳转到新文章预览页
+          window.location.href = `/dev/${data.slug}/`;
+        } else {
+          alert('创建失败: ' + data.error);
+          button.textContent = '新建';
+          button.disabled = false;
+        }
+      } catch (err) {
+        alert('请求失败，请确保开发服务器正在运行');
+        button.textContent = '新建';
+        button.disabled = false;
+      }
+    });
+  </script>
 </BaseLayout>

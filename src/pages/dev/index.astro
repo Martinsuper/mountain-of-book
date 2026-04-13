@@ -1,6 +1,7 @@
 ---
 // 开发预览入口页面 - 自动跳转到第一篇文章
 import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const allPosts = await getCollection('posts');
 allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
@@ -13,8 +14,60 @@ if (firstPost) {
 ---
 
 <BaseLayout title="开发预览">
-  <div class="text-center text-gray-500 py-20">
-    <p>没有文章</p>
-    <p class="text-sm mt-2">在 src/content/posts/ 目录创建 .md 文件</p>
+  <div class="max-w-md mx-auto py-20">
+    <p class="text-center text-gray-500 mb-6">还没有文章，创建第一篇吧！</p>
+
+    <!-- 新建文章表单 -->
+    <form id="new-post-form" class="flex gap-2">
+      <input
+        type="text"
+        name="title"
+        placeholder="输入文章标题..."
+        class="flex-1 px-4 py-2 border border-gray-200 rounded focus:outline-none focus:border-blue-400"
+        required
+      />
+      <button
+        type="submit"
+        class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        新建
+      </button>
+    </form>
   </div>
+
+  <script>
+    document.getElementById('new-post-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const title = (form.querySelector('input[name="title"]') as HTMLInputElement).value.trim();
+
+      if (!title) return;
+
+      const button = form.querySelector('button') as HTMLButtonElement;
+      button.textContent = '创建中...';
+      button.disabled = true;
+
+      try {
+        const res = await fetch('/api/create-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.href = `/dev/${data.slug}/`;
+        } else {
+          alert('创建失败: ' + data.error);
+          button.textContent = '新建';
+          button.disabled = false;
+        }
+      } catch (err) {
+        alert('请求失败，请确保开发服务器正在运行');
+        button.textContent = '新建';
+        button.disabled = false;
+      }
+    });
+  </script>
 </BaseLayout>
