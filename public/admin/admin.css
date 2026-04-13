@@ -525,3 +525,164 @@ nav[class*="Nav"] {
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
+
+/* ===== 表单字段 ===== */
+/* 字段容器 */
+[class*="Field"],
+[class*="Control"],
+[class*="Widget"] {
+  margin-bottom: 24px;
+}
+
+/* 字段标签 */
+[class*="Field"] label,
+[class*="Control"] label,
+[class*="Label"] {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+/* 输入框通用 */
+[class*="Field"] input:not([type="checkbox"]):not([type="radio"]),
+[class*="Field"] textarea,
+[class*="Field"] select,
+[class*="Widget"] input,
+[class*="Widget"] textarea,
+[class*="Widget"] select {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  transition: var(--transition-fast);
+}
+
+[class*="Field"] input:focus,
+[class*="Field"] textarea:focus,
+[class*="Field"] select:focus,
+[class*="Widget"] input:focus,
+[class*="Widget"] textarea:focus,
+[class*="Widget"] select:focus {
+  outline: none;
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 2px var(--bg-tertiary);
+}
+
+[class*="Field"] input::placeholder,
+[class*="Field"] textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* 文本域 */
+[class*="Field"] textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* 日期选择器 */
+[class*="DateTime"] input,
+[class*="DatetimeWidget"] input {
+  font-family: var(--font-mono);
+}
+
+/* 标签列表 Widget */
+[class*="ListWidget"],
+[class*="ListControl"] {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--bg-primary);
+}
+
+[class*="ListWidget"] [class*="Item"],
+[class*="ListControl"] [class*="Item"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border-radius: 999px;
+  padding: 6px 12px;
+  margin: 4px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+[class*="ListWidget"] [class*="Item"] button,
+[class*="ListControl"] [class*="Item"] button {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+}
+
+[class*="ListWidget"] [class*="Item"] button:hover {
+  color: var(--text-primary);
+}
+
+/* Boolean 开关 */
+[class*="BooleanWidget"],
+[class*="BooleanControl"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+[class*="BooleanWidget"] label,
+[class*="BooleanControl"] label {
+  margin-bottom: 0;
+}
+
+/* 复选框样式 */
+[class*="BooleanWidget"] input[type="checkbox"],
+[class*="BooleanControl"] input[type="checkbox"] {
+  appearance: none;
+  width: 44px;
+  height: 24px;
+  background: var(--bg-tertiary);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  position: relative;
+}
+
+[class*="BooleanWidget"] input[type="checkbox"]::after,
+[class*="BooleanControl"] input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: var(--bg-primary);
+  border-radius: 999px;
+  transition: var(--transition-fast);
+}
+
+[class*="BooleanWidget"] input[type="checkbox"]:checked,
+[class*="BooleanControl"] input[type="checkbox"]:checked {
+  background: var(--text-primary);
+}
+
+[class*="BooleanWidget"] input[type="checkbox"]:checked::after,
+[class*="BooleanControl"] input[type="checkbox"]:checked::after {
+  transform: translateX(20px);
+}
+
+/* 下拉选择器 */
+[class*="SelectWidget"] select,
+[class*="SelectControl"] select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
