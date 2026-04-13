@@ -252,7 +252,8 @@ nav[class*="Nav"] {
   transition: var(--transition-fast);
 }
 
-[class*="CollectionTop"] button:hover {
+[class*="CollectionTop"] button:hover,
+[class*="CollectionHeader"] button:hover {
   background: var(--text-secondary);
   transform: translateY(-1px);
 }
@@ -300,9 +301,9 @@ nav[class*="Nav"] {
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
 }
 
 /* 元信息 */
@@ -328,12 +329,14 @@ nav[class*="Nav"] {
   color: var(--text-secondary);
 }
 
-[class*="EntryCard"] [class*="Status"][class*="draft"] {
+[class*="EntryCard"] [class*="Status"][class*="draft"],
+[class*="Entry"] [class*="Status"][class*="draft"] {
   background: var(--bg-tertiary);
   color: var(--text-tertiary);
 }
 
-[class*="EntryCard"] [class*="Status"][class*="published"] {
+[class*="EntryCard"] [class*="Status"][class*="published"],
+[class*="Entry"] [class*="Status"][class*="published"] {
   background: var(--text-primary);
   color: var(--bg-primary);
 }
