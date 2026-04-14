@@ -33,7 +33,7 @@ const firstPostSlug = firstPost?.id.replace('.md', '');
   )}
 
   {firstPost && (
-    <script define:var={{ firstPostSlug }}>
+    <script define:vars={{ firstPostSlug }}>
       window.location.href = `/dev/${firstPostSlug}/`;
     </script>
   )}
