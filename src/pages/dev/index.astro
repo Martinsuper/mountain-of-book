@@ -10,6 +10,9 @@ const firstPost = allPosts[0];
 
 // 检测是否刚创建了新文章
 const createdTitle = Astro.url.searchParams.get('created');
+
+// 第篇文章的 slug（不含 .md）
+const firstPostSlug = firstPost?.id.replace('.md', '');
 ---
 
 <BaseLayout title="开发预览">
@@ -47,10 +50,12 @@ const createdTitle = Astro.url.searchParams.get('created');
       <div class="mt-6 border-t border-gray-200 pt-4">
         <h3 class="text-sm font-semibold text-gray-500 mb-2">文章列表</h3>
         <ul class="space-y-2">
-          {allPosts.map((p) => (
+          {allPosts.map((p) => {
+            const pSlug = p.id.replace('.md', '');
+            return (
             <li>
               <a
-                href={`/dev/${p.id}/`}
+                href={`/dev/${pSlug}/`}
                 class="block px-3 py-2 bg-gray-50 rounded hover:bg-gray-100 text-sm"
               >
                 <span class="flex items-center gap-2">
@@ -61,7 +66,8 @@ const createdTitle = Astro.url.searchParams.get('created');
                 </span>
               </a>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
     )}
@@ -69,9 +75,9 @@ const createdTitle = Astro.url.searchParams.get('created');
 
   <!-- 自动跳转脚本（解决中文URL问题） -->
   {firstPost && !createdTitle && (
-    <script define:var={{ firstPostId: firstPost.id }}>
+    <script define:var={{ firstPostSlug }}>
       // 使用客户端跳转，支持中文URL
-      window.location.href = `/dev/${firstPostId}/`;
+      window.location.href = `/dev/${firstPostSlug}/`;
     </script>
   )}
 
