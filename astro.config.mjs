@@ -1,8 +1,12 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import remarkPlantUml from './src/lib/remark-plantuml';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, readFileSync, existsSync, readdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// 获取项目根目录
+const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 // 开发模式下创建和发布文章的中间件
 const devMiddleware = () => ({
@@ -41,7 +45,7 @@ draft: true
 在这里开始写你的文章...
 `;
 
-            const filePath = join(process.cwd(), 'src/content/posts', `${slug}.md`);
+            const filePath = join(projectRoot, 'src/content/posts', `${slug}.md`);
             writeFileSync(filePath, content, 'utf-8');
 
             res.setHeader('Content-Type', 'application/json');
@@ -65,10 +69,15 @@ draft: true
               return;
             }
 
-            const filePath = join(process.cwd(), 'src/content/posts', `${slug}.md`);
+            const filePath = join(projectRoot, 'src/content/posts', `${slug}.md`);
             if (!existsSync(filePath)) {
+              // 尝试查找可能匹配的文件
+              const postsDir = join(projectRoot, 'src/content/posts');
+              const files = readdirSync(postsDir);
+              console.log('Looking for:', slug);
+              console.log('Available files:', files);
               res.statusCode = 404;
-              res.end(JSON.stringify({ error: '文章不存在' }));
+              res.end(JSON.stringify({ error: `文章不存在: ${slug}`, path: filePath }));
               return;
             }
 
@@ -98,7 +107,7 @@ draft: true
               return;
             }
 
-            const filePath = join(process.cwd(), 'src/content/posts', `${slug}.md`);
+            const filePath = join(projectRoot, 'src/content/posts', `${slug}.md`);
             if (!existsSync(filePath)) {
               res.statusCode = 404;
               res.end(JSON.stringify({ error: '文章不存在' }));

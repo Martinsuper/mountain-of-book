@@ -97,7 +97,6 @@ const { Content } = await post.render();
               {post.data.draft ? (
                 <button
                   id="publish-btn"
-                  data-slug={post.id}
                   class="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                 >
                   发布
@@ -105,7 +104,6 @@ const { Content } = await post.render();
               ) : (
                 <button
                   id="unpublish-btn"
-                  data-slug={post.id}
                   class="text-xs bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
                 >
                   取消发布
@@ -200,7 +198,8 @@ const { Content } = await post.render();
     // 发布文章
     document.getElementById('publish-btn')?.addEventListener('click', async (e) => {
       const button = e.target as HTMLButtonElement;
-      const slug = button.dataset.slug;
+      // 从URL路径获取slug: /dev/slug/ -> slug
+      const slug = window.location.pathname.split('/').filter(s => s)[1];
 
       if (!slug) return;
 
@@ -217,7 +216,6 @@ const { Content } = await post.render();
         const data = await res.json();
 
         if (data.success) {
-          // 刷新页面显示新状态
           window.location.reload();
         } else {
           alert('发布失败: ' + data.error);
@@ -234,7 +232,8 @@ const { Content } = await post.render();
     // 取消发布
     document.getElementById('unpublish-btn')?.addEventListener('click', async (e) => {
       const button = e.target as HTMLButtonElement;
-      const slug = button.dataset.slug;
+      // 从URL路径获取slug
+      const slug = window.location.pathname.split('/').filter(s => s)[1];
 
       if (!slug) return;
 
