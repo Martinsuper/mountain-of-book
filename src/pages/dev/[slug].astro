@@ -8,7 +8,7 @@ export async function getStaticPaths() {
   const posts = await getCollection('posts');
   posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
   return posts.map((post) => ({
-    params: { slug: post.id },
+    params: { slug: post.id.replace('.md', '') },
     props: { post, allPosts: posts }
   }));
 }
@@ -20,6 +20,9 @@ interface Props {
 
 const { post, allPosts } = Astro.props;
 const { Content } = await post.render();
+
+// 当前文章的 slug（不含 .md）
+const currentSlug = post.id.replace('.md', '');
 ---
 
 <BaseLayout title={`预览: ${post.data.title}`}>
@@ -48,12 +51,14 @@ const { Content } = await post.render();
         <h2 class="text-sm font-semibold text-gray-500 mb-2 px-2">文章列表 ({allPosts.length})</h2>
       </div>
       <ul class="space-y-1">
-        {allPosts.map((p) => (
+        {allPosts.map((p) => {
+          const pSlug = p.id.replace('.md', '');
+          return (
           <li>
             <a
-              href={`/dev/${p.id}/`}
+              href={`/dev/${pSlug}/`}
               class={`block px-3 py-2 rounded text-sm transition-colors ${
-                post.id === p.id
+                currentSlug === pSlug
                   ? 'bg-blue-100 text-blue-700 font-medium'
                   : 'hover:bg-gray-100 text-gray-700'
               }`}
@@ -69,7 +74,8 @@ const { Content } = await post.render();
               </span>
             </a>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </aside>
 
@@ -89,7 +95,7 @@ const { Content } = await post.render();
                 )}
               </div>
               <p class="text-xs text-gray-500 mt-1">
-                文件路径：<code class="bg-gray-200 px-1 rounded">src/content/posts/{post.id}.md</code>
+                文件路径：<code class="bg-gray-200 px-1 rounded">src/content/posts/{post.id}</code>
               </p>
             </div>
             <div class="flex gap-2 items-center">
