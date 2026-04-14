@@ -198,8 +198,8 @@ const { Content } = await post.render();
     // 发布文章
     document.getElementById('publish-btn')?.addEventListener('click', async (e) => {
       const button = e.target as HTMLButtonElement;
-      // 从URL路径获取slug: /dev/slug/ -> slug
-      const slug = window.location.pathname.split('/').filter(s => s)[1];
+      // 从URL路径获取slug: /dev/slug/ -> slug，并解码中文
+      const slug = decodeURIComponent(window.location.pathname.split('/').filter(s => s)[1]);
 
       if (!slug) return;
 
@@ -232,8 +232,8 @@ const { Content } = await post.render();
     // 取消发布
     document.getElementById('unpublish-btn')?.addEventListener('click', async (e) => {
       const button = e.target as HTMLButtonElement;
-      // 从URL路径获取slug
-      const slug = window.location.pathname.split('/').filter(s => s)[1];
+      // 从URL路径获取slug，并解码中文
+      const slug = decodeURIComponent(window.location.pathname.split('/').filter(s => s)[1]);
 
       if (!slug) return;
 
