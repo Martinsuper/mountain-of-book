@@ -2,6 +2,7 @@
 // src/pages/posts/[slug].astro
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -16,35 +17,50 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { Content } = await post.render();
+const { Content, headings } = await post.render();
 ---
 
 <BaseLayout title={post.data.title}>
-  <article class="prose dark:prose-invert max-w-none">
-    <header class="mb-8">
-      <h1 class="text-4xl font-bold mb-4">{post.data.title}</h1>
-      <div class="flex items-center gap-4 text-gray-500">
-        <time>
-          {post.data.date.toLocaleDateString('zh-CN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
-        </time>
-        {post.data.tags && (
-          <div class="flex gap-2">
-            {post.data.tags.map((tag) => (
-              <a
-                href={`/tags/${tag}/`}
-                class="hover:text-blue-600"
-              >
-                #{tag}
-              </a>
-            ))}
-          </div>
-        )}
+  <!-- 移动端：目录在文章上方 -->
+  <div class="lg:hidden mb-8">
+    <TableOfContents headings={headings} />
+  </div>
+
+  <!-- 桌面端：双栏布局 -->
+  <div class="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12 lg:max-w-5xl">
+    <article class="prose dark:prose-invert max-w-none">
+      <header class="mb-8 not-prose">
+        <h1 class="text-4xl font-bold mb-4">{post.data.title}</h1>
+        <div class="flex items-center gap-4 text-gray-500 dark:text-gray-400">
+          <time>
+            {post.data.date.toLocaleDateString('zh-CN', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </time>
+          {post.data.tags && (
+            <div class="flex gap-2">
+              {post.data.tags.map((tag) => (
+                <a
+                  href={`/tags/${tag}/`}
+                  class="hover:text-blue-600 dark:hover:text-blue-400"
+                >
+                  #{tag}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
+      <Content />
+    </article>
+
+    <!-- 桌面端：侧边目录 -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-8">
+        <TableOfContents headings={headings} />
       </div>
-    </header>
-    <Content />
-  </article>
+    </aside>
+  </div>
 </BaseLayout>
