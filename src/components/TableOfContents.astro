@@ -12,7 +12,7 @@ const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
     <h2 class="text-sm font-bold uppercase tracking-wide mb-4 text-gray-700 dark:text-gray-300">
       目录
     </h2>
-    <ul class="space-y-2">
+    <ul class="space-y-2 toc-list">
       {toc.map((heading) => (
         <li class={`toc-item toc-depth-${heading.depth}`}>
           <a
@@ -36,5 +36,14 @@ const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
   }
   .toc-depth-4 {
     padding-left: 1.5rem;
+  }
+  .toc-list {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .toc-list::-webkit-scrollbar {
+    display: none;
   }
 </style>
