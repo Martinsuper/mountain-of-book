@@ -1,0 +1,38 @@
+---
+// src/pages/tags/index.astro
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+
+// 统计每个标签的文章数量
+const tagCounts: Record<string, number> = {};
+posts.forEach((post) => {
+  post.data.tags?.forEach((tag) => {
+    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+  });
+});
+
+// 按文章数量排序
+const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="标签列表">
+  <h1 class="text-3xl font-bold mb-8">标签</h1>
+
+  {tags.length === 0 ? (
+    <p class="text-gray-500">暂无标签</p>
+  ) : (
+    <div class="flex flex-wrap gap-3">
+      {tags.map(([tag, count]) => (
+        <a
+          href={`/tags/${tag}/`}
+          class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        >
+          <span class="font-medium">#{tag}</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400">{count}</span>
+        </a>
+      ))}
+    </div>
+  )}
+</BaseLayout>
