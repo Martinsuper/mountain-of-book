@@ -412,7 +412,8 @@
     padding: 1rem;
     margin: 1rem 0;
     border-radius: 0.5rem;
-    text-align: center;
+    display: flex;
+    justify-content: center;
     cursor: zoom-in;
     position: relative;
     overflow: visible;
@@ -431,5 +432,23 @@
 
   .dark .mermaid svg:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ==================== PlantUML 图表容器 ==================== */
+  .plantuml-img {
+    background: transparent;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  .plantuml-img img {
+    max-width: 100%;
+    height: auto;
   }
 </style>

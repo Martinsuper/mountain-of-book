@@ -11,14 +11,12 @@ const { code, alt = "PlantUML diagram" } = Astro.props;
 const svgUrl = encodePlantUml(code);
 ---
 
-<figure class="my-8">
+<div class="plantuml-img">
   <img
     src={svgUrl}
     alt={alt}
-    class="max-w-full h-auto border rounded-lg"
+    class="max-w-full h-auto"
     loading="lazy"
   />
-  <figcaption class="text-center text-gray-500 text-sm mt-2">
-    {alt}
-  </figcaption>
-</figure>
+  {alt && <p class="text-center text-gray-500 text-sm mt-2">{alt}</p>}
+</div>

@@ -19,7 +19,7 @@ export default function remarkPlantUml(): Plugin<void[], Root> {
         // 替换为 html 节点
         tree.children[i] = {
           type: 'html',
-          value: `<img src="${svgUrl}" alt="PlantUML Diagram" class="max-w-full h-auto border rounded-lg" loading="lazy" />`
+          value: `<div class="plantuml-img not-prose"><img src="${svgUrl}" alt="PlantUML Diagram" class="max-w-full h-auto" loading="lazy" /></div>`
         };
       }
     }
