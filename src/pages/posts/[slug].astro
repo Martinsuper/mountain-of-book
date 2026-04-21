@@ -3,6 +3,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
+import CodeCopy from '../../components/CodeCopy.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -54,6 +55,7 @@ const { Content, headings } = await post.render();
         </div>
       </header>
       <Content />
+      <CodeCopy />
     </article>
 
     <!-- 桌面端：侧边目录 -->
