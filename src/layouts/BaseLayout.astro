@@ -4,6 +4,8 @@ import '../styles/global.css';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Search from '../components/Search.astro';
 import BackToTop from '../components/BackToTop.astro';
+import Mermaid from '../components/Mermaid.astro';
+import MermaidModal from '../components/MermaidModal.astro';
 
 interface Props {
   title?: string;
@@ -68,6 +70,8 @@ const currentPath = Astro.url.pathname;
     <main class="max-w-4xl mx-auto px-4 py-8">
       <slot />
     </main>
+    <Mermaid />
+    <MermaidModal />
     <BackToTop />
   </body>
 </html>

@@ -1,0 +1,62 @@
+---
+// src/components/Mermaid.astro
+---
+
+<script>
+  import mermaid from 'mermaid';
+
+  // 等待 DOM 加载完成
+  document.addEventListener('DOMContentLoaded', () => {
+    // 根据当前主题初始化 mermaid
+    const isDark = document.documentElement.classList.contains('dark');
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: isDark ? 'dark' : 'default',
+      securityLevel: 'loose',
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+
+    // mermaid 渲染完成后触发事件
+    setTimeout(() => {
+      // 触发自定义事件，通知 modal 组件可以绑定点击事件
+      document.dispatchEvent(new CustomEvent('mermaid-rendered'));
+    }, 500);
+
+    // 监听主题切换
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          const isDark = document.documentElement.classList.contains('dark');
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: isDark ? 'dark' : 'default',
+            securityLevel: 'loose'
+          });
+
+          // 重新渲染所有 mermaid 图表
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach((element, index) => {
+            const code = element.getAttribute('data-mermaid-code') || element.textContent || '';
+            mermaid.render('mermaid-svg-' + index + '-' + Date.now(), code, (svgCode) => {
+              element.innerHTML = svgCode;
+              // 渲染完成后通知 modal
+              setTimeout(() => {
+                document.dispatchEvent(new CustomEvent('mermaid-rendered'));
+              }, 100);
+            });
+          });
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+  });
+</script>
+
+<style is:global>
+  /* mermaid 样式由 MermaidModal.astro 统一管理 */
+</style>

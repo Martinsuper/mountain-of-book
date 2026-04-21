@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import remarkPlantUml from './src/lib/remark-plantuml';
+import remarkMermaid from './src/lib/remark-mermaid';
 import { writeFileSync, readFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -146,7 +147,7 @@ export default defineConfig({
       theme: 'github-dark',
       wrap: true
     },
-    remarkPlugins: [remarkPlantUml]
+    remarkPlugins: [remarkPlantUml, remarkMermaid]
   },
   publicDir: 'public',
   vite: {
