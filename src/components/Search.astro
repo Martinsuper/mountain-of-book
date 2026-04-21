@@ -1,0 +1,152 @@
+---
+// src/components/Search.astro
+---
+
+<!-- 搜索按钮 -->
+<button
+  id="search-btn"
+  type="button"
+  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+  aria-label="搜索文章"
+>
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+    />
+  </svg>
+</button>
+
+<!-- 搜索弹窗 -->
+<div
+  id="search-modal"
+  class="fixed inset-0 z-50 hidden"
+>
+  <!-- 背景遮罩 -->
+  <div class="absolute inset-0 bg-black/50" id="search-backdrop"></div>
+
+  <!-- 搜索框容器 -->
+  <div class="relative flex items-start justify-center pt-20 px-4">
+    <div class="w-full max-w-xl bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden">
+      <!-- 搜索输入 -->
+      <div class="flex items-center border-b border-gray-200 dark:border-gray-800 px-4">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+        <input
+          id="search-input"
+          type="text"
+          placeholder="搜索文章..."
+          class="w-full px-4 py-3 bg-transparent outline-none text-gray-900 dark:text-gray-100"
+        />
+        <button
+          id="search-close"
+          class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- 搜索结果 -->
+      <ul id="search-results" class="max-h-80 overflow-y-auto p-2"></ul>
+
+      <!-- 无结果提示 -->
+      <p id="search-empty" class="hidden p-4 text-center text-gray-500">
+        未找到相关文章
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById('search-btn');
+  const modal = document.getElementById('search-modal');
+  const backdrop = document.getElementById('search-backdrop');
+  const input = document.getElementById('search-input');
+  const closeBtn = document.getElementById('search-close');
+  const results = document.getElementById('search-results');
+  const empty = document.getElementById('search-empty');
+
+  // 搜索索引缓存
+  let searchIndex: any[] = [];
+
+  // 打开搜索
+  function openSearch() {
+    modal!.classList.remove('hidden');
+    input!.focus();
+    // 加载索引
+    if (searchIndex.length === 0) {
+      fetch('/api/search-index.json')
+        .then(res => res.json())
+        .then(data => searchIndex = data);
+    }
+  }
+
+  // 关闭搜索
+  function closeSearch() {
+    modal!.classList.add('hidden');
+    input!.value = '';
+    results!.innerHTML = '';
+    empty!.classList.add('hidden');
+  }
+
+  // 搜索过滤
+  function search(query: string) {
+    if (!query.trim()) {
+      results!.innerHTML = '';
+      empty!.classList.add('hidden');
+      return;
+    }
+
+    const q = query.toLowerCase();
+    const matched = searchIndex.filter(post =>
+      post.title.toLowerCase().includes(q) ||
+      post.description.toLowerCase().includes(q) ||
+      post.tags.some(tag => tag.toLowerCase().includes(q))
+    );
+
+    if (matched.length === 0) {
+      results!.innerHTML = '';
+      empty!.classList.remove('hidden');
+      return;
+    }
+
+    empty!.classList.add('hidden');
+    results!.innerHTML = matched.map(post => `
+      <li>
+        <a href="/posts/${post.slug}/" class="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+          <h3 class="font-medium">${post.title}</h3>
+          ${post.description ? `<p class="text-sm text-gray-500 mt-1">${post.description.slice(0, 80)}${post.description.length > 80 ? '...' : ''}</p>` : ''}
+          ${post.tags.length > 0 ? `<div class="flex gap-2 mt-2">${post.tags.map(t => `<span class="text-xs text-gray-400">#${t}</span>`).join('')}</div>` : ''}
+        </a>
+      </li>
+    `).join('');
+  }
+
+  // 事件绑定
+  btn!.addEventListener('click', openSearch);
+  closeBtn!.addEventListener('click', closeSearch);
+  backdrop!.addEventListener('click', closeSearch);
+  input!.addEventListener('input', e => search((e.target as HTMLInputElement).value));
+
+  // ESC 关闭
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal!.classList.contains('hidden')) {
+      closeSearch();
+    }
+    // Ctrl/Cmd + K 打开搜索
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      openSearch();
+    }
+  });
+</script>
