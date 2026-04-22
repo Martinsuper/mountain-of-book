@@ -1,0 +1,289 @@
+---
+// src/components/FloatingCompanion.astro
+---
+
+<div class="floating-companion" id="floatingCompanion">
+  <div class="floating-companion-inner">
+    <div class="floating-sprite-wrapper">
+      <div class="floating-shadow"></div>
+      <img id="floatingSprite" class="floating-sprite" src="" alt="" />
+      <div class="floating-particles" id="floatingParticles"></div>
+    </div>
+    <div class="floating-speech" id="floatingSpeech">
+      <span id="floatingSpeechText"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .floating-companion {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 900;
+    cursor: pointer;
+    display: none;
+  }
+
+  .floating-companion.show {
+    display: block;
+  }
+
+  .floating-companion-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .floating-sprite-wrapper {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .floating-shadow {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+    animation: shadowPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes shadowPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.3; }
+    50% { transform: translateX(-50%) scale(0.8); opacity: 0.2; }
+  }
+
+  .floating-sprite {
+    width: 48px;
+    height: 48px;
+    image-rendering: pixelated;
+    animation: floatBounce 3s ease-in-out infinite;
+    transition: transform 0.2s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  }
+
+  @keyframes floatBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .floating-companion:hover .floating-sprite {
+    animation: floatExcited 0.3s ease-in-out 3;
+  }
+
+  @keyframes floatExcited {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-12px) scale(1.15); }
+  }
+
+  .floating-speech {
+    background: #fff;
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    max-width: 180px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+
+  :global(.dark) .floating-speech {
+    background: #1f2937;
+    color: #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .floating-speech.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .floating-speech::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    transform: rotate(45deg);
+  }
+
+  :global(.dark) .floating-speech::after {
+    background: #1f2937;
+  }
+
+  #floatingSpeechText {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: #374151;
+  }
+
+  :global(.dark) #floatingSpeechText {
+    color: #d1d5db;
+  }
+
+  .floating-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .heart-particle {
+    position: absolute;
+    font-size: 12px;
+    animation: heartFloat 1s ease-out forwards;
+  }
+
+  @keyframes heartFloat {
+    0% { transform: translateY(0) scale(0.5); opacity: 1; }
+    100% { transform: translateY(-30px) scale(1); opacity: 0; }
+  }
+
+  .floating-sprite.blink {
+    animation: blink 0.15s ease 3;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .floating-sprite.sleeping {
+    animation: sleepBob 2s ease-in-out infinite;
+  }
+
+  @keyframes sleepBob {
+    0%, 100% { transform: rotate(-3deg) translateY(0); }
+    50% { transform: rotate(3deg) translateY(3px); }
+  }
+</style>
+
+<script>
+import { ensureCompanion, getCompanionPokemon, getRandomDialogue } from '../lib/poke-companion.js';
+
+const COMPANION_KEY = 'poke_companion';
+
+function getCompanion() {
+  try { return JSON.parse(localStorage.getItem(COMPANION_KEY)) || null; }
+  catch { return null; }
+}
+
+const container = document.getElementById('floatingCompanion');
+const sprite = document.getElementById('floatingSprite');
+const speech = document.getElementById('floatingSpeech');
+const speechText = document.getElementById('floatingSpeechText');
+const particles = document.getElementById('floatingParticles');
+
+let speechTimeout = null;
+let dialogueInterval = null;
+let blinkTimeout = null;
+
+function showSpeech(text, duration = 3000) {
+  speechText.textContent = text;
+  speech.classList.add('show');
+  clearTimeout(speechTimeout);
+  speechTimeout = setTimeout(() => speech.classList.remove('show'), duration);
+}
+
+function createHeartParticle() {
+  const heart = document.createElement('span');
+  heart.className = 'heart-particle';
+  heart.textContent = ['💕', '✨', '💖', '⭐'][Math.floor(Math.random() * 4)];
+  heart.style.left = `${20 + Math.random() * 20}px`;
+  heart.style.top = `${10 + Math.random() * 10}px`;
+  particles.appendChild(heart);
+  heart.addEventListener('animationend', () => heart.remove());
+}
+
+function triggerBlink() {
+  sprite.classList.add('blink');
+  setTimeout(() => sprite.classList.remove('blink'), 500);
+  blinkTimeout = setTimeout(triggerBlink, 3000 + Math.random() * 8000);
+}
+
+function updateSprite() {
+  const companion = getCompanion();
+  if (!companion) {
+    container.classList.remove('show');
+    return;
+  }
+
+  sprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${companion.id}.png`;
+  container.classList.add('show');
+
+  if (companion.mood === 'sleepy') {
+    sprite.classList.add('sleeping');
+  } else {
+    sprite.classList.remove('sleeping');
+  }
+
+  clearTimeout(blinkTimeout);
+  blinkTimeout = setTimeout(triggerBlink, 3000 + Math.random() * 5000);
+}
+
+function startDialogueLoop() {
+  clearInterval(dialogueInterval);
+  dialogueInterval = setInterval(() => {
+    const dialogue = getRandomDialogue();
+    if (dialogue) showSpeech(dialogue);
+  }, 30000 + Math.random() * 30000);
+}
+
+container.addEventListener('click', () => {
+  const companion = getCompanion();
+  if (!companion) return;
+
+  const pokemon = getCompanionPokemon();
+  const responses = [
+    `${pokemon?.name || '小伙伴'}：你好呀！`,
+    `${pokemon?.name || '小伙伴'}：今天天气真好~`,
+    `${pokemon?.name || '小伙伴'}：摸摸我嘛~`,
+    `${pokemon?.name || '小伙伴'}：想出去玩！`,
+    `${pokemon?.name || '小伙伴'}：你在忙什么呢？`,
+    `Lv.${companion.level} ${pokemon?.name || ''}：我会一直陪着你的！`,
+  ];
+  const response = responses[Math.floor(Math.random() * responses.length)];
+  showSpeech(response, 4000);
+
+  for (let i = 0; i < 3; i++) {
+    setTimeout(createHeartParticle, i * 150);
+  }
+
+  sprite.style.animation = 'none';
+  sprite.offsetHeight;
+  sprite.style.animation = 'floatExcited 0.3s ease-in-out 2';
+  setTimeout(() => {
+    if (companion.mood === 'sleepy') {
+      sprite.style.animation = 'sleepBob 2s ease-in-out infinite';
+    } else {
+      sprite.style.animation = 'floatBounce 3s ease-in-out infinite';
+    }
+  }, 600);
+});
+
+ensureCompanion();
+updateSprite();
+startDialogueLoop();
+
+window.addEventListener('storage', (e) => {
+  if (e.key === COMPANION_KEY) updateSprite();
+});
+
+setInterval(updateSprite, 5000);
+</script>

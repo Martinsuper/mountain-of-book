@@ -1,0 +1,820 @@
+---
+// src/components/PokeBlindBox.astro
+import pokemonData from '../data/pokemon.json';
+---
+
+<div class="poke-blind-box" id="pokeBlindBox">
+  <div class="box-container">
+    <div class="pokeball-wrapper">
+      <div class="pokeball-glow"></div>
+      <div class="pokeball" id="pokeball" role="button" tabindex="0" aria-label="点击开盲盒">
+        <div class="pokeball-top"></div>
+        <div class="pokeball-bottom"></div>
+        <div class="pokeball-button"></div>
+        <div class="pokeball-line"></div>
+        <div class="pokeball-inner" id="pokeballInner">
+          <div class="light-flash"></div>
+        </div>
+      </div>
+      <div class="particles-container" id="particles"></div>
+    </div>
+    <p class="hint-text">点击精灵球开盲盒</p>
+    <p class="chance-text">今天还可以开 <span id="remainCount">3</span> 次</p>
+    <div class="rarity-info">
+      <span class="rarity-label">传说 <span class="dot legendary-dot"></span> 5%</span>
+      <span class="rarity-label">稀有 <span class="dot rare-dot"></span> 20%</span>
+      <span class="rarity-label">普通 <span class="dot common-dot"></span> 75%</span>
+    </div>
+  </div>
+
+  <div class="celebration-overlay" id="celebrationOverlay">
+    <div class="celebration-content">
+      <div class="celebration-sparkles" id="celebrationSparkles"></div>
+      <div class="legendary-text" id="legendaryText">传说！</div>
+    </div>
+  </div>
+
+  <div class="result-overlay" id="resultOverlay">
+    <div class="result-card" id="resultCard">
+      <div class="sparkles" id="sparkles"></div>
+      <img id="resultSprite" class="result-sprite" src="" alt="" />
+      <h3 id="resultName" class="result-name"></h3>
+      <p id="resultNameEn" class="result-name-en"></p>
+      <div id="resultTypes" class="result-types"></div>
+      <p id="resultRarity" class="result-rarity"></p>
+      <p id="resultDesc" class="result-desc"></p>
+      <button id="collectBtn" class="collect-btn">收入图鉴</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .poke-blind-box {
+    text-align: center;
+    padding: 2rem 1rem;
+    position: relative;
+  }
+
+  .box-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pokeball-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pokeball-glow {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    animation: pulse 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 0.8; }
+  }
+
+  /* Pokeball styles */
+  .pokeball {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 -5px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 2;
+  }
+
+  .pokeball:hover {
+    animation: shake 0.5s ease-in-out infinite;
+  }
+
+  .pokeball:active {
+    transform: scale(0.95);
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+  }
+
+  @keyframes shakeHard {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-10px) rotate(-8deg); }
+    30% { transform: translateX(10px) rotate(8deg); }
+    50% { transform: translateX(-10px) rotate(-5deg); }
+    70% { transform: translateX(10px) rotate(5deg); }
+    90% { transform: translateX(-5px) rotate(-2deg); }
+  }
+
+  @keyframes openBurst {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.8; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  .pokeball.shaking {
+    animation: shakeHard 0.8s ease-in-out;
+  }
+
+  .pokeball.opening {
+    animation: openBurst 0.4s ease-out forwards;
+  }
+
+  .pokeball-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: linear-gradient(135deg, #ee1515 0%, #d41212 100%);
+    border-radius: 50% 50% 0 0;
+    z-index: 1;
+  }
+
+  .pokeball-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    border-radius: 0 0 50% 50%;
+    z-index: 1;
+  }
+
+  .pokeball-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #333;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  .pokeball-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    background: #f0f0f0;
+    border: 3px solid #333;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.8);
+  }
+
+  .pokeball-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .pokeball-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .light-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+    opacity: 0;
+  }
+
+  .light-flash.active {
+    animation: flashBurst 0.3s ease-out;
+  }
+
+  @keyframes flashBurst {
+    0% { opacity: 0; }
+    30% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .hint-text {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0.5rem 0 0;
+    animation: fadeInUp 0.5s ease 0.2s both;
+  }
+
+  .chance-text {
+    font-size: 0.8rem;
+    color: #999;
+  }
+
+  .rarity-info {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #888;
+    animation: fadeInUp 0.5s ease 0.4s both;
+  }
+
+  .rarity-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legendary-dot { background: #ffd700; }
+  .rare-dot { background: #c084fc; }
+  .common-dot { background: #9ca3af; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Particles */
+  .particles-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* Celebration overlay for legendary */
+  .celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+  }
+
+  .celebration-overlay.show {
+    display: flex;
+    animation: celebrationFade 0.3s ease forwards;
+  }
+
+  @keyframes celebrationFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .celebration-content {
+    text-align: center;
+    position: relative;
+  }
+
+  .celebration-sparkles {
+    position: absolute;
+    top: -50px;
+    left: -100px;
+    right: -100px;
+    bottom: -50px;
+    pointer-events: none;
+  }
+
+  .legendary-text {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700, 0 0 60px #ffd700;
+    animation: legendaryPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+
+  @keyframes legendaryPop {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  /* Result overlay */
+  .result-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .result-overlay.show {
+    display: flex;
+    opacity: 1;
+  }
+
+  .result-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    max-width: 320px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transform: scale(0);
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .result-overlay.show .result-card {
+    transform: scale(1);
+  }
+
+  /* Sparkle effects */
+  .sparkles {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    pointer-events: none;
+    border-radius: 20px;
+  }
+
+  .sparkles.legendary {
+    animation: legendaryGlow 1.5s ease-in-out infinite;
+  }
+
+  .sparkles.rare {
+    animation: rareGlow 1.5s ease-in-out infinite;
+  }
+
+  @keyframes legendaryGlow {
+    0%, 100% { box-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700, 0 0 60px #ffd700; }
+    50% { box-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700, 0 0 90px #ffd700; }
+  }
+
+  @keyframes rareGlow {
+    0%, 100% { box-shadow: 0 0 15px #c084fc, 0 0 30px #c084fc; }
+    50% { box-shadow: 0 0 20px #c084fc, 0 0 40px #c084fc; }
+  }
+
+  .result-sprite {
+    width: 120px;
+    height: 120px;
+    image-rendering: pixelated;
+    margin: 0 auto;
+    display: block;
+    animation: bounceIn 0.5s ease 0.3s both;
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    60% { transform: scale(1.1) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  .result-name {
+    color: #fff;
+    font-size: 1.5rem;
+    margin: 0.5rem 0 0.2rem;
+    font-weight: bold;
+    animation: slideUp 0.4s ease 0.5s both;
+  }
+
+  .result-name-en {
+    color: #888;
+    font-size: 0.85rem;
+    margin: 0;
+    animation: slideUp 0.4s ease 0.6s both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-types {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    animation: slideUp 0.4s ease 0.7s both;
+  }
+
+  .type-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .type-badge.草 { background: #78c850; }
+  .type-badge.毒 { background: #a040a0; }
+  .type-badge.火 { background: #f08030; }
+  .type-badge.水 { background: #6890f0; }
+  .type-badge.电 { background: #f8d030; }
+  .type-badge.超能力 { background: #f85888; }
+  .type-badge.冰 { background: #98d8d8; }
+  .type-badge.龙 { background: #7038f8; }
+  .type-badge.恶 { background: #705848; }
+  .type-badge.妖精 { background: #ee99ac; }
+  .type-badge.格斗 { background: #c03028; }
+  .type-badge.飞行 { background: #a890f0; }
+  .type-badge.地面 { background: #e0c068; }
+  .type-badge.岩石 { background: #b8a038; }
+  .type-badge.虫 { background: #a8b820; }
+  .type-badge.幽灵 { background: #705898; }
+  .type-badge.钢 { background: #b8b8d0; }
+  .type-badge.一般 { background: #a8a878; }
+
+  .result-rarity {
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+    animation: slideUp 0.4s ease 0.8s both;
+  }
+
+  .result-rarity.legendary { color: #ffd700; }
+  .result-rarity.rare { color: #c084fc; }
+  .result-rarity.common { color: #9ca3af; }
+
+  .result-desc {
+    color: #aaa;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin: 0.5rem 0 1rem;
+    animation: slideUp 0.4s ease 0.9s both;
+  }
+
+  .collect-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: slideUp 0.4s ease 1s both;
+  }
+
+  .collect-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  }
+
+  .collect-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .collect-btn.collected {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  }
+
+  /* Screen shake for legendary */
+  @keyframes screenShake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5px, -3px); }
+    20% { transform: translate(5px, 3px); }
+    30% { transform: translate(-5px, 3px); }
+    40% { transform: translate(5px, -3px); }
+    50% { transform: translate(-3px, 5px); }
+    60% { transform: translate(3px, -5px); }
+    70% { transform: translate(-3px, -3px); }
+    80% { transform: translate(3px, 3px); }
+    90% { transform: translate(-2px, 2px); }
+  }
+
+  .screen-shake {
+    animation: screenShake 0.5s ease-in-out;
+  }
+</style>
+
+<script>
+import pokemonData from '../data/pokemon.json';
+
+const STORAGE_KEY = 'poke_collection';
+const DAILY_KEY = 'poke_daily_opens';
+const MAX_DAILY_OPENS = 3;
+
+function getCollection() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCollection(collection) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
+}
+
+function getDailyOpens() {
+  const today = new Date().toDateString();
+  try {
+    const data = JSON.parse(localStorage.getItem(DAILY_KEY));
+    if (data && data.date === today) {
+      return data.count;
+    }
+  } catch {}
+  return 0;
+}
+
+function saveDailyOpens(count) {
+  const today = new Date().toDateString();
+  localStorage.setItem(DAILY_KEY, JSON.stringify({ date: today, count }));
+}
+
+function pickPokemon() {
+  const rand = Math.random();
+  let pool;
+  if (rand < 0.05) {
+    pool = pokemonData.filter(p => p.rarity === 'legendary');
+  } else if (rand < 0.25) {
+    pool = pokemonData.filter(p => p.rarity === 'rare');
+  } else {
+    pool = pokemonData.filter(p => p.rarity === 'common');
+  }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function getRarityText(rarity) {
+  const map = { common: '普通', rare: '稀有', legendary: '传说' };
+  return map[rarity] || '普通';
+}
+
+const pokeball = document.getElementById('pokeball');
+const resultOverlay = document.getElementById('resultOverlay');
+const resultCard = document.getElementById('resultCard');
+const resultSprite = document.getElementById('resultSprite');
+const resultName = document.getElementById('resultName');
+const resultNameEn = document.getElementById('resultNameEn');
+const resultTypes = document.getElementById('resultTypes');
+const resultRarity = document.getElementById('resultRarity');
+const resultDesc = document.getElementById('resultDesc');
+const collectBtn = document.getElementById('collectBtn');
+const remainCount = document.getElementById('remainCount');
+const sparkles = document.getElementById('sparkles');
+const particlesContainer = document.getElementById('particles');
+const celebrationOverlay = document.getElementById('celebrationOverlay');
+const legendaryText = document.getElementById('legendaryText');
+const pokeballInner = document.getElementById('pokeballInner');
+
+let currentPokemon = null;
+
+function updateRemaining() {
+  const opens = getDailyOpens();
+  const remaining = Math.max(0, MAX_DAILY_OPENS - opens);
+  remainCount.textContent = remaining;
+  if (remaining === 0) {
+    pokeball.style.opacity = '0.5';
+    pokeball.style.pointerEvents = 'none';
+    document.querySelector('.hint-text').textContent = '今日次数已用完，明天再来吧';
+  }
+}
+
+// Particle explosion effect
+function createParticles(color, count = 20) {
+  particlesContainer.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    const angle = (Math.PI * 2 * i) / count;
+    const velocity = 60 + Math.random() * 80;
+    const x = Math.cos(angle) * velocity;
+    const y = Math.sin(angle) * velocity;
+    const size = 4 + Math.random() * 8;
+
+    particle.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      background: ${color};
+      box-shadow: 0 0 ${size}px ${color};
+      --tx: ${x}px;
+      --ty: ${y}px;
+    `;
+
+    particle.animate([
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(0)`, opacity: 0 }
+    ], {
+      duration: 600 + Math.random() * 400,
+      easing: 'cubic-bezier(0, 0.8, 0.2, 1)',
+      fill: 'forwards'
+    });
+
+    particlesContainer.appendChild(particle);
+  }
+}
+
+// Confetti effect for legendary
+function createConfetti() {
+  const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
+  for (let i = 0; i < 50; i++) {
+    const confetti = document.createElement('div');
+    confetti.style.cssText = `
+      position: fixed;
+      width: ${6 + Math.random() * 8}px;
+      height: ${6 + Math.random() * 8}px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      left: ${Math.random() * 100}%;
+      top: -10px;
+      z-index: 2001;
+      pointer-events: none;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+    `;
+
+    const duration = 1500 + Math.random() * 2000;
+    const swayAmount = (Math.random() - 0.5) * 200;
+
+    confetti.animate([
+      { transform: `translateY(0) rotate(0deg) translateX(0)`, opacity: 1 },
+      { transform: `translateY(100vh) rotate(${360 + Math.random() * 360}deg) translateX(${swayAmount}px)`, opacity: 0.5 }
+    ], {
+      duration: duration,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      fill: 'forwards',
+      delay: Math.random() * 500
+    });
+
+    document.body.appendChild(confetti);
+    setTimeout(() => confetti.remove(), duration + 500);
+  }
+}
+
+// Legendary celebration
+function showCelebration() {
+  celebrationOverlay.style.display = 'flex';
+  requestAnimationFrame(() => celebrationOverlay.classList.add('show'));
+  createConfetti();
+
+  // Flash effect
+  document.body.classList.add('screen-shake');
+  setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+
+  setTimeout(() => {
+    celebrationOverlay.classList.remove('show');
+    celebrationOverlay.style.display = 'none';
+  }, 2000);
+}
+
+function showResult(pokemon) {
+  currentPokemon = pokemon;
+  resultSprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
+  resultSprite.alt = pokemon.name;
+  resultName.textContent = `#${String(pokemon.id).padStart(3, '0')} ${pokemon.name}`;
+  resultNameEn.textContent = pokemon.nameEn;
+  resultTypes.innerHTML = pokemon.types.map(t => `<span class="type-badge ${t}">${t}</span>`).join('');
+  resultRarity.textContent = getRarityText(pokemon.rarity);
+  resultRarity.className = `result-rarity ${pokemon.rarity}`;
+  resultDesc.textContent = pokemon.description;
+
+  // Sparkle effects
+  sparkles.className = 'sparkles';
+  if (pokemon.rarity === 'legendary') sparkles.classList.add('legendary');
+  else if (pokemon.rarity === 'rare') sparkles.classList.add('rare');
+
+  // Check if already collected
+  const collection = getCollection();
+  const alreadyCollected = collection.includes(pokemon.id);
+  if (alreadyCollected) {
+    collectBtn.textContent = '已收藏';
+    collectBtn.disabled = true;
+    collectBtn.classList.add('collected');
+  } else {
+    collectBtn.textContent = '收入图鉴';
+    collectBtn.disabled = false;
+    collectBtn.classList.remove('collected');
+  }
+
+  // For legendary, show celebration first
+  if (pokemon.rarity === 'legendary') {
+    showCelebration();
+    setTimeout(() => {
+      resultOverlay.style.display = 'flex';
+      requestAnimationFrame(() => resultOverlay.classList.add('show'));
+    }, 2000);
+  } else {
+    // Color-based particles
+    const particleColors = {
+      rare: ['#c084fc', '#a855f7', '#d8b4fe'],
+      common: ['#9ca3af', '#d1d5db', '#e5e7eb']
+    };
+    const colors = particleColors[pokemon.rarity] || particleColors.common;
+    createParticles(colors[Math.floor(Math.random() * colors.length)], 15);
+    resultOverlay.style.display = 'flex';
+    requestAnimationFrame(() => resultOverlay.classList.add('show'));
+  }
+}
+
+function closeResult() {
+  resultOverlay.classList.remove('show');
+  setTimeout(() => { resultOverlay.style.display = 'none'; }, 300);
+  // Reset pokeball
+  pokeball.classList.remove('opening');
+  pokeball.style.transform = '';
+}
+
+pokeball.addEventListener('click', () => {
+  const opens = getDailyOpens();
+  if (opens >= MAX_DAILY_OPENS) return;
+
+  pokeball.classList.add('shaking');
+  saveDailyOpens(opens + 1);
+  updateRemaining();
+
+  setTimeout(() => {
+    pokeball.classList.remove('shaking');
+
+    // Flash effect
+    const flash = pokeballInner.querySelector('.light-flash');
+    flash.classList.add('active');
+    setTimeout(() => flash.classList.remove('active'), 300);
+
+    // Open burst animation
+    pokeball.classList.add('opening');
+
+    // Create burst particles
+    createParticles('#fff', 12);
+
+    setTimeout(() => {
+      const pokemon = pickPokemon();
+      showResult(pokemon);
+    }, 400);
+  }, 800);
+});
+
+collectBtn.addEventListener('click', () => {
+  if (!currentPokemon) return;
+  const collection = getCollection();
+  if (!collection.includes(currentPokemon.id)) {
+    collection.push(currentPokemon.id);
+    saveCollection(collection);
+    collectBtn.textContent = '已收藏';
+    collectBtn.disabled = true;
+    collectBtn.classList.add('collected');
+    // Small celebration for new collection
+    createParticles('#10b981', 10);
+  }
+});
+
+resultOverlay.addEventListener('click', (e) => {
+  if (e.target === resultOverlay) closeResult();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && resultOverlay.classList.contains('show')) closeResult();
+});
+
+updateRemaining();
+</script>

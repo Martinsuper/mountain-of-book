@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
 import CodeCopy from '../../components/CodeCopy.astro';
+import ReadingCompanion from '../../components/ReadingCompanion.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -56,12 +57,18 @@ const { Content, headings } = await post.render();
       </header>
       <Content />
       <CodeCopy />
+
+      <!-- 移动端：阅读伙伴 -->
+      <div class="lg:hidden mt-8">
+        <ReadingCompanion />
+      </div>
     </article>
 
-    <!-- 桌面端：侧边目录 -->
+    <!-- 桌面端：侧边目录 + 阅读伙伴 -->
     <aside class="hidden lg:block">
       <div class="sticky top-8">
         <TableOfContents headings={headings} />
+        <ReadingCompanion />
       </div>
     </aside>
   </div>

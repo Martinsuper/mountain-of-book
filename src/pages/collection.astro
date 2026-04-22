@@ -1,0 +1,610 @@
+---
+// src/pages/collection.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import pokemonData from '../data/pokemon.json';
+import PokeBlindBox from '../components/PokeBlindBox.astro';
+
+const groupedByType: Record<string, typeof pokemonData> = {};
+pokemonData.forEach(p => {
+  p.types.forEach(t => {
+    if (!groupedByType[t]) groupedByType[t] = [];
+    groupedByType[t].push(p);
+  });
+});
+---
+
+<BaseLayout title="精灵图鉴 - 书山有路">
+  <div class="collection-page">
+    <h1 class="text-3xl font-bold mb-2 text-center">精灵图鉴</h1>
+    <p class="text-center text-gray-500 dark:text-gray-400 mb-6">
+      已收集 <span id="collectedCount">0</span> / {pokemonData.length} 只精灵
+    </p>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-container mb-8">
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="progress-text" id="progressText">0%</span>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="filter-tabs mb-6">
+      <button class="filter-tab active" data-filter="all">全部</button>
+      <button class="filter-tab" data-filter="legendary">传说</button>
+      <button class="filter-tab" data-filter="rare">稀有</button>
+      <button class="filter-tab" data-filter="common">普通</button>
+      <button class="filter-tab" data-filter="collected">已收集</button>
+    </div>
+
+    <!-- Pokemon grid -->
+    <div class="pokemon-grid" id="pokemonGrid">
+      {pokemonData.map(pokemon => (
+        <div
+          class="pokemon-card"
+          data-id={pokemon.id}
+          data-rarity={pokemon.rarity}
+          data-types={pokemon.types.join(',')}
+        >
+          <div class="pokemon-card-inner">
+            <img
+              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`}
+              alt={pokemon.name}
+              class="pokemon-sprite"
+              loading="lazy"
+            />
+            <div class="pokemon-info">
+              <span class="pokemon-number">#{String(pokemon.id).padStart(3, '0')}</span>
+              <span class="pokemon-name">{pokemon.name}</span>
+              <div class="pokemon-types">
+                {pokemon.types.map(t => (
+                  <span class={`type-badge ${t} type-badge-sm`}>{t}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div class="pokemon-unknown">
+            <span class="question-mark">?</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Pokemon detail modal -->
+  <div class="pokemon-modal" id="pokemonModal">
+    <div class="pokemon-modal-card">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <img class="modal-sprite" id="modalSprite" src="" alt="" />
+      <h3 class="modal-name" id="modalName"></h3>
+      <p class="modal-name-en" id="modalNameEn"></p>
+      <div class="modal-types" id="modalTypes"></div>
+      <p class="modal-rarity" id="modalRarity"></p>
+      <p class="modal-desc" id="modalDesc"></p>
+    </div>
+  </div>
+
+  <!-- Blind box section -->
+  <section class="blind-box-section">
+    <h2 class="text-2xl font-bold mb-6 text-center">精灵盲盒</h2>
+    <PokeBlindBox />
+  </section>
+</BaseLayout>
+
+<style>
+  .collection-page {
+    padding: 1rem 0;
+  }
+
+  .blind-box-section {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 2px dashed #e5e7eb;
+  }
+
+  :global(.dark) .blind-box-section {
+    border-top-color: #374151;
+  }
+
+  .progress-bar-container {
+    position: relative;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 400px;
+    margin: 0 auto 2rem;
+  }
+
+  :global(.dark) .progress-bar-container {
+    background: #374151;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #eab308);
+    border-radius: 12px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  :global(.dark) .progress-text {
+    color: #e5e7eb;
+  }
+
+  /* Filter tabs */
+  .filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .filter-tab {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    border: 1px solid #d1d5db;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    color: inherit;
+  }
+
+  :global(.dark) .filter-tab {
+    border-color: #4b5563;
+  }
+
+  .filter-tab:hover {
+    background: #f3f4f6;
+  }
+
+  :global(.dark) .filter-tab:hover {
+    background: #374151;
+  }
+
+  .filter-tab.active {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+  }
+
+  /* Pokemon grid */
+  .pokemon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .pokemon-grid {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+  }
+
+  .pokemon-card {
+    min-height: 140px;
+    border-radius: 12px;
+    position: relative;
+    background: #f3f4f6;
+    border: 2px solid transparent;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: stretch;
+    cursor: default;
+    perspective: 800px;
+    opacity: 0;
+    animation: cardFlyIn 0.5s ease forwards;
+    animation-play-state: paused;
+  }
+
+  .pokemon-card.visible {
+    animation-play-state: running;
+  }
+
+  @keyframes cardFlyIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.8); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  :global(.dark) .pokemon-card {
+    background: #1f2937;
+  }
+
+  .pokemon-card.collected {
+    border-color: #f59e0b;
+    cursor: pointer;
+  }
+
+  .pokemon-card.collected:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .pokemon-card.collected:active {
+    transform: translateY(-2px) scale(0.98);
+  }
+
+  .pokemon-card.legendary.collected {
+    border-color: #ffd700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .pokemon-card.legendary.collected:hover {
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.25);
+  }
+
+  .pokemon-card.rare.collected {
+    border-color: #c084fc;
+    box-shadow: 0 0 8px rgba(192, 132, 252, 0.3);
+  }
+
+  .pokemon-card.rare.collected:hover {
+    box-shadow: 0 8px 25px rgba(192, 132, 252, 0.25);
+  }
+
+  .pokemon-card:not(.collected) {
+    opacity: 0;
+    animation: cardFlyIn 0.5s ease forwards;
+    animation-play-state: paused;
+  }
+
+  .pokemon-card:not(.collected).visible {
+    animation-play-state: running;
+  }
+
+  .pokemon-card:not(.collected).visible {
+    opacity: 0.5;
+  }
+
+  /* Ripple effect */
+  .card-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
+  }
+
+  @keyframes ripple {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  .pokemon-card-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    width: 100%;
+  }
+
+  .pokemon-card:not(.collected) .pokemon-card-inner {
+    display: none;
+  }
+
+  .pokemon-card:not(.collected) .pokemon-unknown {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    animation: pulseUnknown 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseUnknown {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .pokemon-card.collected .pokemon-unknown {
+    display: none;
+  }
+
+  .question-mark {
+    font-size: 2rem;
+    color: #9ca3af;
+    font-weight: bold;
+  }
+
+  .pokemon-sprite {
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+    margin-bottom: 0.25rem;
+    transition: transform 0.3s ease;
+  }
+
+  .pokemon-card.collected:hover .pokemon-sprite {
+    transform: scale(1.15);
+  }
+
+  .pokemon-info {
+    text-align: center;
+  }
+
+  .pokemon-number {
+    display: block;
+    font-size: 0.6rem;
+    color: #9ca3af;
+  }
+
+  .pokemon-name {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+  }
+
+  .pokemon-types {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+    margin-top: 2px;
+  }
+
+  .type-badge-sm {
+    padding: 0.1rem 0.3rem;
+    border-radius: 8px;
+    font-size: 0.55rem;
+    color: #fff;
+  }
+
+  /* Type badge colors (shared with PokeBlindBox) */
+  .type-badge.草 { background: #78c850; }
+  .type-badge.毒 { background: #a040a0; }
+  .type-badge.火 { background: #f08030; }
+  .type-badge.水 { background: #6890f0; }
+  .type-badge.电 { background: #f8d030; }
+  .type-badge.超能力 { background: #f85888; }
+  .type-badge.冰 { background: #98d8d8; }
+  .type-badge.龙 { background: #7038f8; }
+  .type-badge.恶 { background: #705848; }
+  .type-badge.妖精 { background: #ee99ac; }
+  .type-badge.格斗 { background: #c03028; }
+  .type-badge.飞行 { background: #a890f0; }
+  .type-badge.地面 { background: #e0c068; }
+  .type-badge.岩石 { background: #b8a038; }
+  .type-badge.虫 { background: #a8b820; }
+  .type-badge.幽灵 { background: #705898; }
+  .type-badge.钢 { background: #b8b8d0; }
+  .type-badge.一般 { background: #a8a878; }
+
+  /* Modal styles */
+  .pokemon-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+  }
+
+  .pokemon-modal.show {
+    display: flex;
+  }
+
+  .pokemon-modal-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    max-width: 320px;
+    width: 90%;
+    position: relative;
+    transform: scale(0.5) rotateX(10deg);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+  }
+
+  .pokemon-modal.show .pokemon-modal-card {
+    transform: scale(1) rotateX(0deg);
+    opacity: 1;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .modal-close:hover {
+    opacity: 1;
+  }
+
+  .modal-sprite {
+    width: 120px;
+    height: 120px;
+    image-rendering: pixelated;
+  }
+
+  .modal-name {
+    color: #fff;
+    font-size: 1.5rem;
+    margin: 0.5rem 0 0.2rem;
+  }
+
+  .modal-name-en {
+    color: #888;
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  .modal-types {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+  }
+
+  .modal-rarity {
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+  }
+
+  .modal-rarity.legendary { color: #ffd700; }
+  .modal-rarity.rare { color: #c084fc; }
+  .modal-rarity.common { color: #9ca3af; }
+
+  .modal-desc {
+    color: #aaa;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin: 0.5rem 0 0;
+  }
+</style>
+
+<script>
+import pokemonData from '../data/pokemon.json';
+
+const STORAGE_KEY = 'poke_collection';
+const TOTAL = pokemonData.length;
+
+function getCollection() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function getRarityText(rarity) {
+  const map = { common: '普通', rare: '稀有', legendary: '传说' };
+  return map[rarity] || '普通';
+}
+
+const pokemonModal = document.getElementById('pokemonModal');
+const modalSprite = document.getElementById('modalSprite');
+const modalName = document.getElementById('modalName');
+const modalNameEn = document.getElementById('modalNameEn');
+const modalTypes = document.getElementById('modalTypes');
+const modalRarity = document.getElementById('modalRarity');
+const modalDesc = document.getElementById('modalDesc');
+const modalClose = document.getElementById('modalClose');
+
+function showModal(pokemon) {
+  modalSprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
+  modalName.textContent = `#${String(pokemon.id).padStart(3, '0')} ${pokemon.name}`;
+  modalNameEn.textContent = pokemon.nameEn;
+  modalTypes.innerHTML = pokemon.types.map(t => `<span class="type-badge ${t}">${t}</span>`).join('');
+  modalRarity.textContent = getRarityText(pokemon.rarity);
+  modalRarity.className = `modal-rarity ${pokemon.rarity}`;
+  modalDesc.textContent = pokemon.description;
+
+  requestAnimationFrame(() => pokemonModal.classList.add('show'));
+}
+
+function closeModal() {
+  pokemonModal.classList.remove('show');
+}
+
+function updateDisplay() {
+  const collection = getCollection();
+  document.getElementById('collectedCount').textContent = collection.length;
+
+  const percent = Math.round((collection.length / TOTAL) * 100);
+  document.getElementById('progressFill').style.width = `${percent}%`;
+  document.getElementById('progressText').textContent = `${percent}%`;
+
+  const cards = document.querySelectorAll('.pokemon-card');
+  cards.forEach((card, index) => {
+    const id = parseInt(card.dataset.id);
+    if (collection.includes(id)) {
+      card.classList.add('collected');
+      const rarity = card.dataset.rarity;
+      if (rarity === 'legendary') card.classList.add('legendary');
+      else if (rarity === 'rare') card.classList.add('rare');
+    } else {
+      card.classList.remove('collected', 'legendary', 'rare');
+    }
+    // Staggered entrance
+    card.style.animationDelay = `${index * 30}ms`;
+    card.classList.add('visible');
+  });
+
+  applyFilter();
+}
+
+// Filter logic
+let currentFilter = 'all';
+
+function applyFilter() {
+  const collection = getCollection();
+  document.querySelectorAll('.pokemon-card').forEach(card => {
+    const id = parseInt(card.dataset.id);
+    const rarity = card.dataset.rarity;
+    let visible = true;
+
+    if (currentFilter === 'collected') {
+      visible = collection.includes(id);
+    } else if (currentFilter !== 'all') {
+      visible = rarity === currentFilter;
+    }
+
+    card.style.display = visible ? '' : 'none';
+  });
+}
+
+document.querySelectorAll('.filter-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    applyFilter();
+  });
+});
+
+// Card click to view details
+document.getElementById('pokemonGrid').addEventListener('click', (e) => {
+  const card = e.target.closest('.pokemon-card.collected');
+  if (card) {
+    // Ripple effect
+    const rect = card.getBoundingClientRect();
+    const ripple = document.createElement('div');
+    ripple.className = 'card-ripple';
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+    card.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+
+    const id = parseInt(card.dataset.id);
+    const pokemon = pokemonData.find(p => p.id === id);
+    if (pokemon) showModal(pokemon);
+  }
+});
+
+pokemonModal.addEventListener('click', (e) => {
+  if (e.target === pokemonModal) closeModal();
+});
+modalClose.addEventListener('click', closeModal);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+updateDisplay();
+</script>
