@@ -25,6 +25,483 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <!-- 各工具内容将通过 JS 动态显示 -->
     </div>
   </div>
+
+  <script>
+    // 工具面板HTML模板
+    const toolPanels = {
+      json: `
+        <div class="tool-panel active" id="panel-json">
+          <div class="tool-section">
+            <label class="tool-label">输入 JSON</label>
+            <textarea class="tool-input" id="jsonInput" placeholder='{"name": "example", "value": 123}'></textarea>
+            <div class="tool-actions">
+              <button class="tool-btn tool-btn-primary" onclick="formatJson()">格式化</button>
+              <button class="tool-btn tool-btn-success" onclick="minifyJson()">压缩</button>
+              <button class="tool-btn tool-btn-secondary" onclick="copyJson()">复制</button>
+              <button class="tool-btn tool-btn-danger" onclick="clearJson()">清空</button>
+              <span class="json-status" id="jsonStatus"></span>
+            </div>
+          </div>
+          <div class="tool-section">
+            <label class="tool-label">输出结果</label>
+            <textarea class="tool-output" id="jsonOutput" readonly></textarea>
+          </div>
+        </div>
+      `,
+      timestamp: `
+        <div class="tool-panel" id="panel-timestamp">
+          <div class="tool-section">
+            <label class="tool-label">时间戳转换</label>
+            <div class="timestamp-input-row">
+              <input type="text" id="timestampInput" placeholder="输入时间戳或日期">
+              <div class="unit-toggle">
+                <button class="active" data-unit="s" onclick="setTimestampUnit('s')">秒</button>
+                <button data-unit="ms" onclick="setTimestampUnit('ms')">毫秒</button>
+              </div>
+            </div>
+            <div class="tool-actions">
+              <button class="tool-btn tool-btn-primary" onclick="convertTimestamp()">转换</button>
+              <button class="tool-btn tool-btn-secondary" onclick="getCurrentTimestamp()">当前时间</button>
+              <button class="tool-btn tool-btn-secondary" onclick="copyTimestamp()">复制结果</button>
+            </div>
+            <div class="timestamp-results" id="timestampResults"></div>
+          </div>
+        </div>
+      `,
+      diff: `
+        <div class="tool-panel" id="panel-diff">
+          <div class="tool-section">
+            <label class="tool-label">文本对比</label>
+            <div class="diff-inputs">
+              <div class="input-group">
+                <label class="tool-label">原始文本</label>
+                <textarea class="tool-input" id="diffInput1" placeholder="输入原始文本"></textarea>
+              </div>
+              <div class="input-group">
+                <label class="tool-label">新文本</label>
+                <textarea class="tool-input" id="diffInput2" placeholder="输入新文本"></textarea>
+              </div>
+            </div>
+            <div class="tool-actions">
+              <button class="tool-btn tool-btn-primary" onclick="compareDiff()">对比</button>
+              <button class="tool-btn tool-btn-secondary" onclick="clearDiff()">清空</button>
+            </div>
+            <div class="diff-stats" id="diffStats"></div>
+            <div class="diff-results" id="diffResults"></div>
+          </div>
+        </div>
+      `,
+      url: `
+        <div class="tool-panel" id="panel-url">
+          <div class="tool-section">
+            <label class="tool-label">URL 编码/解码</label>
+            <textarea class="tool-input" id="urlInput" placeholder="输入需要编码或解码的URL"></textarea>
+            <div class="tool-actions">
+              <button class="tool-btn tool-btn-primary" onclick="encodeUrl()">URL编码</button>
+              <button class="tool-btn tool-btn-success" onclick="decodeUrl()">URL解码</button>
+              <button class="tool-btn tool-btn-secondary" onclick="copyUrl()">复制结果</button>
+              <button class="tool-btn tool-btn-danger" onclick="clearUrl()">清空</button>
+            </div>
+            <label class="tool-label">输出结果</label>
+            <textarea class="tool-output" id="urlOutput" readonly></textarea>
+          </div>
+        </div>
+      `,
+      base64: `
+        <div class="tool-panel" id="panel-base64">
+          <div class="tool-section">
+            <label class="tool-label">Base64 编码/解码</label>
+            <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('fileInput').click()">
+              <div class="file-upload-icon">📁</div>
+              <div class="file-upload-text">点击选择文件或拖拽文件到此处</div>
+              <input type="file" id="fileInput" style="display: none" onchange="handleFileSelect(event)">
+            </div>
+            <div class="file-info" id="fileInfo" style="display: none;">
+              <span class="file-name" id="fileName"></span>
+              <span class="file-size" id="fileSize"></span>
+              <button class="file-remove" onclick="removeFile()">×</button>
+            </div>
+            <textarea class="tool-input" id="base64Input" placeholder="输入文本或Base64字符串"></textarea>
+            <div class="tool-actions">
+              <button class="tool-btn tool-btn-primary" onclick="encodeBase64()">编码</button>
+              <button class="tool-btn tool-btn-success" onclick="decodeBase64()">解码</button>
+              <button class="tool-btn tool-btn-secondary" onclick="copyBase64()">复制结果</button>
+              <button class="tool-btn tool-btn-danger" onclick="clearBase64()">清空</button>
+            </div>
+            <label class="tool-label">输出结果</label>
+            <textarea class="tool-output" id="base64Output" readonly></textarea>
+          </div>
+        </div>
+      `
+    };
+
+    // 当前选中的Tab
+    let currentTab = 'json';
+    let timestampUnit = 's';
+
+    // 初始化Tab功能
+    function initTabs() {
+      const tabsContainer = document.getElementById('toolsTabs');
+      const contentContainer = document.getElementById('toolsContent');
+
+      // 渲染所有面板
+      contentContainer.innerHTML = Object.values(toolPanels).join('');
+
+      // 从URL hash获取初始Tab
+      const hash = window.location.hash.slice(1);
+      if (hash && toolPanels[hash]) {
+        currentTab = hash;
+      }
+
+      // 设置初始状态
+      updateTabState();
+
+      // 绑定Tab点击事件
+      const tabButtons = tabsContainer.querySelectorAll('.tab-btn');
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          if (tab && tab !== currentTab) {
+            currentTab = tab;
+            updateTabState();
+            // 更新URL hash
+            window.location.hash = tab;
+          }
+        });
+      });
+
+      // 监听hash变化
+      window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.slice(1);
+        if (hash && hash !== currentTab && toolPanels[hash]) {
+          currentTab = hash;
+          updateTabState();
+        }
+      });
+
+      // 键盘导航支持
+      document.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('tab-btn')) {
+          const tabs = Array.from(tabsContainer.querySelectorAll('.tab-btn'));
+          const currentIndex = tabs.findIndex(t => t === e.target);
+
+          if (e.key === 'ArrowRight' && currentIndex < tabs.length - 1) {
+            tabs[currentIndex + 1].focus();
+          } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+            tabs[currentIndex - 1].focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.target.click();
+          }
+        }
+      });
+    }
+
+    // 更新Tab状态
+    function updateTabState() {
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const panels = document.querySelectorAll('.tool-panel');
+
+      tabButtons.forEach(btn => {
+        if (btn.dataset.tab === currentTab) {
+          btn.classList.add('active');
+          btn.setAttribute('aria-selected', 'true');
+        } else {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-selected', 'false');
+        }
+      });
+
+      panels.forEach(panel => {
+        if (panel.id === `panel-${currentTab}`) {
+          panel.classList.add('active');
+        } else {
+          panel.classList.remove('active');
+        }
+      });
+    }
+
+    // JSON工具函数
+    function formatJson() {
+      const input = document.getElementById('jsonInput').value;
+      const output = document.getElementById('jsonOutput');
+      const status = document.getElementById('jsonStatus');
+
+      try {
+        const parsed = JSON.parse(input);
+        output.value = JSON.stringify(parsed, null, 2);
+        status.textContent = '✓ 有效JSON';
+        status.className = 'json-status valid';
+      } catch (e) {
+        output.value = '错误: ' + e.message;
+        status.textContent = '✗ 无效JSON';
+        status.className = 'json-status invalid';
+      }
+    }
+
+    function minifyJson() {
+      const input = document.getElementById('jsonInput').value;
+      const output = document.getElementById('jsonOutput');
+      const status = document.getElementById('jsonStatus');
+
+      try {
+        const parsed = JSON.parse(input);
+        output.value = JSON.stringify(parsed);
+        status.textContent = '✓ 有效JSON';
+        status.className = 'json-status valid';
+      } catch (e) {
+        output.value = '错误: ' + e.message;
+        status.textContent = '✗ 无效JSON';
+        status.className = 'json-status invalid';
+      }
+    }
+
+    function copyJson() {
+      const output = document.getElementById('jsonOutput');
+      navigator.clipboard.writeText(output.value);
+    }
+
+    function clearJson() {
+      document.getElementById('jsonInput').value = '';
+      document.getElementById('jsonOutput').value = '';
+      document.getElementById('jsonStatus').textContent = '';
+    }
+
+    // 时间戳工具函数
+    function setTimestampUnit(unit) {
+      timestampUnit = unit;
+      document.querySelectorAll('.unit-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.unit === unit);
+      });
+    }
+
+    function convertTimestamp() {
+      const input = document.getElementById('timestampInput').value.trim();
+      const results = document.getElementById('timestampResults');
+
+      if (!input) {
+        results.innerHTML = '<p style="color: #ef4444;">请输入时间戳或日期</p>';
+        return;
+      }
+
+      let timestamp;
+      // 判断输入是时间戳还是日期字符串
+      if (/^\d+$/.test(input)) {
+        timestamp = parseInt(input);
+        if (timestampUnit === 's' && timestamp < 10000000000) {
+          timestamp *= 1000;
+        }
+      } else {
+        timestamp = new Date(input).getTime();
+      }
+
+      if (isNaN(timestamp)) {
+        results.innerHTML = '<p style="color: #ef4444;">无效的输入</p>';
+        return;
+      }
+
+      const date = new Date(timestamp);
+      results.innerHTML = `
+        <div class="timestamp-result-item">
+          <span class="label">时间戳（秒）</span>
+          <span class="value">${Math.floor(timestamp / 1000)}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">时间戳（毫秒）</span>
+          <span class="value">${timestamp}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">UTC 时间</span>
+          <span class="value">${date.toUTCString()}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">本地时间</span>
+          <span class="value">${date.toLocaleString('zh-CN')}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">ISO 字符串</span>
+          <span class="value">${date.toISOString()}</span>
+        </div>
+      `;
+    }
+
+    function getCurrentTimestamp() {
+      const now = Date.now();
+      const results = document.getElementById('timestampResults');
+      const date = new Date(now);
+      results.innerHTML = `
+        <div class="timestamp-result-item">
+          <span class="label">时间戳（秒）</span>
+          <span class="value">${Math.floor(now / 1000)}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">时间戳（毫秒）</span>
+          <span class="value">${now}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">UTC 时间</span>
+          <span class="value">${date.toUTCString()}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">本地时间</span>
+          <span class="value">${date.toLocaleString('zh-CN')}</span>
+        </div>
+        <div class="timestamp-result-item">
+          <span class="label">ISO 字符串</span>
+          <span class="value">${date.toISOString()}</span>
+        </div>
+      `;
+    }
+
+    function copyTimestamp() {
+      const results = document.getElementById('timestampResults');
+      const text = results.textContent;
+      navigator.clipboard.writeText(text);
+    }
+
+    // Diff工具函数
+    function compareDiff() {
+      const input1 = document.getElementById('diffInput1').value;
+      const input2 = document.getElementById('diffInput2').value;
+      const stats = document.getElementById('diffStats');
+      const results = document.getElementById('diffResults');
+
+      const lines1 = input1.split('\n');
+      const lines2 = input2.split('\n');
+
+      let added = 0;
+      let removed = 0;
+      let changed = 0;
+
+      const maxLen = Math.max(lines1.length, lines2.length);
+      let diffHtml = '';
+
+      for (let i = 0; i < maxLen; i++) {
+        const line1 = lines1[i] || '';
+        const line2 = lines2[i] || '';
+
+        if (line1 !== line2) {
+          if (line1 && !line2) {
+            diffHtml += `<span class="diff-line-removed">- ${escapeHtml(line1)}</span>\n`;
+            removed++;
+          } else if (!line1 && line2) {
+            diffHtml += `<span class="diff-line-added">+ ${escapeHtml(line2)}</span>\n`;
+            added++;
+          } else {
+            diffHtml += `<span class="diff-line-removed">- ${escapeHtml(line1)}</span>\n`;
+            diffHtml += `<span class="diff-line-added">+ ${escapeHtml(line2)}</span>\n`;
+            changed++;
+          }
+        } else if (line1) {
+          diffHtml += `  ${escapeHtml(line1)}\n`;
+        }
+      }
+
+      stats.innerHTML = `
+        <span class="diff-stat added">+${added} 行</span>
+        <span class="diff-stat removed">-${removed} 行</span>
+        <span class="diff-stat changed">~${changed} 行</span>
+      `;
+
+      results.innerHTML = diffHtml || '无差异';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function clearDiff() {
+      document.getElementById('diffInput1').value = '';
+      document.getElementById('diffInput2').value = '';
+      document.getElementById('diffStats').innerHTML = '';
+      document.getElementById('diffResults').innerHTML = '';
+    }
+
+    // URL工具函数
+    function encodeUrl() {
+      const input = document.getElementById('urlInput').value;
+      document.getElementById('urlOutput').value = encodeURIComponent(input);
+    }
+
+    function decodeUrl() {
+      const input = document.getElementById('urlInput').value;
+      try {
+        document.getElementById('urlOutput').value = decodeURIComponent(input);
+      } catch (e) {
+        document.getElementById('urlOutput').value = '解码错误: ' + e.message;
+      }
+    }
+
+    function copyUrl() {
+      navigator.clipboard.writeText(document.getElementById('urlOutput').value);
+    }
+
+    function clearUrl() {
+      document.getElementById('urlInput').value = '';
+      document.getElementById('urlOutput').value = '';
+    }
+
+    // Base64工具函数
+    let selectedFile = null;
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedFile = file;
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatFileSize(file.size);
+        document.getElementById('fileInfo').style.display = 'flex';
+      }
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function removeFile() {
+      selectedFile = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('fileInfo').style.display = 'none';
+    }
+
+    function encodeBase64() {
+      if (selectedFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('base64Output').value = e.target.result;
+        };
+        reader.readAsDataURL(selectedFile);
+      } else {
+        const input = document.getElementById('base64Input').value;
+        document.getElementById('base64Output').value = btoa(unescape(encodeURIComponent(input)));
+      }
+    }
+
+    function decodeBase64() {
+      const input = document.getElementById('base64Input').value;
+      try {
+        document.getElementById('base64Output').value = decodeURIComponent(escape(atob(input)));
+      } catch (e) {
+        document.getElementById('base64Output').value = '解码错误: ' + e.message;
+      }
+    }
+
+    function copyBase64() {
+      navigator.clipboard.writeText(document.getElementById('base64Output').value);
+    }
+
+    function clearBase64() {
+      document.getElementById('base64Input').value = '';
+      document.getElementById('base64Output').value = '';
+      removeFile();
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', initTabs);
+  </script>
 </BaseLayout>
 
 <style is:inline>
@@ -50,5 +527,530 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   :global(.dark) .tools-subtitle {
     color: #aaa;
+  }
+
+  /* Tab导航栏样式 */
+  .tools-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    border: none;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .tab-btn {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .tab-btn:hover {
+    background: #e5e7eb;
+  }
+
+  :global(.dark) .tab-btn:hover {
+    background: #4b5563;
+  }
+
+  .tab-btn.active {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  :global(.dark) .tab-btn.active {
+    background: #2563eb;
+  }
+
+  /* 工具内容区 */
+  .tools-content {
+    min-height: 400px;
+  }
+
+  .tool-panel {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .tool-panel.active {
+    display: block;
+    opacity: 1;
+  }
+
+  /* 公共输入输出区样式 */
+  .tool-input,
+  .tool-output {
+    width: 100%;
+    min-height: 150px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+    background: #fff;
+  }
+
+  :global(.dark) .tool-input,
+  :global(.dark) .tool-output {
+    background: #1f2937;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+
+  .tool-input:focus,
+  .tool-output:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* 操作按钮样式 */
+  .tool-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+
+  .tool-btn-primary {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  .tool-btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .tool-btn-success {
+    background: #10b981;
+    color: #fff;
+  }
+
+  .tool-btn-success:hover {
+    background: #059669;
+  }
+
+  .tool-btn-warning {
+    background: #f59e0b;
+    color: #fff;
+  }
+
+  .tool-btn-warning:hover {
+    background: #d97706;
+  }
+
+  .tool-btn-danger {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  .tool-btn-danger:hover {
+    background: #dc2626;
+  }
+
+  .tool-btn-secondary {
+    background: #f3f4f6;
+    color: #4b5563;
+  }
+
+  :global(.dark) .tool-btn-secondary {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .tool-btn-secondary:hover {
+    background: #e5e7eb;
+  }
+
+  :global(.dark) .tool-btn-secondary:hover {
+    background: #4b5563;
+  }
+
+  /* 工具区块通用样式 */
+  .tool-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  :global(.dark) .tool-section {
+    background: #1f2937;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .tool-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.9rem;
+  }
+
+  :global(.dark) .tool-label {
+    color: #f3f4f6;
+  }
+
+  /* 时间戳工具样式 */
+  .timestamp-input-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .timestamp-input-row input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  :global(.dark) .timestamp-input-row input {
+    background: #1f2937;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+
+  .timestamp-input-row input:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+
+  .unit-toggle {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .unit-toggle button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+
+  :global(.dark) .unit-toggle button {
+    background: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .unit-toggle button.active {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+  }
+
+  .timestamp-results {
+    margin-top: 1rem;
+  }
+
+  .timestamp-result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+  }
+
+  :global(.dark) .timestamp-result-item {
+    background: #374151;
+  }
+
+  .timestamp-result-item .label {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+
+  :global(.dark) .timestamp-result-item .label {
+    color: #9ca3af;
+  }
+
+  .timestamp-result-item .value {
+    font-family: monospace;
+    color: #111827;
+  }
+
+  :global(.dark) .timestamp-result-item .value {
+    color: #f3f4f6;
+  }
+
+  /* Diff工具样式 */
+  .diff-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .diff-inputs {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .diff-inputs .input-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .diff-stats {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+  }
+
+  .diff-stat {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .diff-stat.added {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .diff-stat.removed {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .diff-stat.changed {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  :global(.dark) .diff-stat.added {
+    background: #064e3b;
+    color: #6ee7b7;
+  }
+
+  :global(.dark) .diff-stat.removed {
+    background: #7f1d1d;
+    color: #fca5a5;
+  }
+
+  :global(.dark) .diff-stat.changed {
+    background: #78350f;
+    color: #fcd34d;
+  }
+
+  .diff-results {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    padding: 1rem;
+    background: #f9fafb;
+  }
+
+  :global(.dark) .diff-results {
+    background: #111827;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+
+  .diff-line-added {
+    background: #d1fae5;
+    display: block;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+
+  :global(.dark) .diff-line-added {
+    background: #064e3b;
+  }
+
+  .diff-line-removed {
+    background: #fee2e2;
+    display: block;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+
+  :global(.dark) .diff-line-removed {
+    background: #7f1d1d;
+  }
+
+  /* Base64文件上传样式 */
+  .file-upload-area {
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1rem;
+  }
+
+  .file-upload-area:hover {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+  }
+
+  :global(.dark) .file-upload-area:hover {
+    background: #1e3a5f;
+  }
+
+  .file-upload-area.dragover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  :global(.dark) .file-upload-area.dragover {
+    background: #1e3a8a;
+  }
+
+  .file-upload-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .file-upload-text {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+
+  :global(.dark) .file-upload-text {
+    color: #9ca3af;
+  }
+
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f3f4f6;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  :global(.dark) .file-info {
+    background: #374151;
+  }
+
+  .file-name {
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .file-size {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+
+  :global(.dark) .file-size {
+    color: #9ca3af;
+  }
+
+  .file-remove {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.25rem;
+  }
+
+  /* 移动端响应式样式 */
+  @media (max-width: 768px) {
+    .tools-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .tools-tabs {
+      gap: 0.4rem;
+    }
+
+    .tab-btn {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+
+    .tool-section {
+      padding: 1rem;
+    }
+
+    .tool-actions {
+      flex-direction: column;
+    }
+
+    .tool-btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .timestamp-input-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .unit-toggle {
+      justify-content: center;
+    }
+  }
+
+  /* JSON状态样式 */
+  .json-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-left: 1rem;
+  }
+
+  .json-status.valid {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .json-status.invalid {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  :global(.dark) .json-status.valid {
+    background: #064e3b;
+    color: #6ee7b7;
+  }
+
+  :global(.dark) .json-status.invalid {
+    background: #7f1d1d;
+    color: #fca5a5;
   }
 </style>
