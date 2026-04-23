@@ -1,0 +1,54 @@
+---
+// src/pages/tools.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="开发者工具" description="常用开发工具集合">
+  <div class="tools-page">
+    <!-- 页面标题 -->
+    <header class="tools-header">
+      <h1>🔧 开发者工具箱</h1>
+      <p class="tools-subtitle">常用开发工具集合，助力高效开发</p>
+    </header>
+
+    <!-- Tab 导航栏 -->
+    <nav class="tools-tabs" id="toolsTabs">
+      <button class="tab-btn active" data-tab="json">📋 JSON</button>
+      <button class="tab-btn" data-tab="timestamp">🕐 时间戳</button>
+      <button class="tab-btn" data-tab="diff">🔀 Diff</button>
+      <button class="tab-btn" data-tab="url">🔗 URL</button>
+      <button class="tab-btn" data-tab="base64">📦 Base64</button>
+    </nav>
+
+    <!-- 工具内容区容器 -->
+    <div class="tools-content" id="toolsContent">
+      <!-- 各工具内容将通过 JS 动态显示 -->
+    </div>
+  </div>
+</BaseLayout>
+
+<style is:inline>
+  /* 基础页面样式 */
+  .tools-page {
+    padding: 1rem 0;
+  }
+
+  .tools-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .tools-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tools-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  :global(.dark) .tools-subtitle {
+    color: #aaa;
+  }
+</style>
