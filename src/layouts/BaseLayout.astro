@@ -98,6 +98,12 @@ const currentPath = Astro.url.pathname;
             图鉴
           </a>
           <a
+            href="/todo/"
+            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/todo/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+          >
+            待办
+          </a>
+          <a
             href="/tags/"
             class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath.startsWith('/tags') ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
           >

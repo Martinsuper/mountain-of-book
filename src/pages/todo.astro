@@ -1,0 +1,2777 @@
+---
+// src/pages/todo.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="待办清单" description="基于四象限理论的任务管理">
+  <div class="todo-page">
+    <!-- 页面标题 -->
+    <header class="todo-header">
+      <h1>📋 待办清单</h1>
+      <p class="todo-subtitle">基于艾森豪威尔矩阵，高效管理你的任务</p>
+      <div class="todo-actions">
+        <div class="search-wrapper">
+          <input type="text" id="searchInput" placeholder="搜索任务..." class="search-input" />
+          <button class="search-clear-btn" id="searchClearBtn" title="清除搜索">×</button>
+        </div>
+        <button id="addTaskBtn" class="add-task-btn">+ 新任务</button>
+        <button id="batchModeBtn" class="batch-mode-btn">批量操作</button>
+        <button id="clearCompletedBtn" class="clear-completed-btn">清除已完成</button>
+      </div>
+    </header>
+
+    <!-- 四象限网格 -->
+    <div class="quadrant-grid">
+      <!-- Q1: 重要且紧急 -->
+      <div class="quadrant-card quadrant-q1" data-quadrant="1">
+        <div class="quadrant-header">
+          <div class="quadrant-icon">🔥</div>
+          <div class="quadrant-info">
+            <h2 class="quadrant-title">重要且紧急</h2>
+            <p class="quadrant-desc">立即处理</p>
+          </div>
+          <span class="quadrant-count" id="count-q1">0</span>
+        </div>
+        <div class="task-list" id="list-q1">
+          <!-- 任务项将通过 JS 渲染 -->
+        </div>
+        <button class="quadrant-add-btn" data-quadrant="1">
+          <span>+ 添加任务</span>
+        </button>
+      </div>
+
+      <!-- Q2: 重要但不紧急 -->
+      <div class="quadrant-card quadrant-q2" data-quadrant="2">
+        <div class="quadrant-header">
+          <div class="quadrant-icon">📅</div>
+          <div class="quadrant-info">
+            <h2 class="quadrant-title">重要不紧急</h2>
+            <p class="quadrant-desc">规划安排</p>
+          </div>
+          <span class="quadrant-count" id="count-q2">0</span>
+        </div>
+        <div class="task-list" id="list-q2">
+          <!-- 任务项将通过 JS 渲染 -->
+        </div>
+        <button class="quadrant-add-btn" data-quadrant="2">
+          <span>+ 添加任务</span>
+        </button>
+      </div>
+
+      <!-- Q3: 不重要但紧急 -->
+      <div class="quadrant-card quadrant-q3" data-quadrant="3">
+        <div class="quadrant-header">
+          <div class="quadrant-icon">📞</div>
+          <div class="quadrant-info">
+            <h2 class="quadrant-title">不重要紧急</h2>
+            <p class="quadrant-desc">委托简化</p>
+          </div>
+          <span class="quadrant-count" id="count-q3">0</span>
+        </div>
+        <div class="task-list" id="list-q3">
+          <!-- 任务项将通过 JS 渲染 -->
+        </div>
+        <button class="quadrant-add-btn" data-quadrant="3">
+          <span>+ 添加任务</span>
+        </button>
+      </div>
+
+      <!-- Q4: 不重要且不紧急 -->
+      <div class="quadrant-card quadrant-q4" data-quadrant="4">
+        <div class="quadrant-header">
+          <div class="quadrant-icon">🗑️</div>
+          <div class="quadrant-info">
+            <h2 class="quadrant-title">不重要不紧急</h2>
+            <p class="quadrant-desc">删除延后</p>
+          </div>
+          <span class="quadrant-count" id="count-q4">0</span>
+        </div>
+        <div class="task-list" id="list-q4">
+          <!-- 任务项将通过 JS 渲染 -->
+        </div>
+        <button class="quadrant-add-btn" data-quadrant="4">
+          <span>+ 添加任务</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 统计面板 -->
+    <div class="stats-panel">
+      <div class="stats-header">
+        <span class="stats-icon">📊</span>
+        <span>任务统计</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item stat-total">
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-label">总任务</span>
+        </div>
+        <div class="stat-item stat-completed">
+          <span class="stat-value" id="stat-completed">0</span>
+          <span class="stat-label">已完成</span>
+        </div>
+        <div class="stat-item stat-pending">
+          <span class="stat-value" id="stat-pending">0</span>
+          <span class="stat-label">待处理</span>
+        </div>
+        <div class="stat-item stat-rate">
+          <span class="stat-value" id="stat-rate">0%</span>
+          <span class="stat-label">完成率</span>
+        </div>
+      </div>
+      <div class="progress-bars">
+        <div class="progress-item" data-quadrant="1">
+          <span class="progress-label">Q1</span>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-q1"></div>
+          </div>
+          <span class="progress-text" id="progress-text-q1">0%</span>
+        </div>
+        <div class="progress-item" data-quadrant="2">
+          <span class="progress-label">Q2</span>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-q2"></div>
+          </div>
+          <span class="progress-text" id="progress-text-q2">0%</span>
+        </div>
+        <div class="progress-item" data-quadrant="3">
+          <span class="progress-label">Q3</span>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-q3"></div>
+          </div>
+          <span class="progress-text" id="progress-text-q3">0%</span>
+        </div>
+        <div class="progress-item" data-quadrant="4">
+          <span class="progress-label">Q4</span>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-q4"></div>
+          </div>
+          <span class="progress-text" id="progress-text-q4">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加任务弹窗 -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>添加新任务</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="taskTitle">任务标题 *</label>
+          <input type="text" id="taskTitle" placeholder="输入任务标题" required />
+        </div>
+        <div class="form-group">
+          <label for="taskDesc">描述（可选）</label>
+          <textarea id="taskDesc" placeholder="输入任务描述" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="taskDue">截止日期</label>
+          <input type="date" id="taskDue" min="" />
+        </div>
+        <div class="form-group">
+          <label>选择象限</label>
+          <div class="quadrant-selector">
+            <button class="quadrant-btn active" data-quadrant="1">🔴 Q1 重要紧急</button>
+            <button class="quadrant-btn" data-quadrant="2">🔵 Q2 重要规划</button>
+            <button class="quadrant-btn" data-quadrant="3">🟠 Q3 紧急次要</button>
+            <button class="quadrant-btn" data-quadrant="4">⚪ Q4 低优先</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>优先级</label>
+          <div class="priority-selector">
+            <button class="priority-btn" data-priority="high">高</button>
+            <button class="priority-btn active" data-priority="medium">中</button>
+            <button class="priority-btn" data-priority="low">低</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnCancel">取消</button>
+        <button class="btn-submit" id="btnSubmit">添加任务</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑任务弹窗 -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>编辑任务</h3>
+        <button class="modal-close" id="editModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editTaskId" />
+        <div class="form-group">
+          <label for="editTaskTitle">任务标题 *</label>
+          <input type="text" id="editTaskTitle" placeholder="输入任务标题" required />
+        </div>
+        <div class="form-group">
+          <label for="editTaskDesc">描述（可选）</label>
+          <textarea id="editTaskDesc" placeholder="输入任务描述" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="editTaskDue">截止日期</label>
+          <input type="date" id="editTaskDue" />
+        </div>
+        <div class="form-group">
+          <label>选择象限</label>
+          <div class="quadrant-selector" id="editQuadrantSelector">
+            <button class="quadrant-btn" data-quadrant="1">🔴 Q1 重要紧急</button>
+            <button class="quadrant-btn" data-quadrant="2">🔵 Q2 重要规划</button>
+            <button class="quadrant-btn" data-quadrant="3">🟠 Q3 紧急次要</button>
+            <button class="quadrant-btn" data-quadrant="4">⚪ Q4 低优先</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>优先级</label>
+          <div class="priority-selector" id="editPrioritySelector">
+            <button class="priority-btn" data-priority="high">高</button>
+            <button class="priority-btn" data-priority="medium">中</button>
+            <button class="priority-btn" data-priority="low">低</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-delete" id="btnDelete">删除</button>
+        <button class="btn-cancel" id="editBtnCancel">取消</button>
+        <button class="btn-submit" id="editBtnSubmit">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认弹窗 -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal modal-small">
+      <div class="modal-header">
+        <h3>确认删除</h3>
+        <button class="modal-close" id="deleteModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>确定要删除这个任务吗？此操作不可恢复。</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="deleteBtnCancel">取消</button>
+        <button class="btn-delete-confirm" id="deleteBtnConfirm">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量操作面板 -->
+  <div class="batch-actions-panel" id="batchActionsPanel">
+    <span class="selected-count" id="selectedCount">已选择 0 个任务</span>
+    <button class="btn-batch-complete" id="btnBatchComplete">批量完成</button>
+    <button class="btn-batch-delete" id="btnBatchDelete">批量删除</button>
+    <button class="btn-cancel" id="btnBatchCancel">取消</button>
+  </div>
+
+  <!-- 任务详情弹窗 -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="detailModalTitle">任务详情</h3>
+        <button class="modal-close" id="detailModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-section">
+          <label class="detail-label">标题</label>
+          <p class="detail-value" id="detailTitle"></p>
+        </div>
+        <div class="detail-section">
+          <label class="detail-label">描述</label>
+          <p class="detail-value detail-desc-full" id="detailDesc"></p>
+        </div>
+        <div class="detail-meta-row">
+          <div class="detail-section">
+            <label class="detail-label">象限</label>
+            <span class="detail-badge" id="detailQuadrant"></span>
+          </div>
+          <div class="detail-section">
+            <label class="detail-label">优先级</label>
+            <span class="detail-badge" id="detailPriority"></span>
+          </div>
+          <div class="detail-section">
+            <label class="detail-label">截止日期</label>
+            <span class="detail-value" id="detailDue"></span>
+          </div>
+          <div class="detail-section">
+            <label class="detail-label">状态</label>
+            <span class="detail-badge" id="detailStatus"></span>
+          </div>
+        </div>
+        <div class="detail-section">
+          <label class="detail-label">创建时间</label>
+          <p class="detail-value" id="detailCreatedAt"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-edit" id="detailBtnEdit">编辑</button>
+        <button class="btn-cancel" id="detailBtnCancel">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Undo Toast -->
+  <div class="undo-toast" id="undoToast">
+    <span class="undo-message">任务已删除</span>
+    <button class="undo-btn" id="undoBtn">撤销</button>
+  </div>
+
+  <!-- 导出面板 -->
+  <div class="export-panel" id="exportPanel">
+    <button class="export-btn" id="exportJsonBtn" title="导出 JSON">导出 JSON</button>
+    <button class="export-btn" id="exportCsvBtn" title="导出 CSV">导出 CSV</button>
+  </div>
+</BaseLayout>
+
+<style is:inline>
+  .todo-page {
+    padding: 1rem 0;
+  }
+
+  /* 页面头部 */
+  .todo-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .todo-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .todo-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  :global(.dark) .todo-subtitle {
+    color: #aaa;
+  }
+
+  .todo-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-input {
+    padding: 0.5rem 2rem 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    width: 200px;
+    transition: all 0.2s ease;
+  }
+
+  .search-clear-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s ease;
+  }
+
+  .search-clear-btn:hover {
+    color: #ef4444;
+  }
+
+  :global(.dark) .search-clear-btn {
+    color: #6b7280;
+  }
+
+  :global(.dark) .search-clear-btn:hover {
+    color: #f87171;
+  }
+
+  :global(.dark) .search-input {
+    background: #1f2937;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .add-task-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .add-task-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  }
+
+  .batch-mode-btn,
+  .clear-completed-btn {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .batch-mode-btn,
+  :global(.dark) .clear-completed-btn {
+    background: #374151;
+    color: #d1d5db;
+    border-color: #4b5563;
+  }
+
+  .batch-mode-btn:hover,
+  .clear-completed-btn:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+  }
+
+  :global(.dark) .batch-mode-btn:hover,
+  :global(.dark) .clear-completed-btn:hover {
+    background: #4b5563;
+  }
+
+  .batch-mode-btn.active {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+  }
+
+  .clear-completed-btn:hover {
+    color: #ef4444;
+    border-color: #fecaca;
+  }
+
+  :global(.dark) .clear-completed-btn:hover {
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  /* 批量操作面板 */
+  .batch-actions-panel {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  :global(.dark) .batch-actions-panel {
+    background: #1f2937;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .batch-actions-panel.show {
+    display: flex;
+  }
+
+  .batch-actions-panel .selected-count {
+    font-weight: 600;
+    color: #3b82f6;
+  }
+
+  .batch-actions-panel .btn-batch-complete,
+  .batch-actions-panel .btn-batch-delete {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+
+  .batch-actions-panel .btn-batch-complete {
+    background: #10b981;
+    color: #fff;
+  }
+
+  .batch-actions-panel .btn-batch-delete {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  .batch-actions-panel .btn-batch-complete:hover {
+    background: #059669;
+  }
+
+  .batch-actions-panel .btn-batch-delete:hover {
+    background: #dc2626;
+  }
+
+  /* 批量选择复选框 */
+  .task-batch-checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid #d1d5db;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    background: #fff;
+    margin-right: 0.5rem;
+  }
+
+  :global(.dark) .task-batch-checkbox {
+    border-color: #4b5563;
+    background: #111827;
+  }
+
+  .batch-mode .task-batch-checkbox {
+    display: flex;
+  }
+
+  .task-batch-checkbox.checked {
+    background: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .task-batch-checkbox.checked::after {
+    content: '✓';
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 640px) {
+    .todo-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .search-wrapper {
+      width: 100%;
+    }
+
+    .search-input {
+      width: 100%;
+    }
+
+    .add-task-btn,
+    .batch-mode-btn,
+    .clear-completed-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .modal {
+      width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-body {
+      padding: 1rem;
+    }
+
+    .quadrant-selector,
+    .priority-selector {
+      flex-direction: column;
+    }
+
+    .quadrant-btn,
+    .priority-btn {
+      width: 100%;
+    }
+  }
+
+  /* 任务详情弹窗 */
+  .detail-section {
+    margin-bottom: 1rem;
+  }
+
+  .detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  :global(.dark) .detail-label {
+    color: #9ca3af;
+  }
+
+  .detail-value {
+    font-size: 1rem;
+    color: #333;
+    margin: 0;
+  }
+
+  :global(.dark) .detail-value {
+    color: #f3f4f6;
+  }
+
+  .detail-desc-full {
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+
+  .detail-meta-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .detail-meta-row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .detail-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .detail-badge.q1 { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+  .detail-badge.q2 { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+  .detail-badge.q3 { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  .detail-badge.q4 { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+  .detail-badge.high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+  .detail-badge.medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  .detail-badge.low { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+  .detail-badge.completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+  .detail-badge.pending { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+  .btn-edit {
+    background: #3b82f6;
+    color: #fff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .btn-edit:hover {
+    background: #2563eb;
+  }
+
+  /* Undo Toast */
+  .undo-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    animation: slideUp 0.3s ease;
+  }
+
+  .undo-toast.show {
+    display: flex;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+
+  .undo-message {
+    font-size: 0.9rem;
+  }
+
+  .undo-btn {
+    background: #3b82f6;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .undo-btn:hover {
+    background: #2563eb;
+  }
+
+  /* 导出面板 */
+  .export-panel {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .export-btn {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .export-btn {
+    background: #374151;
+    color: #d1d5db;
+    border-color: #4b5563;
+  }
+
+  .export-btn:hover {
+    background: #e5e7eb;
+    color: #3b82f6;
+  }
+
+  :global(.dark) .export-btn:hover {
+    background: #4b5563;
+    color: #60a5fa;
+  }
+
+  /* 任务项可点击查看详情 */
+  .task-title {
+    cursor: pointer;
+  }
+
+  .task-title:hover {
+    color: #3b82f6;
+  }
+
+  :global(.dark) .task-title:hover {
+    color: #60a5fa;
+  }
+
+  /* 四象限网格 */
+  .quadrant-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .quadrant-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  /* 象限卡片 */
+  .quadrant-card {
+    border-radius: 16px;
+    padding: 1rem;
+    min-height: 300px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .quadrant-q1 {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  :global(.dark) .quadrant-q1 {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+
+  .quadrant-q2 {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  :global(.dark) .quadrant-q2 {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .quadrant-q3 {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+
+  :global(.dark) .quadrant-q3 {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+
+  .quadrant-q4 {
+    background: rgba(107, 114, 128, 0.05);
+    border-color: rgba(107, 114, 128, 0.3);
+  }
+
+  :global(.dark) .quadrant-q4 {
+    background: rgba(107, 114, 128, 0.15);
+    border-color: rgba(107, 114, 128, 0.5);
+  }
+
+  .quadrant-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  :global(.dark) .quadrant-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .quadrant-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  :global(.dark) .quadrant-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  :global(:not(.dark)) .quadrant-header {
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .quadrant-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  :global(.dark) .quadrant-icon {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  :global(:not(.dark)) .quadrant-icon {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .quadrant-info {
+    flex: 1;
+  }
+
+  .quadrant-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .quadrant-q1 .quadrant-title { color: #ef4444; }
+  .quadrant-q2 .quadrant-title { color: #3b82f6; }
+  .quadrant-q3 .quadrant-title { color: #f59e0b; }
+  .quadrant-q4 .quadrant-title { color: #6b7280; }
+
+  .quadrant-desc {
+    font-size: 0.75rem;
+    color: #888;
+    margin: 0;
+  }
+
+  .quadrant-count {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  :global(.dark) .quadrant-count {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .quadrant-q1 .quadrant-count { color: #ef4444; }
+  .quadrant-q2 .quadrant-count { color: #3b82f6; }
+  .quadrant-q3 .quadrant-count { color: #f59e0b; }
+  .quadrant-q4 .quadrant-count { color: #6b7280; }
+
+  /* 任务列表 */
+  .task-list {
+    flex: 1;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.25rem;
+  }
+
+  .task-list:empty::after {
+    content: '暂无任务';
+    color: #9ca3af;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 2rem 1rem;
+    display: block;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 12px;
+    border: 1px dashed #d1d5db;
+  }
+
+  :global(.dark) .task-list:empty::after {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #374151;
+  }
+
+  /* 任务项卡片样式 */
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.3s ease;
+    position: relative;
+    cursor: grab;
+    max-height: 120px;
+    overflow: hidden;
+  }
+
+  :global(.dark) .task-item {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .task-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    border-color: #d1d5db;
+  }
+
+  :global(.dark) .task-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: #4b5563;
+  }
+
+  /* Q1 任务卡片特殊样式 */
+  .quadrant-q1 .task-item:hover {
+    border-color: rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  }
+
+  /* Q2 任务卡片特殊样式 */
+  .quadrant-q2 .task-item:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+
+  /* Q3 任务卡片特殊样式 */
+  .quadrant-q3 .task-item:hover {
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  }
+
+  /* Q4 任务卡片特殊样式 */
+  .quadrant-q4 .task-item:hover {
+    border-color: rgba(107, 114, 128, 0.4);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.15);
+  }
+
+  .task-item.completed {
+    opacity: 0.7;
+    background: #f9fafb;
+    border-color: #e5e7eb;
+  }
+
+  :global(.dark) .task-item.completed {
+    background: #111827;
+    border-color: #1f2937;
+  }
+
+  .task-item.completed .task-title {
+    text-decoration: line-through;
+    color: #9ca3af;
+  }
+
+  .task-item.dragging {
+    opacity: 0.5;
+    transform: scale(1.02);
+    cursor: grabbing;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border: 2px dashed #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  :global(.dark) .task-item.dragging {
+    border-color: #60a5fa;
+    background: rgba(59, 130, 246, 0.2);
+  }
+
+  /* 拖拽占位符 */
+  .drag-placeholder {
+    height: 60px;
+    border: 2px dashed #3b82f6;
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.05);
+    margin: 0.5rem 0;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .drag-placeholder {
+    border-color: #60a5fa;
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  /* 象限卡片拖拽悬停效果 */
+  .quadrant-card.drag-over {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+  }
+
+  .quadrant-q1.drag-over {
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+  }
+
+  .quadrant-q2.drag-over {
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+
+  .quadrant-q3.drag-over {
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+  }
+
+  .quadrant-q4.drag-over {
+    border-color: rgba(107, 114, 128, 0.6);
+    box-shadow: 0 0 20px rgba(107, 114, 128, 0.2);
+  }
+
+  /* 拖拽提示文字 */
+  .quadrant-card.drag-over::after {
+    content: '拖放到此处';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .quadrant-q1.drag-over::after { color: #ef4444; }
+  .quadrant-q2.drag-over::after { color: #3b82f6; }
+  .quadrant-q3.drag-over::after { color: #f59e0b; }
+  .quadrant-q4.drag-over::after { color: #6b7280; }
+
+  .task-item.due-warning {
+    border-color: #ef4444;
+    animation: duePulse 1s ease infinite;
+  }
+
+  @keyframes duePulse {
+    0%, 100% { box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
+    50% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 复选框样式 */
+  .task-checkbox {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid #d1d5db;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    background: #fff;
+  }
+
+  :global(.dark) .task-checkbox {
+    border-color: #4b5563;
+    background: #111827;
+  }
+
+  .task-checkbox:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  :global(.dark) .task-checkbox:hover {
+    background: #1e3a5f;
+  }
+
+  .task-checkbox.checked {
+    background: #10b981;
+    border-color: #10b981;
+  }
+
+  .task-checkbox.checked::after {
+    content: '✓';
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+
+  .task-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    overflow: hidden;
+  }
+
+  .task-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .task-desc {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  :global(.dark) .task-desc {
+    color: #9ca3af;
+  }
+
+  .task-meta {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  :global(.dark) .task-meta {
+    color: #6b7280;
+  }
+
+  .task-due {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+  }
+
+  .task-due.overdue {
+    color: #ef4444;
+  }
+
+  .task-priority {
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .task-priority.high {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  .task-priority.medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  .task-priority.low {
+    background: rgba(107, 114, 128, 0.15);
+    color: #6b7280;
+  }
+
+  /* 操作按钮 */
+  .task-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .task-item:hover .task-actions {
+    opacity: 1;
+  }
+
+  .task-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .task-action-btn {
+    border-color: #374151;
+    background: #1f2937;
+  }
+
+  .task-action-btn:hover {
+    background: #f3f4f6;
+    transform: scale(1.05);
+  }
+
+  :global(.dark) .task-action-btn:hover {
+    background: #374151;
+  }
+
+  .task-action-btn.delete:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #ef4444;
+  }
+
+  :global(.dark) .task-action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .task-action-btn.edit:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #3b82f6;
+  }
+
+  :global(.dark) .task-action-btn.edit:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  /* 象限添加按钮 */
+  .quadrant-add-btn {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    color: #888;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .quadrant-add-btn {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .quadrant-add-btn:hover {
+    border-style: solid;
+    background: rgba(255, 255, 255, 0.05);
+    color: #3b82f6;
+  }
+
+  :global(.dark) .quadrant-add-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* 统计面板 */
+  .stats-panel {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  :global(.dark) .stats-panel {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .stats-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .stats-icon {
+    font-size: 1.25rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  :global(.dark) .stat-item {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: block;
+  }
+
+  .stat-total .stat-value { color: #3b82f6; }
+  .stat-completed .stat-value { color: #10b981; }
+  .stat-pending .stat-value { color: #f59e0b; }
+  .stat-rate .stat-value { color: #8b5cf6; }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  /* 进度条 */
+  .progress-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .progress-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .progress-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    width: 30px;
+  }
+
+  .progress-item[data-quadrant="1"] .progress-label { color: #ef4444; }
+  .progress-item[data-quadrant="2"] .progress-label { color: #3b82f6; }
+  .progress-item[data-quadrant="3"] .progress-label { color: #f59e0b; }
+  .progress-item[data-quadrant="4"] .progress-label { color: #6b7280; }
+
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  :global(.dark) .progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-item[data-quadrant="1"] .progress-fill { background: #ef4444; }
+  .progress-item[data-quadrant="2"] .progress-fill { background: #3b82f6; }
+  .progress-item[data-quadrant="3"] .progress-fill { background: #f59e0b; }
+  .progress-item[data-quadrant="4"] .progress-fill { background: #6b7280; }
+
+  .progress-text {
+    font-size: 0.75rem;
+    color: #888;
+    width: 50px;
+    text-align: right;
+  }
+
+  /* 弹窗样式 */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-overlay.show {
+    display: flex;
+    opacity: 1;
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 480px;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+  }
+
+  :global(.dark) .modal {
+    background: #1f2937;
+  }
+
+  .modal-overlay.show .modal {
+    transform: scale(1);
+  }
+
+  .modal-small {
+    max-width: 320px;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  :global(.dark) .modal-header {
+    border-bottom-color: #374151;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .modal-close:hover {
+    color: #333;
+  }
+
+  :global(.dark) .modal-close:hover {
+    color: #fff;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-body p {
+    margin: 0;
+    color: #666;
+  }
+
+  :global(.dark) .modal-body p {
+    color: #aaa;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .form-group input,
+  :global(.dark) .form-group textarea {
+    background: #111827;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* 象限选择器 */
+  .quadrant-selector,
+  .priority-selector {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .quadrant-btn,
+  .priority-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+
+  :global(.dark) .quadrant-btn,
+  :global(.dark) .priority-btn {
+    border-color: #4b5563;
+  }
+
+  .quadrant-btn:hover,
+  .priority-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+  }
+
+  .quadrant-btn.active,
+  .priority-btn.active {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  :global(.dark) .modal-footer {
+    border-top-color: #374151;
+  }
+
+  .btn-cancel,
+  .btn-submit,
+  .btn-delete,
+  .btn-delete-confirm {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-cancel {
+    background: #e5e7eb;
+    color: #333;
+  }
+
+  :global(.dark) .btn-cancel {
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  .btn-cancel:hover {
+    background: #d1d5db;
+  }
+
+  :global(.dark) .btn-cancel:hover {
+    background: #4b5563;
+  }
+
+  .btn-submit {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  .btn-submit:hover {
+    background: #2563eb;
+  }
+
+  .btn-delete,
+  .btn-delete-confirm {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  .btn-delete:hover,
+  .btn-delete-confirm:hover {
+    background: #dc2626;
+  }
+
+  /* 完成动画粒子 */
+  .completion-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  @keyframes particleBurst {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0); opacity: 0; }
+  }
+</style>
+
+<script>
+// 数据存储
+const STORAGE_KEY = 'todo_quadrant_data';
+const STORAGE_VERSION = 1;
+
+interface TodoItem {
+  id: string;
+  title: string;
+  description?: string;
+  quadrant: 1 | 2 | 3 | 4;
+  createdAt: number;
+  updatedAt: number;
+  dueDate?: number;
+  completed: boolean;
+  completedAt?: number;
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface TodoStorage {
+  items: TodoItem[];
+  version: number;
+  lastUpdated: number;
+}
+
+// 工具函数
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function getStorage(): TodoStorage {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return { items: [], version: STORAGE_VERSION, lastUpdated: Date.now() };
+    const parsed = JSON.parse(data);
+    return parsed.version === STORAGE_VERSION ? parsed : { items: [], version: STORAGE_VERSION, lastUpdated: Date.now() };
+  } catch {
+    return { items: [], version: STORAGE_VERSION, lastUpdated: Date.now() };
+  }
+}
+
+function saveStorage(data: TodoStorage): void {
+  data.lastUpdated = Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function formatDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function isDueSoon(dueDate?: number): boolean {
+  if (!dueDate) return false;
+  const now = Date.now();
+  const diff = dueDate - now;
+  return diff > 0 && diff < 24 * 60 * 60 * 1000; // 24小时内
+}
+
+function isOverdue(dueDate?: number): boolean {
+  if (!dueDate) return false;
+  return dueDate < Date.now();
+}
+
+function getQuadrantColor(q: number): string {
+  const colors: Record<number, string> = {
+    1: '#ef4444',
+    2: '#3b82f6',
+    3: '#f59e0b',
+    4: '#6b7280'
+  };
+  return colors[q] || '#6b7280';
+}
+
+function getPriorityOrder(p: string): number {
+  const orders: Record<string, number> = { high: 3, medium: 2, low: 1 };
+  return orders[p] || 0;
+}
+
+// 设置日期输入的最小值（今天）
+function setDateMinToday() {
+  const today = formatDate(Date.now());
+  taskDue.min = today;
+  editTaskDue.min = today;
+}
+
+// 清空添加表单
+function clearAddForm() {
+  taskTitle.value = '';
+  taskDesc.value = '';
+  taskDue.value = '';
+  currentQuadrant = 1;
+  currentPriority = 'medium';
+  updateQuadrantBtns(quadrantBtns, currentQuadrant);
+  updatePriorityBtns(priorityBtns, currentPriority);
+}
+
+// DOM 元素
+const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+const searchClearBtn = document.getElementById('searchClearBtn');
+const addTaskBtn = document.getElementById('addTaskBtn');
+const batchModeBtn = document.getElementById('batchModeBtn');
+const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+const batchActionsPanel = document.getElementById('batchActionsPanel');
+const selectedCountEl = document.getElementById('selectedCount');
+const btnBatchComplete = document.getElementById('btnBatchComplete');
+const btnBatchDelete = document.getElementById('btnBatchDelete');
+const btnBatchCancel = document.getElementById('btnBatchCancel');
+const addModal = document.getElementById('addModal');
+const editModal = document.getElementById('editModal');
+const deleteModal = document.getElementById('deleteModal');
+const modalClose = document.getElementById('modalClose');
+const editModalClose = document.getElementById('editModalClose');
+const deleteModalClose = document.getElementById('deleteModalClose');
+const btnCancel = document.getElementById('btnCancel');
+const editBtnCancel = document.getElementById('editBtnCancel');
+const deleteBtnCancel = document.getElementById('deleteBtnCancel');
+const btnSubmit = document.getElementById('btnSubmit');
+const editBtnSubmit = document.getElementById('editBtnSubmit');
+const deleteBtnConfirm = document.getElementById('deleteBtnConfirm');
+const btnDelete = document.getElementById('btnDelete');
+
+// 详情弹窗元素
+const detailModal = document.getElementById('detailModal');
+const detailModalTitle = document.getElementById('detailModalTitle');
+const detailModalClose = document.getElementById('detailModalClose');
+const detailTitle = document.getElementById('detailTitle');
+const detailDesc = document.getElementById('detailDesc');
+const detailQuadrant = document.getElementById('detailQuadrant');
+const detailPriority = document.getElementById('detailPriority');
+const detailDue = document.getElementById('detailDue');
+const detailStatus = document.getElementById('detailStatus');
+const detailCreatedAt = document.getElementById('detailCreatedAt');
+const detailBtnEdit = document.getElementById('detailBtnEdit');
+const detailBtnCancel = document.getElementById('detailBtnCancel');
+
+// Undo Toast 元素
+const undoToast = document.getElementById('undoToast');
+const undoBtn = document.getElementById('undoBtn');
+
+// 导出元素
+const exportJsonBtn = document.getElementById('exportJsonBtn');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+// 表单元素
+const taskTitle = document.getElementById('taskTitle') as HTMLInputElement;
+const taskDesc = document.getElementById('taskDesc') as HTMLTextAreaElement;
+const taskDue = document.getElementById('taskDue') as HTMLInputElement;
+const quadrantBtns = document.querySelectorAll('#addModal .quadrant-btn');
+const priorityBtns = document.querySelectorAll('#addModal .priority-btn');
+
+const editTaskId = document.getElementById('editTaskId') as HTMLInputElement;
+const editTaskTitle = document.getElementById('editTaskTitle') as HTMLInputElement;
+const editTaskDesc = document.getElementById('editTaskDesc') as HTMLTextAreaElement;
+const editTaskDue = document.getElementById('editTaskDue') as HTMLInputElement;
+const editQuadrantBtns = document.querySelectorAll('#editQuadrantSelector .quadrant-btn');
+const editPriorityBtns = document.querySelectorAll('#editPrioritySelector .priority-btn');
+
+// 当前选择的象限和优先级
+let currentQuadrant: 1 | 2 | 3 | 4 = 1;
+let currentPriority: 'high' | 'medium' | 'low' = 'medium';
+let editingTaskId: string | null = null;
+let deletingTaskId: string | null = null;
+let batchModeActive = false;
+let selectedTaskIds: Set<string> = new Set();
+let searchDebounceTimer: number | null = null;
+let lastDeletedTask: TodoItem | null = null;
+let undoTimer: number | null = null;
+let viewingTaskId: string | null = null;
+
+// 创建任务项 DOM
+function createTaskElement(task: TodoItem): HTMLElement {
+  const item = document.createElement('div');
+  item.className = `task-item${task.completed ? ' completed' : ''}${isDueSoon(task.dueDate) || isOverdue(task.dueDate) ? ' due-warning' : ''}${batchModeActive ? ' batch-mode' : ''}`;
+  item.dataset.id = task.id;
+  item.draggable = !batchModeActive; // 批量模式下禁用拖拽
+
+  const dueText = task.dueDate ? formatDate(task.dueDate) : '';
+  const overdueClass = isOverdue(task.dueDate) ? 'overdue' : '';
+
+  // 安全构建 DOM，避免 XSS
+  const particlesDiv = document.createElement('div');
+  particlesDiv.className = 'completion-particles';
+  particlesDiv.id = `particles-${task.id}`;
+
+  // 批量选择复选框
+  const batchCheckboxDiv = document.createElement('div');
+  batchCheckboxDiv.className = `task-batch-checkbox${selectedTaskIds.has(task.id) ? ' checked' : ''}`;
+  batchCheckboxDiv.dataset.id = task.id;
+
+  const checkboxDiv = document.createElement('div');
+  checkboxDiv.className = `task-checkbox${task.completed ? ' checked' : ''}`;
+  checkboxDiv.dataset.id = task.id;
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'task-content';
+
+  const titleP = document.createElement('p');
+  titleP.className = 'task-title';
+  titleP.textContent = task.title; // 使用 textContent 避免 XSS
+
+  contentDiv.appendChild(titleP);
+
+  if (task.description) {
+    const descP = document.createElement('p');
+    descP.className = 'task-desc';
+    descP.textContent = task.description; // 使用 textContent 避免 XSS
+    contentDiv.appendChild(descP);
+  }
+
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'task-meta';
+
+  if (dueText) {
+    const dueSpan = document.createElement('span');
+    dueSpan.className = `task-due ${overdueClass}`;
+    dueSpan.textContent = `📅 ${dueText}`;
+    metaDiv.appendChild(dueSpan);
+  }
+
+  const prioritySpan = document.createElement('span');
+  prioritySpan.className = `task-priority ${task.priority}`;
+  prioritySpan.textContent = task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低';
+  metaDiv.appendChild(prioritySpan);
+
+  contentDiv.appendChild(metaDiv);
+
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'task-actions';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'task-action-btn edit';
+  editBtn.dataset.id = task.id;
+  editBtn.title = '编辑';
+  editBtn.textContent = '✏️';
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'task-action-btn delete';
+  deleteBtn.dataset.id = task.id;
+  deleteBtn.title = '删除';
+  deleteBtn.textContent = '🗑️';
+
+  actionsDiv.appendChild(editBtn);
+  actionsDiv.appendChild(deleteBtn);
+
+  item.appendChild(particlesDiv);
+  item.appendChild(batchCheckboxDiv);
+  item.appendChild(checkboxDiv);
+  item.appendChild(contentDiv);
+  item.appendChild(actionsDiv);
+
+  return item;
+}
+
+// 创建完成粒子效果
+function createCompletionParticles(taskId: string) {
+  const container = document.getElementById(`particles-${taskId}`);
+  if (!container) return;
+
+  const colors = ['#10b981', '#34d399', '#6ee7b7'];
+  for (let i = 0; i < 8; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    const angle = (Math.PI * 2 * i) / 8;
+    const velocity = 30 + Math.random() * 20;
+    const tx = Math.cos(angle) * velocity;
+    const ty = Math.sin(angle) * velocity;
+
+    particle.style.cssText = `
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      --tx: ${tx}px;
+      --ty: ${ty}px;
+    `;
+
+    particle.animate([
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
+    ], {
+      duration: 500,
+      easing: 'cubic-bezier(0, 0.8, 0.2, 1)',
+      fill: 'forwards'
+    });
+
+    container.appendChild(particle);
+  }
+}
+
+// 渲染所有任务
+function renderTasks(filter?: string) {
+  const storage = getStorage();
+  let items = storage.items;
+
+  // 搜索过滤
+  if (filter) {
+    const lowerFilter = filter.toLowerCase();
+    items = items.filter(item =>
+      item.title.toLowerCase().includes(lowerFilter) ||
+      (item.description && item.description.toLowerCase().includes(lowerFilter))
+    );
+  }
+
+  // 按象限分组
+  const quadrants: Record<string, TodoItem[]> = { '1': [], '2': [], '3': [], '4': [] };
+  items.forEach(item => {
+    const key = String(item.quadrant);
+    if (quadrants[key]) {
+      quadrants[key].push(item);
+    }
+  });
+
+  // 每个象限内按优先级和完成状态排序
+  ['1', '2', '3', '4'].forEach(q => {
+    const tasks = quadrants[q] || [];
+
+    tasks.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      // 按优先级排序，相同优先级按创建时间降序（最新在前）
+      const priorityDiff = getPriorityOrder(b.priority) - getPriorityOrder(a.priority);
+      if (priorityDiff !== 0) return priorityDiff;
+      return b.createdAt - a.createdAt;
+    });
+
+    const listEl = document.getElementById(`list-q${q}`);
+    if (listEl) {
+      listEl.innerHTML = '';
+      tasks.forEach(task => {
+        listEl.appendChild(createTaskElement(task));
+      });
+    }
+
+    // 更新计数
+    const countEl = document.getElementById(`count-q${q}`);
+    if (countEl) {
+      const pendingCount = tasks.filter(t => !t.completed).length;
+      countEl.textContent = String(pendingCount);
+    }
+  });
+
+  updateStats();
+}
+
+// 更新统计数据
+function updateStats() {
+  const storage = getStorage();
+  const items = storage.items;
+
+  const total = items.length;
+  const completed = items.filter(i => i.completed).length;
+  const pending = total - completed;
+  const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  (document.getElementById('stat-total') as HTMLElement).textContent = String(total);
+  (document.getElementById('stat-completed') as HTMLElement).textContent = String(completed);
+  (document.getElementById('stat-pending') as HTMLElement).textContent = String(pending);
+  (document.getElementById('stat-rate') as HTMLElement).textContent = `${rate}%`;
+
+  // 各象限进度
+  for (let q = 1; q <= 4; q++) {
+    const quadrantItems = items.filter(i => i.quadrant === q);
+    const quadrantCompleted = quadrantItems.filter(i => i.completed).length;
+    const quadrantRate = quadrantItems.length > 0 ? Math.round((quadrantCompleted / quadrantItems.length) * 100) : 0;
+
+    const progressFill = document.getElementById(`progress-q${q}`) as HTMLElement;
+    const progressText = document.getElementById(`progress-text-q${q}`) as HTMLElement;
+
+    if (progressFill) progressFill.style.width = `${quadrantRate}%`;
+    if (progressText) progressText.textContent = `${quadrantRate}%`;
+  }
+}
+
+// 弹窗操作
+function showModal(modal: HTMLElement) {
+  // 设置日期最小值
+  setDateMinToday();
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => modal.classList.add('show'));
+}
+
+function hideModal(modal: HTMLElement, clearForm = false) {
+  modal.classList.remove('show');
+  setTimeout(() => modal.style.display = 'none', 300);
+  // 清空表单（用于取消操作）
+  if (clearForm && modal === addModal) {
+    clearAddForm();
+  }
+}
+
+// 添加任务
+function addTask() {
+  const title = taskTitle.value.trim();
+  if (!title) return;
+
+  const storage = getStorage();
+  const task: TodoItem = {
+    id: generateId(),
+    title,
+    description: taskDesc.value.trim() || undefined,
+    quadrant: currentQuadrant,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    dueDate: taskDue.value ? new Date(taskDue.value).getTime() : undefined,
+    completed: false,
+    priority: currentPriority
+  };
+
+  storage.items.push(task);
+  saveStorage(storage);
+
+  // 重置表单
+  taskTitle.value = '';
+  taskDesc.value = '';
+  taskDue.value = '';
+  currentQuadrant = 1;
+  currentPriority = 'medium';
+  updateQuadrantBtns(quadrantBtns, currentQuadrant);
+  updatePriorityBtns(priorityBtns, currentPriority);
+
+  hideModal(addModal!);
+  renderTasks();
+}
+
+// 编辑任务
+function openEditModal(taskId: string) {
+  const storage = getStorage();
+  const task = storage.items.find(i => i.id === taskId);
+  if (!task) return;
+
+  editingTaskId = taskId;
+
+  editTaskId.value = taskId;
+  editTaskTitle.value = task.title;
+  editTaskDesc.value = task.description || '';
+  editTaskDue.value = task.dueDate ? formatDate(task.dueDate) : '';
+
+  currentQuadrant = task.quadrant;
+  currentPriority = task.priority;
+  updateQuadrantBtns(editQuadrantBtns, currentQuadrant);
+  updatePriorityBtns(editPriorityBtns, currentPriority);
+
+  showModal(editModal!);
+}
+
+function saveEdit() {
+  const title = editTaskTitle.value.trim();
+  if (!title || !editingTaskId) return;
+
+  const storage = getStorage();
+  const task = storage.items.find(i => i.id === editingTaskId);
+  if (!task) return;
+
+  task.title = title;
+  task.description = editTaskDesc.value.trim() || undefined;
+  task.quadrant = currentQuadrant;
+  task.priority = currentPriority;
+  task.dueDate = editTaskDue.value ? new Date(editTaskDue.value).getTime() : undefined;
+  task.updatedAt = Date.now();
+
+  saveStorage(storage);
+  hideModal(editModal!);
+  editingTaskId = null;
+  renderTasks(searchInput.value);
+}
+
+// 删除任务
+function openDeleteModal(taskId: string) {
+  deletingTaskId = taskId;
+  showModal(deleteModal!);
+}
+
+function confirmDelete() {
+  if (!deletingTaskId) return;
+
+  const storage = getStorage();
+  const taskToDelete = storage.items.find(i => i.id === deletingTaskId);
+
+  if (taskToDelete) {
+    // 保存已删除的任务用于撤销
+    lastDeletedTask = taskToDelete;
+    storage.items = storage.items.filter(i => i.id !== deletingTaskId);
+    saveStorage(storage);
+
+    // 显示撤销提示
+    showUndoToast(taskToDelete);
+  }
+
+  hideModal(deleteModal!);
+  deletingTaskId = null;
+  renderTasks(searchInput.value);
+}
+
+// 完成任务
+function toggleComplete(taskId: string) {
+  const storage = getStorage();
+  const task = storage.items.find(i => i.id === taskId);
+  if (!task) return;
+
+  task.completed = !task.completed;
+  task.completedAt = task.completed ? Date.now() : undefined;
+  task.updatedAt = Date.now();
+
+  saveStorage(storage);
+
+  if (task.completed) {
+    createCompletionParticles(taskId);
+  }
+
+  renderTasks(searchInput.value);
+}
+
+// 更新按钮状态
+function updateQuadrantBtns(btns: NodeListOf<Element>, quadrant: number) {
+  btns.forEach(btn => {
+    const q = parseInt(btn.getAttribute('data-quadrant') || '1');
+    btn.classList.toggle('active', q === quadrant);
+  });
+}
+
+function updatePriorityBtns(btns: NodeListOf<Element>, priority: string) {
+  btns.forEach(btn => {
+    const p = btn.getAttribute('data-priority') || 'medium';
+    btn.classList.toggle('active', p === priority);
+  });
+}
+
+// 批量模式相关函数
+function toggleBatchMode() {
+  batchModeActive = !batchModeActive;
+  selectedTaskIds.clear();
+  batchModeBtn?.classList.toggle('active', batchModeActive);
+  batchActionsPanel?.classList.toggle('show', batchModeActive);
+  updateSelectedCount();
+  renderTasks(searchInput.value);
+}
+
+function toggleBatchSelection(taskId: string) {
+  if (selectedTaskIds.has(taskId)) {
+    selectedTaskIds.delete(taskId);
+  } else {
+    selectedTaskIds.add(taskId);
+  }
+  updateSelectedCount();
+  renderTasks(searchInput.value);
+}
+
+function updateSelectedCount() {
+  if (selectedCountEl) {
+    selectedCountEl.textContent = `已选择 ${selectedTaskIds.size} 个任务`;
+  }
+}
+
+function batchComplete() {
+  if (selectedTaskIds.size === 0) return;
+  const storage = getStorage();
+  storage.items.forEach(item => {
+    if (selectedTaskIds.has(item.id)) {
+      item.completed = true;
+      item.completedAt = Date.now();
+      item.updatedAt = Date.now();
+    }
+  });
+  saveStorage(storage);
+  selectedTaskIds.clear();
+  updateSelectedCount();
+  renderTasks(searchInput.value);
+}
+
+function batchDelete() {
+  if (selectedTaskIds.size === 0) return;
+  const storage = getStorage();
+  storage.items = storage.items.filter(i => !selectedTaskIds.has(i.id));
+  saveStorage(storage);
+  selectedTaskIds.clear();
+  updateSelectedCount();
+  renderTasks(searchInput.value);
+}
+
+function clearCompletedTasks() {
+  const storage = getStorage();
+  const completedCount = storage.items.filter(i => i.completed).length;
+  if (completedCount === 0) return;
+  storage.items = storage.items.filter(i => !i.completed);
+  saveStorage(storage);
+  renderTasks(searchInput.value);
+}
+
+// 搜索防抖
+function debounceSearch(callback: () => void, delay = 300) {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+  searchDebounceTimer = window.setTimeout(callback, delay);
+}
+
+// 任务详情功能
+function openDetailModal(taskId: string) {
+  const storage = getStorage();
+  const task = storage.items.find(i => i.id === taskId);
+  if (!task) return;
+
+  viewingTaskId = taskId;
+
+  if (detailModalTitle) detailModalTitle.textContent = '任务详情';
+  if (detailTitle) detailTitle.textContent = task.title;
+  if (detailDesc) detailDesc.textContent = task.description || '暂无描述';
+
+  const quadrantNames = { 1: 'Q1 重要紧急', 2: 'Q2 重要规划', 3: 'Q3 紧急次要', 4: 'Q4 低优先' };
+  if (detailQuadrant) {
+    detailQuadrant.textContent = quadrantNames[task.quadrant];
+    detailQuadrant.className = `detail-badge q${task.quadrant}`;
+  }
+
+  const priorityNames = { high: '高', medium: '中', low: '低' };
+  if (detailPriority) {
+    detailPriority.textContent = priorityNames[task.priority];
+    detailPriority.className = `detail-badge ${task.priority}`;
+  }
+
+  if (detailDue) {
+    detailDue.textContent = task.dueDate ? formatDate(task.dueDate) : '无截止日期';
+    if (isOverdue(task.dueDate)) {
+      detailDue.style.color = '#ef4444';
+    } else {
+      detailDue.style.color = '';
+    }
+  }
+
+  if (detailStatus) {
+    detailStatus.textContent = task.completed ? '已完成' : '待处理';
+    detailStatus.className = `detail-badge ${task.completed ? 'completed' : 'pending'}`;
+  }
+
+  if (detailCreatedAt) {
+    const createdDate = new Date(task.createdAt);
+    detailCreatedAt.textContent = `${formatDate(task.createdAt)} ${createdDate.getHours()}:${String(createdDate.getMinutes()).padStart(2, '0')}`;
+  }
+
+  showModal(detailModal!);
+}
+
+// Undo 功能
+function showUndoToast(task: TodoItem) {
+  lastDeletedTask = task;
+  undoToast?.classList.add('show');
+
+  // 5秒后自动隐藏
+  if (undoTimer) clearTimeout(undoTimer);
+  undoTimer = window.setTimeout(() => {
+    hideUndoToast();
+    lastDeletedTask = null;
+  }, 5000);
+}
+
+function hideUndoToast() {
+  undoToast?.classList.remove('show');
+  if (undoTimer) {
+    clearTimeout(undoTimer);
+    undoTimer = null;
+  }
+}
+
+function undoDelete() {
+  if (!lastDeletedTask) return;
+
+  const storage = getStorage();
+  storage.items.push(lastDeletedTask);
+  saveStorage(storage);
+  hideUndoToast();
+  lastDeletedTask = null;
+  renderTasks(searchInput.value);
+}
+
+// 导出功能
+function exportToJson() {
+  const storage = getStorage();
+  const dataStr = JSON.stringify(storage, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `todo_backup_${formatDate(Date.now())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportToCsv() {
+  const storage = getStorage();
+  const headers = ['ID', '标题', '描述', '象限', '优先级', '截止日期', '状态', '创建时间'];
+  const rows = storage.items.map(item => [
+    item.id,
+    item.title,
+    item.description || '',
+    item.quadrant,
+    item.priority,
+    item.dueDate ? formatDate(item.dueDate) : '',
+    item.completed ? '已完成' : '待处理',
+    formatDate(item.createdAt)
+  ]);
+
+  const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `todo_backup_${formatDate(Date.now())}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 浏览器通知功能
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function checkDeadlineNotifications() {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const storage = getStorage();
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000;
+
+    storage.items.forEach(item => {
+      if (item.completed || !item.dueDate) return;
+
+      const diff = item.dueDate - now;
+      if (diff > 0 && diff < oneHour) {
+        // 1小时内截止的任务
+        const hoursLeft = Math.round(diff / (60 * 60 * 1000));
+        const minutesLeft = Math.round(diff / (60 * 1000));
+        const timeText = hoursLeft > 0 ? `${hoursLeft}小时` : `${minutesLeft}分钟`;
+
+        new Notification(`任务即将截止: ${item.title}`, {
+          body: `距离截止时间还有 ${timeText}`,
+          icon: '/favicon.ico'
+        });
+      }
+    });
+  }
+}
+
+// 拖拽功能
+let draggedItem: HTMLElement | null = null;
+let dragPlaceholder: HTMLElement | null = null;
+
+function handleDragStart(e: DragEvent) {
+  draggedItem = e.target as HTMLElement;
+  if (!draggedItem.classList.contains('task-item')) return;
+
+  draggedItem.classList.add('dragging');
+  e.dataTransfer!.effectAllowed = 'move';
+  e.dataTransfer!.setData('text/plain', draggedItem.dataset.id || '');
+
+  // 创建占位符
+  dragPlaceholder = document.createElement('div');
+  dragPlaceholder.className = 'drag-placeholder';
+  dragPlaceholder.style.height = draggedItem.offsetHeight + 'px';
+
+  // 延迟添加占位符，让拖拽开始
+  setTimeout(() => {
+    if (draggedItem && draggedItem.parentElement) {
+      draggedItem.parentElement.insertBefore(dragPlaceholder!, draggedItem.nextSibling);
+    }
+  }, 0);
+}
+
+function handleDragEnd(e: Event) {
+  if (draggedItem) {
+    draggedItem.classList.remove('dragging');
+    draggedItem.style.opacity = '';
+    draggedItem = null;
+  }
+  if (dragPlaceholder) {
+    dragPlaceholder.remove();
+    dragPlaceholder = null;
+  }
+  // 移除所有拖拽提示样式
+  document.querySelectorAll('.quadrant-card').forEach(card => {
+    card.classList.remove('drag-over');
+  });
+}
+
+function handleDragOver(e: DragEvent) {
+  e.preventDefault();
+  e.dataTransfer!.dropEffect = 'move';
+
+  const targetCard = (e.target as HTMLElement).closest('.quadrant-card');
+  if (targetCard) {
+    // 添加拖拽提示样式
+    document.querySelectorAll('.quadrant-card').forEach(card => {
+      card.classList.remove('drag-over');
+    });
+    targetCard.classList.add('drag-over');
+  }
+
+  // 同象限内排序
+  if (draggedItem && dragPlaceholder) {
+    const targetList = (e.target as HTMLElement).closest('.task-list');
+    if (targetList && targetList === draggedItem.parentElement) {
+      const afterElement = getDragAfterElement(targetList, e.clientY);
+      if (afterElement && afterElement !== dragPlaceholder) {
+        targetList.insertBefore(dragPlaceholder, afterElement);
+      } else if (!afterElement && targetList.lastElementChild !== dragPlaceholder) {
+        targetList.appendChild(dragPlaceholder);
+      }
+    }
+  }
+}
+
+function handleDrop(e: DragEvent) {
+  e.preventDefault();
+  if (!draggedItem) return;
+
+  const targetCard = (e.target as HTMLElement).closest('.quadrant-card');
+  if (!targetCard) return;
+
+  const targetList = targetCard.querySelector('.task-list');
+  const newQuadrant = parseInt(targetCard.getAttribute('data-quadrant') || '1') as 1 | 2 | 3 | 4;
+  const taskId = draggedItem.dataset.id;
+
+  if (taskId) {
+    const storage = getStorage();
+    const task = storage.items.find(i => i.id === taskId);
+    if (task) {
+      // 更新象限
+      if (task.quadrant !== newQuadrant) {
+        task.quadrant = newQuadrant;
+        task.updatedAt = Date.now();
+      }
+
+      // 同象限内排序 - 计算新位置
+      if (targetList && dragPlaceholder) {
+        const tasksInQuadrant = storage.items.filter(i => i.quadrant === newQuadrant && !i.completed);
+        const afterElement = getDragAfterElement(targetList, e.clientY);
+
+        // 找到插入位置
+        let newIndex = tasksInQuadrant.length - 1;
+        if (afterElement && afterElement.classList.contains('task-item')) {
+          const afterId = afterElement.dataset.id;
+          const afterTask = tasksInQuadrant.find(i => i.id === afterId);
+          if (afterTask) {
+            newIndex = tasksInQuadrant.indexOf(afterTask);
+          }
+        }
+
+        // 更新排序（通过调整 updatedAt）
+        const baseTime = Date.now();
+        tasksInQuadrant.forEach((t, idx) => {
+          if (t.id === taskId) {
+            t.updatedAt = baseTime + (newIndex * 1000);
+          } else if (idx >= newIndex) {
+            t.updatedAt = baseTime + ((idx + 1) * 1000);
+          }
+        });
+      }
+
+      saveStorage(storage);
+      renderTasks(searchInput.value);
+    }
+  }
+
+  // 清理
+  handleDragEnd(e);
+}
+
+function getDragAfterElement(container: Element, y: number): Element | null {
+  const draggableElements = [...container.querySelectorAll('.task-item:not(.dragging), .drag-placeholder')];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY, element: null as Element | null }).element;
+}
+
+// 事件绑定
+function initEvents() {
+  // 搜索（带防抖）
+  searchInput.addEventListener('input', () => {
+    debounceSearch(() => renderTasks(searchInput.value));
+  });
+
+  // 清除搜索
+  searchClearBtn?.addEventListener('click', () => {
+    searchInput.value = '';
+    renderTasks();
+  });
+
+  // 批量模式
+  batchModeBtn?.addEventListener('click', toggleBatchMode);
+  btnBatchComplete?.addEventListener('click', batchComplete);
+  btnBatchDelete?.addEventListener('click', batchDelete);
+  btnBatchCancel?.addEventListener('click', () => {
+    batchModeActive = false;
+    selectedTaskIds.clear();
+    batchModeBtn?.classList.remove('active');
+    batchActionsPanel?.classList.remove('show');
+    renderTasks(searchInput.value);
+  });
+
+  // 清除已完成任务
+  clearCompletedBtn?.addEventListener('click', clearCompletedTasks);
+
+  // 添加任务按钮
+  addTaskBtn?.addEventListener('click', () => showModal(addModal!));
+  modalClose?.addEventListener('click', () => hideModal(addModal!, true));
+  btnCancel?.addEventListener('click', () => hideModal(addModal!, true));
+  btnSubmit?.addEventListener('click', addTask);
+
+  // 编辑弹窗
+  editModalClose?.addEventListener('click', () => hideModal(editModal!));
+  editBtnCancel?.addEventListener('click', () => hideModal(editModal!));
+  editBtnSubmit?.addEventListener('click', saveEdit);
+  btnDelete?.addEventListener('click', () => {
+    if (editingTaskId) {
+      hideModal(editModal!);
+      openDeleteModal(editingTaskId);
+    }
+  });
+
+  // 删除弹窗
+  deleteModalClose?.addEventListener('click', () => hideModal(deleteModal!));
+  deleteBtnCancel?.addEventListener('click', () => hideModal(deleteModal!));
+  deleteBtnConfirm?.addEventListener('click', confirmDelete);
+
+  // 象限选择
+  quadrantBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentQuadrant = parseInt(btn.getAttribute('data-quadrant') || '1') as 1 | 2 | 3 | 4;
+      updateQuadrantBtns(quadrantBtns, currentQuadrant);
+    });
+  });
+
+  editQuadrantBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentQuadrant = parseInt(btn.getAttribute('data-quadrant') || '1') as 1 | 2 | 3 | 4;
+      updateQuadrantBtns(editQuadrantBtns, currentQuadrant);
+    });
+  });
+
+  // 优先级选择
+  priorityBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentPriority = btn.getAttribute('data-priority') as 'high' | 'medium' | 'low';
+      updatePriorityBtns(priorityBtns, currentPriority);
+    });
+  });
+
+  editPriorityBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentPriority = btn.getAttribute('data-priority') as 'high' | 'medium' | 'low';
+      updatePriorityBtns(editPriorityBtns, currentPriority);
+    });
+  });
+
+  // 象限卡片添加按钮
+  document.querySelectorAll('.quadrant-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentQuadrant = parseInt(btn.getAttribute('data-quadrant') || '1') as 1 | 2 | 3 | 4;
+      updateQuadrantBtns(quadrantBtns, currentQuadrant);
+      showModal(addModal!);
+      taskTitle.focus();
+    });
+  });
+
+  // 拖拽事件
+  document.querySelectorAll('.quadrant-card').forEach(card => {
+    card.addEventListener('dragover', handleDragOver);
+    card.addEventListener('drop', handleDrop);
+  });
+
+  // 任务项事件（使用事件委托）
+  document.querySelectorAll('.task-list').forEach(list => {
+    list.addEventListener('click', (e: Event) => {
+      const target = e.target as HTMLElement;
+
+      // 点击批量选择复选框
+      if (target.classList.contains('task-batch-checkbox')) {
+        const taskId = target.dataset.id;
+        if (taskId) toggleBatchSelection(taskId);
+        return; // 批量模式下不触发其他操作
+      }
+
+      // 批量模式下点击任务项整行也触发选择
+      if (batchModeActive && target.classList.contains('task-item')) {
+        const taskId = target.dataset.id;
+        if (taskId) toggleBatchSelection(taskId);
+        return;
+      }
+
+      // 点击复选框
+      if (target.classList.contains('task-checkbox')) {
+        const taskId = target.dataset.id;
+        if (taskId) toggleComplete(taskId);
+      }
+
+      // 点击编辑按钮
+      if (target.classList.contains('edit') || target.closest('.edit')) {
+        const taskId = target.dataset.id || target.closest('.edit')?.dataset.id;
+        if (taskId) openEditModal(taskId);
+      }
+
+      // 点击删除按钮
+      if (target.classList.contains('delete') || target.closest('.delete')) {
+        const taskId = target.dataset.id || target.closest('.delete')?.dataset.id;
+        if (taskId) openDeleteModal(taskId);
+      }
+
+      // 点击任务标题查看详情
+      if (target.classList.contains('task-title')) {
+        const taskItem = target.closest('.task-item');
+        const taskId = taskItem?.dataset.id;
+        if (taskId && !batchModeActive) openDetailModal(taskId);
+      }
+    });
+
+    list.addEventListener('dragstart', handleDragStart);
+    list.addEventListener('dragend', handleDragEnd);
+  });
+
+  // 详情弹窗
+  detailModalClose?.addEventListener('click', () => hideModal(detailModal!));
+  detailBtnCancel?.addEventListener('click', () => hideModal(detailModal!));
+  detailBtnEdit?.addEventListener('click', () => {
+    if (viewingTaskId) {
+      hideModal(detailModal!);
+      openEditModal(viewingTaskId);
+    }
+  });
+
+  // Undo
+  undoBtn?.addEventListener('click', undoDelete);
+
+  // 导出
+  exportJsonBtn?.addEventListener('click', exportToJson);
+  exportCsvBtn?.addEventListener('click', exportToCsv);
+
+  // ESC 关闭弹窗
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (addModal?.classList.contains('show')) hideModal(addModal, true);
+      if (editModal?.classList.contains('show')) hideModal(editModal);
+      if (deleteModal?.classList.contains('show')) hideModal(deleteModal);
+      if (detailModal?.classList.contains('show')) hideModal(detailModal);
+    }
+  });
+
+  // Enter 提交
+  taskTitle.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  // 浏览器通知
+  requestNotificationPermission();
+  // 每30分钟检查截止日期通知
+  setInterval(checkDeadlineNotifications, 30 * 60 * 1000);
+}
+
+// 初始化
+initEvents();
+renderTasks();
+</script>
