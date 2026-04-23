@@ -1,9 +1,9 @@
 import { getCollection } from 'astro:content';
-import { sortPostsByCreateTime } from '../../lib/post-utils';
+import { sortPostsByDate } from '../../lib/post-utils';
 
 export async function GET() {
   const posts = await getCollection('posts', ({ data }) => !data.draft);
-  sortPostsByCreateTime(posts);
+  sortPostsByDate(posts);
 
   const index = posts.map((post) => ({
     title: post.data.title,

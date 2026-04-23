@@ -1,10 +1,10 @@
 // src/pages/rss.xml.ts
 import { getCollection } from 'astro:content';
-import { sortPostsByCreateTime } from '../lib/post-utils';
+import { sortPostsByDate } from '../lib/post-utils';
 
 export async function GET() {
   const posts = await getCollection('posts', ({ data }) => !data.draft);
-  sortPostsByCreateTime(posts);
+  sortPostsByDate(posts);
 
   const site = 'https://fblog.younote.top';
 

@@ -1,11 +1,11 @@
 ---
 // src/pages/archive.astro
 import { getCollection } from 'astro:content';
-import { sortPostsByCreateTime, groupPostsByYear } from '../lib/post-utils';
+import { sortPostsByDate, groupPostsByYear } from '../lib/post-utils';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const posts = await getCollection('posts', ({ data }) => !data.draft);
-sortPostsByCreateTime(posts);
+sortPostsByDate(posts);
 
 // 按年份分组
 const yearGroups = groupPostsByYear(posts);

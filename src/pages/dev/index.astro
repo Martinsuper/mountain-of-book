@@ -1,11 +1,11 @@
 ---
 // 开发预览入口页面 - 直接跳转到第一篇文章
 import { getCollection } from 'astro:content';
-import { sortPostsByCreateTime } from '../../lib/post-utils';
+import { sortPostsByDate } from '../../lib/post-utils';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const allPosts = await getCollection('posts');
-sortPostsByCreateTime(allPosts);
+sortPostsByDate(allPosts);
 
 const firstPost = allPosts[0];
 const firstPostSlug = firstPost?.id.replace('.md', '');
