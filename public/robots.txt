@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fblog.younote.top/sitemap.xml

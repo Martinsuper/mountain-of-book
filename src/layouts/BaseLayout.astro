@@ -11,9 +11,21 @@ import FloatingCompanion from '../components/FloatingCompanion.astro';
 interface Props {
   title?: string;
   description?: string;
+  keywords?: string;
+  image?: string;
+  type?: 'website' | 'article';
 }
 
-const { title = '书山有路', description = '书山有路勤为径，学海无涯苦作舟' } = Astro.props;
+const {
+  title = '书山有路',
+  description = '书山有路勤为径，学海无涯苦作舟',
+  keywords = '博客,技术,编程,学习',
+  image = '/og-image.png',
+  type = 'website'
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const fullTitle = title === '书山有路' ? title : `${title} | 书山有路`;
 const currentPath = Astro.url.pathname;
 ---
 
@@ -23,7 +35,29 @@ const currentPath = Astro.url.pathname;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <title>{title}</title>
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="书山有路" />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.site)} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:site_name" content="书山有路" />
+    <meta property="og:locale" content="zh_CN" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(image, Astro.site)} />
+
+    <!-- RSS -->
+    <link rel="alternate" type="application/rss+xml" title="书山有路 RSS" href="/rss.xml" />
+
+    <title>{fullTitle}</title>
     <script is:inline>
       const savedTheme = localStorage.getItem('theme');
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -35,8 +69,8 @@ const currentPath = Astro.url.pathname;
   <body class="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
       <nav class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/" class="text-lg font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 no-underline">
-          {title}
+        <a href="/" class="text-lg font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 no-underline whitespace-nowrap">
+          书山有路
         </a>
         <div class="flex items-center gap-3">
           <a
