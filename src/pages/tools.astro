@@ -135,6 +135,43 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       `
     };
 
+    // Toast通知函数
+    function showToast(message, type = 'success') {
+      const existingToast = document.querySelector('.toast');
+      if (existingToast) existingToast.remove();
+
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'error' ? '#ef4444' : '#1f2937'};
+        color: #fff;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        z-index: 1000;
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    }
+
+    // 复制到剪贴板
+    async function copyToClipboard(text) {
+      if (!text) {
+        showToast('无内容可复制', 'error');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('已复制到剪贴板');
+      } catch {
+        showToast('复制失败', 'error');
+      }
+    }
+
     // 当前选中的Tab
     let currentTab = 'json';
     let timestampUnit = 's';
@@ -231,10 +268,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         output.value = JSON.stringify(parsed, null, 2);
         status.textContent = '✓ 有效JSON';
         status.className = 'json-status valid';
+        showToast('格式化成功');
       } catch (e) {
         output.value = '错误: ' + e.message;
         status.textContent = '✗ 无效JSON';
         status.className = 'json-status invalid';
+        showToast('JSON格式错误', 'error');
       }
     }
 
@@ -248,16 +287,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         output.value = JSON.stringify(parsed);
         status.textContent = '✓ 有效JSON';
         status.className = 'json-status valid';
+        showToast('压缩成功');
       } catch (e) {
         output.value = '错误: ' + e.message;
         status.textContent = '✗ 无效JSON';
         status.className = 'json-status invalid';
+        showToast('JSON格式错误', 'error');
       }
     }
 
     function copyJson() {
       const output = document.getElementById('jsonOutput');
-      navigator.clipboard.writeText(output.value);
+      copyToClipboard(output.value);
     }
 
     function clearJson() {
@@ -355,7 +396,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function copyTimestamp() {
       const results = document.getElementById('timestampResults');
       const text = results.textContent;
-      navigator.clipboard.writeText(text);
+      copyToClipboard(text);
     }
 
     // Diff工具函数
@@ -403,6 +444,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       `;
 
       results.innerHTML = diffHtml || '无差异';
+      showToast('对比完成');
     }
 
     function escapeHtml(text) {
@@ -422,19 +464,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function encodeUrl() {
       const input = document.getElementById('urlInput').value;
       document.getElementById('urlOutput').value = encodeURIComponent(input);
+      showToast('编码成功');
     }
 
     function decodeUrl() {
       const input = document.getElementById('urlInput').value;
       try {
         document.getElementById('urlOutput').value = decodeURIComponent(input);
+        showToast('解码成功');
       } catch (e) {
         document.getElementById('urlOutput').value = '解码错误: ' + e.message;
+        showToast('解码失败', 'error');
       }
     }
 
     function copyUrl() {
-      navigator.clipboard.writeText(document.getElementById('urlOutput').value);
+      const output = document.getElementById('urlOutput');
+      copyToClipboard(output.value);
     }
 
     function clearUrl() {
@@ -444,6 +490,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     // Base64工具函数
     let selectedFile = null;
+
+    // Base64编码 (UTF-8 to Base64)
+    function encodeBase64Unicode(str) {
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(str);
+      return btoa(String.fromCharCode(...bytes));
+    }
+
+    // Base64解码 (Base64 to UTF-8)
+    function decodeBase64Unicode(base64) {
+      const binaryStr = atob(base64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const decoder = new TextDecoder();
+      return decoder.decode(bytes);
+    }
 
     function handleFileSelect(event) {
       const file = event.target.files[0];
@@ -472,25 +536,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById('base64Output').value = e.target.result;
+          showToast('文件编码成功');
         };
         reader.readAsDataURL(selectedFile);
       } else {
         const input = document.getElementById('base64Input').value;
-        document.getElementById('base64Output').value = btoa(unescape(encodeURIComponent(input)));
+        document.getElementById('base64Output').value = encodeBase64Unicode(input);
+        showToast('编码成功');
       }
     }
 
     function decodeBase64() {
       const input = document.getElementById('base64Input').value;
       try {
-        document.getElementById('base64Output').value = decodeURIComponent(escape(atob(input)));
+        document.getElementById('base64Output').value = decodeBase64Unicode(input);
+        showToast('解码成功');
       } catch (e) {
         document.getElementById('base64Output').value = '解码错误: ' + e.message;
+        showToast('解码失败', 'error');
       }
     }
 
     function copyBase64() {
-      navigator.clipboard.writeText(document.getElementById('base64Output').value);
+      const output = document.getElementById('base64Output');
+      copyToClipboard(output.value);
     }
 
     function clearBase64() {
@@ -1052,5 +1121,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   :global(.dark) .json-status.invalid {
     background: #7f1d1d;
     color: #fca5a5;
+  }
+
+  /* Toast样式 */
+  .toast {
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 </style>
