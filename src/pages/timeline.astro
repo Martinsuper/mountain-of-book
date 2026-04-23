@@ -1,10 +1,11 @@
 ---
 // src/pages/timeline.astro
 import { getCollection } from 'astro:content';
+import { sortPostsByCreateTime } from '../lib/post-utils';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const posts = await getCollection('posts', ({ data }) => !data.draft);
-posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+sortPostsByCreateTime(posts);
 
 // 格式化日期显示
 function formatDate(date: Date): string {
