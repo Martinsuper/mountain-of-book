@@ -35,10 +35,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <label class="tool-label">输入 JSON</label>
             <textarea class="tool-input" id="jsonInput" placeholder='{"name": "example", "value": 123}'></textarea>
             <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" onclick="formatJson()">格式化</button>
-              <button class="tool-btn tool-btn-success" onclick="minifyJson()">压缩</button>
-              <button class="tool-btn tool-btn-secondary" onclick="copyJson()">复制</button>
-              <button class="tool-btn tool-btn-danger" onclick="clearJson()">清空</button>
+              <button class="tool-btn tool-btn-primary" data-action="formatJson">格式化</button>
+              <button class="tool-btn tool-btn-success" data-action="minifyJson">压缩</button>
+              <button class="tool-btn tool-btn-secondary" data-action="copyJson">复制</button>
+              <button class="tool-btn tool-btn-danger" data-action="clearJson">清空</button>
               <span class="json-status" id="jsonStatus"></span>
             </div>
           </div>
@@ -55,14 +55,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="timestamp-input-row">
               <input type="text" id="timestampInput" placeholder="输入时间戳或日期">
               <div class="unit-toggle">
-                <button class="active" data-unit="s" onclick="setTimestampUnit('s')">秒</button>
-                <button data-unit="ms" onclick="setTimestampUnit('ms')">毫秒</button>
+                <button class="active" data-unit="s" data-action="setTimestampUnitS">秒</button>
+                <button data-unit="ms" data-action="setTimestampUnitMs">毫秒</button>
               </div>
             </div>
             <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" onclick="convertTimestamp()">转换</button>
-              <button class="tool-btn tool-btn-secondary" onclick="getCurrentTimestamp()">当前时间</button>
-              <button class="tool-btn tool-btn-secondary" onclick="copyTimestamp()">复制结果</button>
+              <button class="tool-btn tool-btn-primary" data-action="convertTimestamp">转换</button>
+              <button class="tool-btn tool-btn-secondary" data-action="getCurrentTimestamp">当前时间</button>
+              <button class="tool-btn tool-btn-secondary" data-action="copyTimestamp">复制结果</button>
             </div>
             <div class="timestamp-results" id="timestampResults"></div>
           </div>
@@ -75,19 +75,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="diff-inputs">
               <div class="input-group">
                 <label class="tool-label">原始文本</label>
-                <textarea class="tool-input" id="diffInput1" placeholder="输入原始文本"></textarea>
+                <div class="diff-editor-container">
+                  <div class="diff-overlay" id="diffOverlayLeft"></div>
+                  <textarea class="tool-input diff-editor" id="diffInput1" placeholder="输入原始文本"></textarea>
+                </div>
               </div>
               <div class="input-group">
                 <label class="tool-label">新文本</label>
-                <textarea class="tool-input" id="diffInput2" placeholder="输入新文本"></textarea>
+                <div class="diff-editor-container">
+                  <div class="diff-overlay" id="diffOverlayRight"></div>
+                  <textarea class="tool-input diff-editor" id="diffInput2" placeholder="输入新文本"></textarea>
+                </div>
               </div>
             </div>
             <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" onclick="compareDiff()">对比</button>
-              <button class="tool-btn tool-btn-secondary" onclick="clearDiff()">清空</button>
+              <button class="tool-btn tool-btn-primary" data-action="compareDiff">对比</button>
+              <button class="tool-btn tool-btn-secondary" data-action="clearDiff">清空</button>
             </div>
             <div class="diff-stats" id="diffStats"></div>
-            <div class="diff-results" id="diffResults"></div>
           </div>
         </div>
       `,
@@ -97,10 +102,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <label class="tool-label">URL 编码/解码</label>
             <textarea class="tool-input" id="urlInput" placeholder="输入需要编码或解码的URL"></textarea>
             <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" onclick="encodeUrl()">URL编码</button>
-              <button class="tool-btn tool-btn-success" onclick="decodeUrl()">URL解码</button>
-              <button class="tool-btn tool-btn-secondary" onclick="copyUrl()">复制结果</button>
-              <button class="tool-btn tool-btn-danger" onclick="clearUrl()">清空</button>
+              <button class="tool-btn tool-btn-primary" data-action="encodeUrl">URL编码</button>
+              <button class="tool-btn tool-btn-success" data-action="decodeUrl">URL解码</button>
+              <button class="tool-btn tool-btn-secondary" data-action="copyUrl">复制结果</button>
+              <button class="tool-btn tool-btn-danger" data-action="clearUrl">清空</button>
             </div>
             <label class="tool-label">输出结果</label>
             <textarea class="tool-output" id="urlOutput" readonly></textarea>
@@ -111,22 +116,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="tool-panel" id="panel-base64">
           <div class="tool-section">
             <label class="tool-label">Base64 编码/解码</label>
-            <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('fileInput').click()">
+            <div class="file-upload-area" id="fileUploadArea">
               <div class="file-upload-icon">📁</div>
               <div class="file-upload-text">点击选择文件或拖拽文件到此处</div>
-              <input type="file" id="fileInput" style="display: none" onchange="handleFileSelect(event)">
+              <input type="file" id="fileInput" style="display: none">
             </div>
             <div class="file-info" id="fileInfo" style="display: none;">
               <span class="file-name" id="fileName"></span>
               <span class="file-size" id="fileSize"></span>
-              <button class="file-remove" onclick="removeFile()">×</button>
+              <button class="file-remove" data-action="removeFile">×</button>
             </div>
             <textarea class="tool-input" id="base64Input" placeholder="输入文本或Base64字符串"></textarea>
             <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" onclick="encodeBase64()">编码</button>
-              <button class="tool-btn tool-btn-success" onclick="decodeBase64()">解码</button>
-              <button class="tool-btn tool-btn-secondary" onclick="copyBase64()">复制结果</button>
-              <button class="tool-btn tool-btn-danger" onclick="clearBase64()">清空</button>
+              <button class="tool-btn tool-btn-primary" data-action="encodeBase64">编码</button>
+              <button class="tool-btn tool-btn-success" data-action="decodeBase64">解码</button>
+              <button class="tool-btn tool-btn-secondary" data-action="copyBase64">复制结果</button>
+              <button class="tool-btn tool-btn-danger" data-action="clearBase64">清空</button>
             </div>
             <label class="tool-label">输出结果</label>
             <textarea class="tool-output" id="base64Output" readonly></textarea>
@@ -184,6 +189,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       // 渲染所有面板
       contentContainer.innerHTML = Object.values(toolPanels).join('');
 
+      // 绑定工具按钮事件
+      bindToolActions();
+
       // 从URL hash获取初始Tab
       const hash = window.location.hash.slice(1);
       if (hash && toolPanels[hash]) {
@@ -232,6 +240,55 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
       });
     }
+
+    // 绑定所有工具按钮的事件处理器
+    function bindToolActions() {
+      // 查找所有带有 data-action 属性的按钮
+      document.querySelectorAll('[data-action]').forEach(el => {
+        const action = el.dataset.action;
+        if (actionHandlers[action]) {
+          el.addEventListener('click', actionHandlers[action]);
+        }
+      });
+
+      // 文件上传区域点击
+      const fileUploadArea = document.getElementById('fileUploadArea');
+      if (fileUploadArea) {
+        fileUploadArea.addEventListener('click', () => {
+          document.getElementById('fileInput').click();
+        });
+      }
+
+      // 文件选择
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+      }
+    }
+
+    // 事件处理器映射
+    const actionHandlers = {
+      formatJson: formatJson,
+      minifyJson: minifyJson,
+      copyJson: copyJson,
+      clearJson: clearJson,
+      setTimestampUnitS: () => setTimestampUnit('s'),
+      setTimestampUnitMs: () => setTimestampUnit('ms'),
+      convertTimestamp: convertTimestamp,
+      getCurrentTimestamp: getCurrentTimestamp,
+      copyTimestamp: copyTimestamp,
+      compareDiff: compareDiff,
+      clearDiff: clearDiff,
+      encodeUrl: encodeUrl,
+      decodeUrl: decodeUrl,
+      copyUrl: copyUrl,
+      clearUrl: clearUrl,
+      removeFile: removeFile,
+      encodeBase64: encodeBase64,
+      decodeBase64: decodeBase64,
+      copyBase64: copyBase64,
+      clearBase64: clearBase64,
+    };
 
     // 更新Tab状态
     function updateTabState() {
@@ -401,50 +458,153 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     // Diff工具函数
     function compareDiff() {
-      const input1 = document.getElementById('diffInput1').value;
-      const input2 = document.getElementById('diffInput2').value;
+      const input1 = document.getElementById('diffInput1');
+      const input2 = document.getElementById('diffInput2');
+      const overlayLeft = document.getElementById('diffOverlayLeft');
+      const overlayRight = document.getElementById('diffOverlayRight');
       const stats = document.getElementById('diffStats');
-      const results = document.getElementById('diffResults');
 
-      const lines1 = input1.split('\n');
-      const lines2 = input2.split('\n');
+      const text1 = input1.value;
+      const text2 = input2.value;
+
+      if (!text1 && !text2) {
+        showToast('请输入文本内容', 'error');
+        return;
+      }
+
+      const lines1 = text1.split('\n');
+      const lines2 = text2.split('\n');
 
       let added = 0;
       let removed = 0;
       let changed = 0;
 
       const maxLen = Math.max(lines1.length, lines2.length);
-      let diffHtml = '';
+      let leftHtml = '';
+      let rightHtml = '';
 
       for (let i = 0; i < maxLen; i++) {
-        const line1 = lines1[i] || '';
-        const line2 = lines2[i] || '';
+        const line1 = lines1[i] !== undefined ? lines1[i] : '';
+        const line2 = lines2[i] !== undefined ? lines2[i] : '';
 
-        if (line1 !== line2) {
-          if (line1 && !line2) {
-            diffHtml += `<span class="diff-line-removed">- ${escapeHtml(line1)}</span>\n`;
-            removed++;
-          } else if (!line1 && line2) {
-            diffHtml += `<span class="diff-line-added">+ ${escapeHtml(line2)}</span>\n`;
-            added++;
-          } else {
-            diffHtml += `<span class="diff-line-removed">- ${escapeHtml(line1)}</span>\n`;
-            diffHtml += `<span class="diff-line-added">+ ${escapeHtml(line2)}</span>\n`;
-            changed++;
-          }
-        } else if (line1) {
-          diffHtml += `  ${escapeHtml(line1)}\n`;
+        if (line1 === line2) {
+          // 完全相同的行
+          leftHtml += `<div class="diff-line-overlay same">${escapeHtml(line1) || '&nbsp;'}</div>`;
+          rightHtml += `<div class="diff-line-overlay same">${escapeHtml(line2) || '&nbsp;'}</div>`;
+        } else if (line1 && !line2) {
+          // 删除行：左边有，右边没有
+          leftHtml += `<div class="diff-line-overlay removed"><span class="char-diff removed">${escapeHtml(line1)}</span></div>`;
+          rightHtml += `<div class="diff-line-overlay empty">&nbsp;</div>`;
+          removed++;
+        } else if (!line1 && line2) {
+          // 新增行：左边没有，右边有
+          leftHtml += `<div class="diff-line-overlay empty">&nbsp;</div>`;
+          rightHtml += `<div class="diff-line-overlay added"><span class="char-diff added">${escapeHtml(line2)}</span></div>`;
+          added++;
+        } else {
+          // 修改行：字符级别对比
+          const charDiff = computeCharDiff(line1, line2);
+          leftHtml += `<div class="diff-line-overlay modified">${charDiff.left || '&nbsp;'}</div>`;
+          rightHtml += `<div class="diff-line-overlay modified">${charDiff.right || '&nbsp;'}</div>`;
+          changed++;
         }
       }
 
       stats.innerHTML = `
-        <span class="diff-stat added">+${added} 行</span>
-        <span class="diff-stat removed">-${removed} 行</span>
-        <span class="diff-stat changed">~${changed} 行</span>
+        <span class="diff-stat added">+${added} 新增</span>
+        <span class="diff-stat removed">-${removed} 删除</span>
+        <span class="diff-stat changed">~${changed} 修改</span>
       `;
 
-      results.innerHTML = diffHtml || '无差异';
+      // 显示 overlay 高亮层
+      overlayLeft.innerHTML = leftHtml;
+      overlayRight.innerHTML = rightHtml;
+      overlayLeft.classList.add('active');
+      overlayRight.classList.add('active');
+
+      // 让 textarea 透明，显示 overlay
+      input1.classList.add('diff-mode');
+      input2.classList.add('diff-mode');
+
       showToast('对比完成');
+    }
+
+    // 字符级别差异计算（使用 LCS 算法）
+    function computeCharDiff(str1, str2) {
+      const chars1 = [...str1];
+      const chars2 = [...str2];
+
+      // 计算 LCS
+      const lcs = computeLCS(chars1, chars2);
+
+      // 标记差异
+      let leftResult = '';
+      let rightResult = '';
+
+      let i1 = 0, i2 = 0, lcsIdx = 0;
+
+      // 处理左边字符串
+      while (i1 < chars1.length || lcsIdx < lcs.length) {
+        if (lcsIdx < lcs.length && i1 < chars1.length && chars1[i1] === lcs[lcsIdx]) {
+          leftResult += escapeHtml(chars1[i1]);
+          i1++;
+          lcsIdx++;
+        } else if (i1 < chars1.length) {
+          leftResult += `<span class="char-diff removed">${escapeHtml(chars1[i1])}</span>`;
+          i1++;
+        }
+      }
+
+      // 重置 LCS 索引，处理右边字符串
+      lcsIdx = 0;
+      while (i2 < chars2.length || lcsIdx < lcs.length) {
+        if (lcsIdx < lcs.length && i2 < chars2.length && chars2[i2] === lcs[lcsIdx]) {
+          rightResult += escapeHtml(chars2[i2]);
+          i2++;
+          lcsIdx++;
+        } else if (i2 < chars2.length) {
+          rightResult += `<span class="char-diff added">${escapeHtml(chars2[i2])}</span>`;
+          i2++;
+        }
+      }
+
+      return { left: leftResult, right: rightResult };
+    }
+
+    // LCS（最长公共子序列）算法
+    function computeLCS(arr1, arr2) {
+      const m = arr1.length;
+      const n = arr2.length;
+
+      // 构建 DP 表
+      const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          if (arr1[i - 1] === arr2[j - 1]) {
+            dp[i][j] = dp[i - 1][j - 1] + 1;
+          } else {
+            dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+          }
+        }
+      }
+
+      // 回溯提取 LCS
+      const lcs = [];
+      let i = m, j = n;
+      while (i > 0 && j > 0) {
+        if (arr1[i - 1] === arr2[j - 1]) {
+          lcs.unshift(arr1[i - 1]);
+          i--;
+          j--;
+        } else if (dp[i - 1][j] > dp[i][j - 1]) {
+          i--;
+        } else {
+          j--;
+        }
+      }
+
+      return lcs;
     }
 
     function escapeHtml(text) {
@@ -454,10 +614,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function clearDiff() {
-      document.getElementById('diffInput1').value = '';
-      document.getElementById('diffInput2').value = '';
+      const input1 = document.getElementById('diffInput1');
+      const input2 = document.getElementById('diffInput2');
+      const overlayLeft = document.getElementById('diffOverlayLeft');
+      const overlayRight = document.getElementById('diffOverlayRight');
+
+      input1.value = '';
+      input2.value = '';
+      input1.classList.remove('diff-mode');
+      input2.classList.remove('diff-mode');
+      overlayLeft.innerHTML = '';
+      overlayRight.innerHTML = '';
+      overlayLeft.classList.remove('active');
+      overlayRight.classList.remove('active');
       document.getElementById('diffStats').innerHTML = '';
-      document.getElementById('diffResults').innerHTML = '';
     }
 
     // URL工具函数
@@ -934,44 +1104,136 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #fcd34d;
   }
 
-  .diff-results {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-family: monospace;
-    font-size: 0.85rem;
-    white-space: pre-wrap;
-    padding: 1rem;
-    background: #f9fafb;
+  /* Diff输入框内高亮样式 */
+  .diff-editor-container {
+    position: relative;
+    width: 100%;
   }
 
-  :global(.dark) .diff-results {
-    background: #111827;
-    border-color: #4b5563;
+  .diff-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: auto;
+    pointer-events: none;
+    z-index: 1;
+    background: transparent;
+    border-radius: 8px;
+    display: none;
+  }
+
+  .diff-overlay.active {
+    display: block;
+  }
+
+  :global(.dark) .diff-overlay {
     color: #f3f4f6;
   }
 
-  .diff-line-added {
-    background: #d1fae5;
-    display: block;
-    margin: 0 -1rem;
-    padding: 0 1rem;
+  .diff-editor {
+    position: relative;
+    z-index: 2;
+    caret-color: #374151;
   }
 
-  :global(.dark) .diff-line-added {
-    background: #064e3b;
+  .diff-editor.diff-mode {
+    color: transparent;
+    background: transparent;
   }
 
-  .diff-line-removed {
-    background: #fee2e2;
-    display: block;
-    margin: 0 -1rem;
-    padding: 0 1rem;
+  :global(.dark) .diff-editor.diff-mode {
+    caret-color: #f3f4f6;
   }
 
-  :global(.dark) .diff-line-removed {
-    background: #7f1d1d;
+  .diff-line-overlay {
+    min-height: 1.6em;
+    padding: 0;
+    white-space: pre;
+  }
+
+  .diff-line-overlay.same {
+    color: #374151;
+  }
+
+  :global(.dark) .diff-line-overlay.same {
+    color: #f3f4f6;
+  }
+
+  .diff-line-overlay.removed {
+    background: rgba(254, 202, 202, 0.6);
+    border-radius: 2px;
+  }
+
+  :global(.dark) .diff-line-overlay.removed {
+    background: rgba(136, 19, 55, 0.6);
+  }
+
+  .diff-line-overlay.added {
+    background: rgba(187, 247, 208, 0.6);
+    border-radius: 2px;
+  }
+
+  :global(.dark) .diff-line-overlay.added {
+    background: rgba(22, 101, 52, 0.6);
+  }
+
+  .diff-line-overlay.modified {
+    background: rgba(254, 243, 199, 0.4);
+    border-radius: 2px;
+  }
+
+  :global(.dark) .diff-line-overlay.modified {
+    background: rgba(120, 53, 15, 0.4);
+  }
+
+  .diff-line-overlay.empty {
+    background: rgba(229, 231, 235, 0.3);
+  }
+
+  :global(.dark) .diff-line-overlay.empty {
+    background: rgba(55, 65, 81, 0.3);
+  }
+
+  /* 字符级别差异高亮 */
+  .char-diff {
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  .char-diff.removed {
+    background: #fecaca;
+    color: #be123c;
+    font-weight: 600;
+  }
+
+  :global(.dark) .char-diff.removed {
+    background: #881337;
+    color: #fda4af;
+  }
+
+  .char-diff.added {
+    background: #bbf7d0;
+    color: #15803d;
+    font-weight: 600;
+  }
+
+  :global(.dark) .char-diff.added {
+    background: #166534;
+    color: #a7f3d0;
+  }
+
+  @media (max-width: 768px) {
+    .diff-inputs {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Base64文件上传样式 */
