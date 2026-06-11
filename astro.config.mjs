@@ -136,6 +136,7 @@ draft: true
 
 export default defineConfig({
   site: 'https://fblog.younote.top',
+  server: { host: true },
   integrations: [tailwind()],
   output: 'static',
   build: {
