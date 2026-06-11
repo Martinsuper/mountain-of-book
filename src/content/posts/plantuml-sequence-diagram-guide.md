@@ -937,7 +937,8 @@ Alice -> Bob: 登录请求
 
 note left of Alice: Alice 是客户端
 note right of Bob: Bob 是服务端
-note over Alice, Bob: 这是双方之间的交互
+note over Alice, Bob
+  这是双方之间的交互
 end note
 
 note left: 这是一条独立注释
@@ -957,7 +958,8 @@ Alice -> Bob: 登录请求
 
 note left of Alice: Alice 是客户端
 note right of Bob: Bob 是服务端
-note over Alice, Bob: 这是双方之间的交互
+note over Alice, Bob
+  这是双方之间的交互
 end note
 
 note left: 这是一条独立注释
@@ -1226,14 +1228,13 @@ autonumber
 
 actor User as U
 boundary Gateway
-participant "Auth Service" as Auth
-participant "User Service" as UserService
-database "User DB" as DB
 
 box "认证模块" #LightBlue
-Auth
-DB
+  participant "Auth Service" as Auth
+  database "User DB" as DB
 end box
+
+participant "User Service" as UserService
 
 U -> Gateway ++ : 输入账号密码
 Gateway -> Auth ++ : 转发登录请求
@@ -1244,12 +1245,12 @@ DB --> UserService -- : 返回用户数据
 UserService --> Auth -- : 验证结果
 
 alt 登录成功
-Auth -> Auth : 生成 JWT Token
-Auth --> Gateway -- : 返回 Token
-Gateway --> U -- : 登录成功，跳转首页
+  Auth -> Auth : 生成 JWT Token
+  Auth --> Gateway -- : 返回 Token
+  Gateway --> U -- : 登录成功，跳转首页
 else 登录失败
-Auth --> Gateway -- : 返回失败原因
-Gateway --> U -- : 显示错误信息
+  Auth --> Gateway -- : 返回失败原因
+  Gateway --> U -- : 显示错误信息
 end
 
 @enduml
@@ -1265,14 +1266,13 @@ autonumber
 
 actor User as U
 boundary Gateway
-participant "Auth Service" as Auth
-participant "User Service" as UserService
-database "User DB" as DB
 
 box "认证模块" #LightBlue
-Auth
-DB
+  participant "Auth Service" as Auth
+  database "User DB" as DB
 end box
+
+participant "User Service" as UserService
 
 U -> Gateway ++ : 输入账号密码
 Gateway -> Auth ++ : 转发登录请求
@@ -1283,12 +1283,12 @@ DB --> UserService -- : 返回用户数据
 UserService --> Auth -- : 验证结果
 
 alt 登录成功
-Auth -> Auth : 生成 JWT Token
-Auth --> Gateway -- : 返回 Token
-Gateway --> U -- : 登录成功，跳转首页
+  Auth -> Auth : 生成 JWT Token
+  Auth --> Gateway -- : 返回 Token
+  Gateway --> U -- : 登录成功，跳转首页
 else 登录失败
-Auth --> Gateway -- : 返回失败原因
-Gateway --> U -- : 显示错误信息
+  Auth --> Gateway -- : 返回失败原因
+  Gateway --> U -- : 显示错误信息
 end
 
 @enduml
