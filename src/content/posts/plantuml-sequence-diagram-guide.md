@@ -1036,10 +1036,9 @@ Alice -> Bob: 自定义编号格式
 Alice -> Bob: 第一阶段
 == 阶段完成 ==
 Bob -> Charlie: 第二阶段
-...                 ' 延迟/时间流逝
+...
 Charlie --> Bob: 响应
-|||                 ' 空白间距
-||50||              ' 50 像素间距
+|||
 Bob --> Alice: 最终响应
 @enduml
 ```
@@ -1051,10 +1050,9 @@ Bob --> Alice: 最终响应
 Alice -> Bob: 第一阶段
 == 阶段完成 ==
 Bob -> Charlie: 第二阶段
-...                 ' 延迟/时间流逝
+...
 Charlie --> Bob: 响应
-|||                 ' 空白间距
-||50||              ' 50 像素间距
+|||
 Bob --> Alice: 最终响应
 @enduml
 ```
@@ -1064,7 +1062,6 @@ Bob --> Alice: 最终响应
 | `== 文字 ==` | 分割线 |
 | `...` | 延迟 |
 | `|||` | 间距 |
-| `||N||` | N 像素间距 |
 
 ---
 
@@ -1160,12 +1157,14 @@ PlantUML 提供了丰富的 `skinparam` 配置：
 
 ```text
 @startuml
-skinparam sequenceMessageAlign right        ' 消息文本右对齐
-skinparam responseMessageBelowArrow true     ' 响应消息显示在箭头下方
-skinparam actorStyle awesome                 ' 火柴人风格（或 hollow）
-skinparam lifelineStrategy solid             ' 生命线使用实线
-hide footbox                                 ' 隐藏底部参与者框
-hide unlinked                                ' 隐藏未连接的参与者
+skinparam sequenceMessageAlign right
+skinparam responseMessageBelowArrow true
+skinparam actorStyle awesome
+skinparam lifelineStrategy solid
+hide footbox
+
+Alice -> Bob: 消息文本右对齐
+Bob --> Alice: 响应在箭头下方
 @enduml
 ```
 
@@ -1173,12 +1172,14 @@ hide unlinked                                ' 隐藏未连接的参与者
 
 ```plantuml
 @startuml
-skinparam sequenceMessageAlign right        ' 消息文本右对齐
-skinparam responseMessageBelowArrow true     ' 响应消息显示在箭头下方
-skinparam actorStyle awesome                 ' 火柴人风格（或 hollow）
-skinparam lifelineStrategy solid             ' 生命线使用实线
-hide footbox                                 ' 隐藏底部参与者框
-hide unlinked                                ' 隐藏未连接的参与者
+skinparam sequenceMessageAlign right
+skinparam responseMessageBelowArrow true
+skinparam actorStyle awesome
+skinparam lifelineStrategy solid
+hide footbox
+
+Alice -> Bob: 消息文本右对齐
+Bob --> Alice: 响应在箭头下方
 @enduml
 ```
 
