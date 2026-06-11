@@ -151,7 +151,7 @@ boundary "API Gateway" as Gateway
 participant Service
 
 User -> Gateway : HTTP Request
-Gateway -> Service : 路转发
+Gateway -> Service : 转发请求
 @enduml
 ```
 
@@ -630,6 +630,9 @@ Alice -[#blue]> Bob : 调试信息
 
 ```text
 @startuml
+participant System
+participant Service
+
 [-> System : 外部请求
 System -> Service : 处理请求
 Service ->] : 输出到外部
@@ -640,6 +643,9 @@ Service ->] : 输出到外部
 
 ```plantuml
 @startuml
+participant System
+participant Service
+
 [-> System : 外部请求
 System -> Service : 处理请求
 Service ->] : 输出到外部
@@ -751,9 +757,12 @@ Alice -> Bob !!: 销毁实例
 
 ```text
 @startuml
+participant A
+participant B
+
 [-> A: 外部输入
 A -> B: 内部处理
-B ->]: 输出到外部
+B ->] : 输出到外部
 @enduml
 ```
 
@@ -761,9 +770,12 @@ B ->]: 输出到外部
 
 ```plantuml
 @startuml
+participant A
+participant B
+
 [-> A: 外部输入
 A -> B: 内部处理
-B ->]: 输出到外部
+B ->] : 输出到外部
 @enduml
 ```
 
@@ -1150,7 +1162,6 @@ skinparam sequenceMessageAlign right        ' 消息文本右对齐
 skinparam responseMessageBelowArrow true     ' 响应消息显示在箭头下方
 skinparam actorStyle awesome                 ' 火柴人风格（或 hollow）
 skinparam lifelineStrategy solid             ' 生命线使用实线
-skinparam style strictuml                    ' 严格 UML 风格
 hide footbox                                 ' 隐藏底部参与者框
 hide unlinked                                ' 隐藏未连接的参与者
 @enduml
@@ -1164,7 +1175,6 @@ skinparam sequenceMessageAlign right        ' 消息文本右对齐
 skinparam responseMessageBelowArrow true     ' 响应消息显示在箭头下方
 skinparam actorStyle awesome                 ' 火柴人风格（或 hollow）
 skinparam lifelineStrategy solid             ' 生命线使用实线
-skinparam style strictuml                    ' 严格 UML 风格
 hide footbox                                 ' 隐藏底部参与者框
 hide unlinked                                ' 隐藏未连接的参与者
 @enduml
