@@ -33,3 +33,18 @@ a {
   max-width: 720px;
   margin: 0 auto;
 }
+
+/* 表格超长内容横向滚动 */
+.prose table {
+  display: block !important;
+  overflow-x: auto !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+/* 单元格内代码自动换行（不在单词中间断行） */
+.prose td code {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}

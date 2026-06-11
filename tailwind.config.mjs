@@ -8,6 +8,15 @@ export default {
         DEFAULT: {
           css: {
             maxWidth: '720px',
+            table: {
+              display: 'block',
+              overflowX: 'auto',
+              maxWidth: '100%',
+            },
+            'td code': {
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+            },
             prose: {
               fontSize: '16px',
               lineHeight: '1.6'
