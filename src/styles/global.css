@@ -17,11 +17,16 @@
   }
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 a {
@@ -32,6 +37,15 @@ a {
 .prose {
   max-width: 720px;
   margin: 0 auto;
+}
+
+/* 确保 prose 内块级元素不撑破容器 */
+.prose pre,
+.prose table,
+.prose img,
+.prose video,
+.prose iframe {
+  max-width: 100%;
 }
 
 /* 表格超长内容横向滚动 */
