@@ -18,7 +18,7 @@ const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
 ---
 
 <BaseLayout title="标签列表">
-  <h1 class="text-3xl font-bold mb-8">标签</h1>
+  <h1 class="text-2xl lg:text-3xl font-bold mb-8">标签</h1>
 
   {tags.length === 0 ? (
     <p class="text-gray-500">暂无标签</p>

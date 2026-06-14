@@ -68,11 +68,27 @@ const currentPath = Astro.url.pathname;
   </head>
   <body class="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-      <nav class="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4 min-w-0">
-          <a href="/" class="text-lg font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 no-underline truncate shrink-0 max-w-[50%]">
+      <nav class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3 min-w-0">
+          <a href="/" class="text-lg font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 no-underline truncate shrink-0">
             书山有路
           </a>
-          <div class="flex items-center gap-3 shrink-0 ml-auto">
+          <!-- 移动端：汉堡菜单按钮 -->
+          <button id="mobile-menu-btn" class="lg:hidden ml-auto p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="菜单">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <!-- 右侧工具按钮（始终可见） -->
+          <div class="flex items-center gap-2 shrink-0 ml-auto lg:ml-0 lg:gap-3">
+            <Search />
+            <ThemeToggle />
+            <button id="navCompanion" class="nav-companion-btn" title="我的伙伴">
+              <img id="navCompanionSprite" src="" alt="伙伴" class="nav-sprite" />
+              <span id="navCompanionLevel" class="nav-level"></span>
+            </button>
+          </div>
+          <!-- 桌面端：导航链接 -->
+          <div class="hidden lg:flex items-center gap-3 shrink-0 ml-auto">
           <a
             href="/"
             class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
@@ -115,14 +131,18 @@ const currentPath = Astro.url.pathname;
           >
             标签
           </a>
-          <Search />
-          <ThemeToggle />
-          <button id="navCompanion" class="nav-companion-btn" title="我的伙伴">
-            <img id="navCompanionSprite" src="" alt="伙伴" class="nav-sprite" />
-            <span id="navCompanionLevel" class="nav-level"></span>
-          </button>
         </div>
       </nav>
+      <!-- 移动端：下拉导航菜单 -->
+      <div id="mobile-menu" class="mobile-menu lg:hidden">
+        <a href="/" class={`mobile-nav-link ${currentPath === '/' ? 'active' : ''}`}>首页</a>
+        <a href="/archive/" class={`mobile-nav-link ${currentPath === '/archive/' ? 'active' : ''}`}>归档</a>
+        <a href="/timeline/" class={`mobile-nav-link ${currentPath === '/timeline/' ? 'active' : ''}`}>时间轴</a>
+        <a href="/collection/" class={`mobile-nav-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
+        <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
+        <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
+        <a href="/tags/" class={`mobile-nav-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
+      </div>
     </header>
     <main class="max-w-4xl mx-auto px-4 py-8">
       <slot />
@@ -220,6 +240,57 @@ const currentPath = Astro.url.pathname;
     text-align: center;
   }
 
+  /* Mobile menu */
+  .mobile-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    border-top: 1px solid transparent;
+  }
+
+  .mobile-menu.open {
+    max-height: 500px;
+    border-top-color: #e5e7eb;
+  }
+
+  :global(.dark) .mobile-menu.open {
+    border-top-color: #374151;
+  }
+
+  .mobile-nav-link {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s;
+  }
+
+  :global(.dark) .mobile-nav-link {
+    color: #d1d5db;
+    border-bottom-color: #1f2937;
+  }
+
+  .mobile-nav-link:hover {
+    background: #f9fafb;
+  }
+
+  :global(.dark) .mobile-nav-link:hover {
+    background: #1f2937;
+  }
+
+  .mobile-nav-link.active {
+    color: #3b82f6;
+    font-weight: 600;
+    background: #eff6ff;
+  }
+
+  :global(.dark) .mobile-nav-link.active {
+    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.1);
+  }
+
   /* Companion panel */
   .companion-panel {
     position: fixed;
@@ -245,6 +316,23 @@ const currentPath = Astro.url.pathname;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     transform: translateY(10px) scale(0.95);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @media (max-width: 768px) {
+    .companion-panel {
+      bottom: 12px;
+      right: 12px;
+      left: 12px;
+    }
+    .companion-panel-inner {
+      width: auto;
+      padding: 1rem;
+      border-radius: 12px;
+    }
+    .panel-sprite {
+      width: 72px;
+      height: 72px;
+    }
   }
 
   .companion-panel.show .companion-panel-inner {
@@ -558,5 +646,18 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 ensureCompanion();
+
+// Mobile menu toggle
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+mobileMenuBtn?.addEventListener('click', () => {
+  mobileMenu?.classList.toggle('open');
+});
+// Close mobile menu when clicking a link
+mobileMenu?.querySelectorAll('.mobile-nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    mobileMenu.classList.remove('open');
+  });
+});
 updateNavSprite();
 </script>

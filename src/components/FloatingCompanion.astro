@@ -26,6 +26,15 @@
     user-select: none;
   }
 
+  @media (max-width: 768px) {
+    .floating-companion {
+      bottom: 12px;
+      left: 12px;
+      transform: scale(0.6);
+      transform-origin: bottom left;
+    }
+  }
+
   .floating-companion.show {
     display: block;
   }
@@ -107,6 +116,13 @@
     transform: translateY(5px);
     transition: all 0.3s ease;
     pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .floating-speech {
+      max-width: 150px;
+      font-size: 0.75rem;
+    }
   }
 
   :global(.dark) .floating-speech {

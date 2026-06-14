@@ -9,9 +9,10 @@ const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
 
 {toc.length > 0 && (
   <nav class="toc">
-    <h2 class="text-sm font-bold uppercase tracking-wide mb-4 text-gray-700 dark:text-gray-300">
-      目录
-    </h2>
+    <button class="toc-toggle" aria-label="展开/收起目录">
+      <span class="toc-toggle-title">目录</span>
+      <span class="toc-toggle-icon">▾</span>
+    </button>
     <ul class="space-y-2 toc-list">
       {toc.map((heading) => (
         <li class={`toc-item toc-depth-${heading.depth}`}>
@@ -28,6 +29,72 @@ const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
 )}
 
 <style>
+  .toc {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  :global(.dark) .toc {
+    background: #1f2937;
+  }
+
+  .toc-toggle {
+    display: none;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .toc-toggle-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #374151;
+  }
+
+  :global(.dark) .toc-toggle-title {
+    color: #d1d5db;
+  }
+
+  .toc-toggle-icon {
+    font-size: 0.875rem;
+    color: #6b7280;
+    transition: transform 0.2s ease;
+  }
+
+  .toc.collapsed .toc-toggle-icon {
+    transform: rotate(-90deg);
+  }
+
+  .toc.collapsed .toc-list {
+    display: none;
+  }
+
+  :global(.lg) .toc.collapsed .toc-list {
+    display: block;
+  }
+
+  @media (max-width: 1024px) {
+    .toc-toggle {
+      display: flex;
+    }
+
+    .toc {
+      padding: 0.75rem;
+    }
+
+    .toc-list {
+      max-height: none !important;
+    }
+  }
+
   .toc-depth-2 {
     padding-left: 0;
   }
@@ -47,3 +114,19 @@ const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
     display: none;
   }
 </style>
+
+<script>
+  document.querySelectorAll('.toc').forEach(toc => {
+    const toggle = toc.querySelector('.toc-toggle');
+    if (!toggle) return;
+
+    // 移动端默认收起
+    if (window.innerWidth < 1024) {
+      toc.classList.add('collapsed');
+    }
+
+    toggle.addEventListener('click', () => {
+      toc.classList.toggle('collapsed');
+    });
+  });
+</script>
