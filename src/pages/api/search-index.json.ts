@@ -2,20 +2,28 @@ import { getCollection } from 'astro:content';
 import { sortPostsByDate } from '../../lib/post-utils';
 
 export async function GET() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft);
-  sortPostsByDate(posts);
+  try {
+    const posts = await getCollection('posts', ({ data }) => !data.draft);
+    sortPostsByDate(posts);
 
-  const index = posts.map((post) => ({
-    title: post.data.title,
-    description: post.data.description || '',
-    slug: post.id,
-    tags: post.data.tags || [],
-    date: post.data.date.toISOString()
-  }));
+    const index = posts.map((post) => ({
+      title: post.data.title,
+      description: post.data.description || '',
+      slug: post.id,
+      tags: post.data.tags || [],
+      date: post.data.date.toISOString()
+    }));
 
-  return new Response(JSON.stringify(index), {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
+    return new Response(JSON.stringify(index), {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Failed to generate search index:', error);
+    return new Response(JSON.stringify({ error: 'Failed to generate search index' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }

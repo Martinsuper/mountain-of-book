@@ -57,6 +57,34 @@ const currentPath = Astro.url.pathname;
     <!-- RSS -->
     <link rel="alternate" type="application/rss+xml" title="书山有路 RSS" href="/rss.xml" />
 
+    <!-- Preconnect for external domains -->
+    <link rel="preconnect" href="https://raw.githubusercontent.com" />
+    <link rel="preconnect" href="https://www.plantuml.com" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(
+      type === 'article' ? {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": title,
+        "description": description,
+        "image": new URL(image, Astro.site).href,
+        "url": canonicalURL.href,
+        "author": { "@type": "Person", "name": "书山有路" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "书山有路",
+          "logo": { "@type": "ImageObject", "url": new URL('/og-image.png', Astro.site).href }
+        }
+      } : {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "书山有路",
+        "url": new URL('/', Astro.site).href,
+        "description": description
+      }
+    )} />
+
     <title>{fullTitle}</title>
     <script is:inline>
       const savedTheme = localStorage.getItem('theme');
