@@ -1,7 +1,8 @@
 ---
-title: "Headroom：AI Agent 的上下文压缩层，节省 60-95% Token"
+title: "Headroom：AI Agent 的上下文压缩层"
 description: "headroom 是一个开源的 AI 智能体上下文压缩工具，27k stars。它在工具输出、日志、文件、RAG 检索结果到达 LLM 之前进行压缩，实现 60-95% 的 token 节省，同时保持回答质量不变。支持 Python/TS 库、代理服务器、MCP 工具三种接入方式。"
 date: 2026-06-14
+category: "工具教程"
 tags: ["headroom", "llm", "token-optimization", "context-compression", "mcp", "rag"]
 draft: false
 ---
@@ -12,7 +13,7 @@ AI Agent 有一个隐性的成本黑洞：上下文。当 agent 处理工具输�
 
 Headroom 在内容到达 LLM **之前**进行压缩。它不是简单的截断或摘要，而是 6 种针对不同内容类型的压缩算法，配合可逆压缩（CCR）和 KV 缓存对齐技术，实现 60-95% 的 token 节省，同时保持回答质量不变。
 
-27k stars，2026 年 1 月创建，5 个月就成为 GitHub 上最火的 LLM 优化工具之一。它不是一个单一的库，而是提供了多种使用模式：Python/TypeScript 库、代理服务器、Agent 包装器、MCP 服务器。
+27k stars，2026 年 1 月创建，5 个月就成为 GitHub 上增长最快的 LLM 优化工具之一。它不是一个单一的库，而是提供了多种使用模式：Python/TypeScript 库、代理服务器、Agent 包装器、MCP 服务器。
 
 ## 项目概览
 
@@ -166,7 +167,7 @@ headroom perf
 
 输出示例：
 
-```
+```text
 Total tokens saved: 1,234,567
 Cost saved: $45.67
 Compression ratio: 78%
@@ -273,7 +274,7 @@ Anthropic 和 OpenAI 的 API 支持 KV 缓存（prompt caching），但要求前
 
 可逆压缩的核心思路：
 
-```
+```text
 1. 原始内容 → 本地缓存（SQLite）
 2. 压缩版本 → 发给 LLM
 3. LLM 返回结果
@@ -284,7 +285,7 @@ Anthropic 和 OpenAI 的 API 支持 KV 缓存（prompt caching），但要求前
 
 ### 管线生命周期
 
-```
+```text
 Setup → Pre-Start → Post-Start → Input Received → Input Cached →
 Input Routed → Input Compressed → Input Remembered → Pre-Send →
 Post-Send → Response Received

@@ -2,6 +2,7 @@
 title: "CodeGraph：为 AI 编程代理提供预构建的代码知识图谱"
 description: "codegraph 是一个开源的代码知识图谱工具，48.9k stars。它用 tree-sitter + SQLite 预先索引代码结构，通过 MCP 协议为 Claude Code、Cursor、Codex 等 AI 编程代理提供语义代码智能，减少 token 消耗和工具调用。"
 date: 2026-06-14
+category: "工具教程"
 tags: ["codegraph", "knowledge-graph", "mcp", "tree-sitter", "sqlite", "claude-code"]
 draft: false
 ---
@@ -81,7 +82,7 @@ codegraph init
 
 安装完成后，Claude Code 会自动通过 MCP 连接到 CodeGraph。你可以直接提问：
 
-```
+```text
 > "一个 HTTP 请求是如何到达数据库的？"
 ```
 
@@ -188,7 +189,7 @@ end note
 
 ### 索引流程
 
-```
+```text
 1. 解析阶段
    └─ 使用 web-tree-sitter 将源代码解析为 AST
 
@@ -264,7 +265,7 @@ CREATE VIRTUAL TABLE fts USING fts5(
 
 这是 CodeGraph 最核心的功能。传统的 AI 编程代理需要这样探索代码：
 
-```
+```text
 1. grep "handleRequest" → 找到 15 个文件
 2. read 第 1 个文件 → 不是我要的
 3. read 第 2 个文件 → 找到了，但不知道它调用了什么
@@ -275,7 +276,7 @@ CREATE VIRTUAL TABLE fts USING fts5(
 
 有了 CodeGraph，AI 代理可以：
 
-```
+```text
 codegraph_explore("handleRequest")
 → 一次返回：
    - handleRequest 函数源码

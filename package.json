@@ -4,12 +4,17 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "pnpm check-plantuml && astro build",
+    "build:skip-check": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "check-plantuml": "node scripts/check-plantuml.mjs",
+    "fetch-plantuml": "node scripts/fetch-plantuml.mjs",
+    "inline-plantuml": "node scripts/inline-plantuml.mjs",
+    "build:full": "astro build && node scripts/inline-plantuml.mjs"
   },
   "dependencies": {
     "@astrojs/tailwind": "^6.0.0",

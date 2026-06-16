@@ -2,6 +2,7 @@
 title: "Maven settings.xml 配置详解"
 description: "详解 Maven settings.xml 配置文件的各个标签含义、常用配置示例及最佳实践"
 date: 2026-04-21
+category: "后端开发"
 tags: ["maven", "java", "configuration"]
 draft: false
 ---

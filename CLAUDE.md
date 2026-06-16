@@ -22,6 +22,7 @@
 - PlantUML 图表渲染（远程 SVG，plantuml-encoder）
 - Mermaid 图表渲染（客户端，支持点击放大）
 - 暗色模式（class 切换）
+- 分类归档系统（AI 工程 / 工具教程 / 前端开发 / 后端开发）
 - 标签归档系统
 - 阅读时间计算
 - 目录自动生成（TableOfContents）
@@ -40,8 +41,10 @@
 │   ├── content/posts/     # Markdown 文章（核心内容目录）
 │   ├── layouts/           # 页面布局（BaseLayout.astro）
 │   ├── pages/             # 路由页面
-│   │   ├── posts/[slug].astro  # 文章详情页
-│   │   ├── tags/[tag].astro    # 标签归档页
+│   │   ├── posts/[slug].astro       # 文章详情页
+│   │   ├── categories/index.astro   # 分类索引页
+│   │   ├── categories/[category].astro  # 分类归档页
+│   │   ├── tags/[tag].astro         # 标签归档页
 │   │   ├── archive.astro       # 归档页
 │   │   ├── timeline.astro      # 时间线
 │   │   ├── collection.astro    # 合集页
@@ -120,6 +123,7 @@ pnpm test
 title: "文章标题"                    # 必填，字符串
 description: "文章描述/摘要"          # 可选，建议填写（用于 SEO 和列表展示）
 date: 2026-04-23                    # 必填，ISO 日期格式 YYYY-MM-DD
+category: "工具教程"                 # 可选，文章所属分类（见下方合法值）
 tags: ["tag1", "tag2"]              # 可选，字符串数组
 draft: false                        # 必填，布尔值（默认 false）
 ---
@@ -129,6 +133,11 @@ draft: false                        # 必填，布尔值（默认 false）
 - `title`：使用双引号包裹，标题应简洁明确，不超过 50 字
 - `description`：使用双引号包裹，100-200 字为宜，用于 SEO `<meta name="description">` 和社交分享
 - `date`：纯日期格式 `YYYY-MM-DD`，不加引号
+- `category`：文章分类，从以下 4 个合法值中选择（一篇一个分类）：
+  - `AI 工程` — AI Agent、LLM、RAG、MCP 相关的工程实践
+  - `工具教程` — 各类开发/效率工具的使用指南
+  - `前端开发` — 前端框架、样式、静态站点相关
+  - `后端开发` — Java、Maven、后端架构相关
 - `tags`：使用小写英文或拼音，用连字符 `-` 连接多词标签（如 `sequence-diagram`），不使用中文
 - `draft`：新文章默认 `true`，发布时改为 `false`
 
@@ -154,6 +163,7 @@ draft: false                        # 必填，布尔值（默认 false）
 title: "XXX 快速上手指南"
 description: "简明描述"
 date: YYYY-MM-DD
+category: "工具教程"
 tags: ["xxx", "相关技术"]
 draft: true
 ---
@@ -196,6 +206,7 @@ A: ...
 title: "XXX 核心概念与实战总结"
 description: "简明描述"
 date: YYYY-MM-DD
+category: "工具教程"
 tags: ["xxx"]
 draft: true
 ---
@@ -221,6 +232,29 @@ draft: true
 
 - [资源名](URL)
 ```
+
+#### 📋 文章完成后的强制检查流程
+
+**写完文章后，必须按以下顺序检查：**
+
+1. **Frontmatter 检查**：确认所有必填字段完整且格式正确
+2. **内容检查**：确认标题层级、代码块语言、链接格式等
+3. **PlantUML 验证**（如果包含 PlantUML 代码块）：
+   ```bash
+   pnpm check-plantuml
+   ```
+   - 如果验证失败，根据错误提示修复，重新运行直到通过
+   - **不要跳过这一步**
+4. **构建测试**：
+   ```bash
+   pnpm build
+   ```
+   - 确认构建成功，无错误
+5. **本地预览**：
+   ```bash
+   pnpm preview
+   ```
+   - 访问 `http://localhost:4321` 检查页面渲染效果
 
 ### 2.4 标题层级规则
 
@@ -281,6 +315,32 @@ Bob --> Alice: 回复
 - PlantUML 渲染依赖外部服务（`www.plantuml.com`），需要网络连接
 - 适合：时序图、用例图、类图、活动图、组件图
 - 渲染为 `<img>` 标签，自带 `loading="lazy"`
+
+**⚠️ 强制验证**：
+- **写完 PlantUML 代码后，必须立即运行 `pnpm check-plantuml` 验证语法**
+- 如果验证失败，根据错误提示修复代码，直到验证通过
+- 验证工具使用本地 PlantUML JAR（`bin/plantuml.jar`），无需网络
+- 示例：
+  ```bash
+  # 校验所有文章的 PlantUML
+  pnpm check-plantuml
+  
+  # 校验单个文件
+  ./scripts/validate-plantuml.sh diagram.puml
+  ```
+
+**PlantUML JAR 安装**（仅首次需要）：
+```bash
+# 下载官方 JAR（约 20MB）
+curl -L -o bin/plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2025.2/plantuml-1.2025.2.jar
+
+# 验证安装
+java -jar bin/plantuml.jar -version
+```
+
+**注意**：
+- 系统需要安装 Java 11+（推荐 Java 17）
+- JAR 文件已添加到 `.gitignore`，不会提交到仓库
 
 ### 2.7 Mermaid 图表规范
 
@@ -403,10 +463,11 @@ git push origin main → GitHub Actions 自动触发 → 构建 → 部署到 Gi
 推送代码到 main 之前，必须确认：
 
 - [ ] 本地 `pnpm build` 构建成功（零错误）
+- [ ] **`pnpm check-plantuml` 验证通过**（所有 PlantUML 语法正确）
 - [ ] 新文章的 `draft` 字段已设为 `false`（如果要发布）
 - [ ] frontmatter 格式正确（title、date 必填）
 - [ ] 文件名符合命名规范（小写 + 连字符）
-- [ ] PlantUML/Mermaid 图表语法正确（本地预览验证过）
+- [ ] Mermaid 图表语法正确（本地预览验证过）
 - [ ] 没有遗留 `console.log` 或调试代码
 - [ ] 图片链接可正常访问
 
@@ -478,6 +539,11 @@ git push origin main → GitHub Actions 自动触发 → 构建 → 部署到 Gi
 6. PlantUML 使用 `@startuml`/`@enduml`，Mermaid 不使用
 7. 中文撰写，技术术语保留英文
 8. 提供有意义的 `description` 用于 SEO
+9. **PlantUML 验证（强制）**：
+   - 文章中包含 PlantUML 代码块时，写完后**必须立即**运行 `pnpm check-plantuml`
+   - 验证失败时，根据错误提示的行号和代码修复语法，重新验证直到通过
+   - 不要跳过这一步，不要假设代码是正确的
+   - 验证工具使用本地 JAR，速度快，无网络依赖
 
 ### 修改代码时
 

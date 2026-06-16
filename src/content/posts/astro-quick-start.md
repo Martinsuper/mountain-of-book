@@ -2,6 +2,7 @@
 title: "Astro 快速上手指南"
 description: "从零开始搭建你的第一个 Astro 博客项目，介绍安装、项目结构、组件基础、路由系统、布局组件及部署方式"
 date: 2026-04-23
+category: "前端开发"
 tags: ["astro", "frontend", "static-site", "blog"]
 draft: false
 ---
@@ -12,7 +13,7 @@ Astro 是一款现代化的静态站点生成器，专为内容驱动的网站�
 
 ## 为什么选择 Astro？
 
-- **零 JavaScript 默认输出** — 生成的页面默认不包含 JavaScript，极致轻量
+- **零 JavaScript 默认输出** — 生成的页面默认不包含 JavaScript，轻量
 - **Islands 架构** — 仅在需要交互的地方加载 JavaScript
 - **框架无关** — 可以混用 React、Vue、Svelte 等组件
 - **内容优先** — 完美支持 Markdown、MDX，适合博客、文档站
@@ -65,7 +66,7 @@ npm create astro@latest -- --template blog
 
 创建完成后，你的项目目录结构如下：
 
-```
+```text
 my-astro-project/
 ├── src/
 │   ├── pages/        # 必需！页面文件，决定网站路由
@@ -316,17 +317,3 @@ Astro 构建的是纯静态文件，可以部署到多种平台：
 - [博客教程](https://docs.astro.build/en/tutorial/) — 六单元完整教程
 - [组件模板语法](https://docs.astro.build/en/basics/astro-syntax/)
 - [内容集合](https://docs.astro.build/en/guides/content/) — 类型安全的内容管理
-
-## 总结
-
-Astro 是构建内容驱动网站的绝佳选择：
-
-| 特点 | 说明 |
-|-----|------|
-| 安装简单 | 一行命令即可创建项目 |
-| 文件路由 | pages 目录决定 URL 结构 |
-| 组件化 | 可复用的 Astro 组件 |
-| Markdown 支持 | 原生支持，适合博客 |
-| 静态输出 | 可部署到任何静态托管 |
-
-开始你的 Astro 之旅吧！运行 `npm create astro@latest` 创建你的第一个项目。

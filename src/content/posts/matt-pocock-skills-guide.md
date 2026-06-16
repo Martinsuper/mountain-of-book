@@ -1,7 +1,8 @@
 ---
-title: "Matt Pocock 的 Skills：把经典工程原则变成 AI 编码助手可调用的技能"
+title: "Matt Pocock 的 Skills：AI 编码助手的工程原则技能"
 description: "mattpocock/skills 是 TypeScript 大佬 Matt Pocock 开源的 Claude Code 技能集，128k stars。它把 TDD、DDD、Pragmatic Programmer 等经典工程方法论沉淀成 SKILL.md 文件，让 AI 编码助手可以按工程纪律工作，而不是 vibe coding。"
 date: 2026-06-14
+category: "AI 工程"
 tags: ["claude-code", "skills", "engineering", "tdd", "ddd", "matt-pocock"]
 draft: false
 ---
@@ -82,7 +83,7 @@ npx skills@latest add mattpocock/skills
 
 安装后，在 Claude Code 中直接用斜杠命令调用：
 
-```
+```text
 /tdd          # 启动 TDD 循环
 /diagnose     # 启动 bug 诊断流程
 /grill-me     # 让 agent 面试你的计划
@@ -153,7 +154,7 @@ ctx --> ai : 共享术语
 
 `npx skills` CLI 的工作流程：
 
-```
+```text
 1. 扫描仓库中的 skills/ 目录
 2. 列出所有可用的 skill
 3. 让用户选择要安装哪些
@@ -191,7 +192,7 @@ Markdown 是 AI 最容易理解和执行的格式。它不需要运行时，不�
 
 **3. 为什么强调"面试式澄清"（grill-me）？**
 
-这是整个项目最受欢迎的技能。核心思想是：在动手写代码之前，让 agent 反问你，把需求、边界条件、决策树全部问清楚。这比"直接开干然后返工"高效得多。
+这是整个项目的核心技能之一。核心思想是：在动手写代码之前，让 agent 反问你，把需求、边界条件、决策树全部问清楚。这比"直接开干然后返工"高效得多。
 
 ## 适用场景与局限
 

@@ -1,7 +1,8 @@
 ---
-title: "CloakBrowser：C++ 源码级反检测 Chromium，通过 30/30 检测测试"
+title: "CloakBrowser：源码级反检测 Chromium 浏览器"
 description: "CloakBrowser 是一个开源的反检测自动化浏览器，26k stars。它不是配置修补或 JS 注入，而是在 C++ 源码级别修改了指纹的真实 Chromium 二进制，58 个补丁覆盖 Canvas、WebGL、Audio、字体、GPU、WebRTC、TLS 指纹等维度。Playwright/Puppeteer 的直接替代品。"
 date: 2026-06-14
+category: "工具教程"
 tags: ["cloakbrowser", "chromium", "anti-detection", "browser-automation", "playwright", "puppeteer"]
 draft: false
 ---
@@ -219,7 +220,8 @@ compile --> binary
 binary --> wrapper
 layer2 --> wrapper
 
-wrapper --> [CloakBrowser API] as api
+[CloakBrowser API] as api
+wrapper --> api
 
 @enduml
 ```
@@ -277,7 +279,7 @@ page.mouse.wheel(0, 300)  # 非匀速，模拟人类惯性
 
 CloakBrowser 后台检查更新，始终使用最新隐身构建：
 
-```
+```text
 1. 启动时检查 GitHub Releases
 2. 如果有新版本，下载新的 Chromium 二进制
 3. 验证 GPG 签名 + SHA-256 校验

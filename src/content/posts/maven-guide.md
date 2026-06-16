@@ -2,6 +2,7 @@
 title: "Maven 使用指南"
 description: "Maven 是 Java 项目管理和构建自动化的核心工具，本文介绍 Maven 的安装配置、项目结构、常用命令、依赖管理等核心知识点"
 date: 2026-04-21
+category: "后端开发"
 tags: ["maven", "java", "build-tool"]
 draft: false
 ---
@@ -75,7 +76,7 @@ mvn -version
 
 Maven 标准目录结构：
 
-```
+```text
 my-project/
 ├── pom.xml                 # 项目配置文件
 ├── src/

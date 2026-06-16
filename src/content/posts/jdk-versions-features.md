@@ -2,6 +2,7 @@
 title: "JDK 各版本特性详解：从 JDK 8 到 JDK 21"
 description: "详细介绍 JDK 8 到 JDK 21 各版本的重要特性，包括 Lambda、Stream、模块化、Records、Virtual Threads 等，并提供丰富的代码示例"
 date: 2026-04-21
+category: "后端开发"
 tags: ["java", "jdk", "jdk-features", "java-version"]
 draft: false
 ---
@@ -54,8 +55,6 @@ Java 作为一门成熟且持续演进的编程语言，从 JDK 8 开始进入�
 | **集合增强** | JDK 9-21 | 工厂方法/Sequenced | 便捷创建、顺序访问 |
 
 ---
-
-## 详细特性介绍
 
 ## 一、JDK 8 (2014年3月) - Java 语言的革命性更新
 

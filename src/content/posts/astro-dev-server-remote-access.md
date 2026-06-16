@@ -2,6 +2,7 @@
 title: "解决 Astro 开发服务器无法通过 Tailscale/外网访问的问题"
 description: "Astro 开发服务器默认只监听 localhost，导致无法通过 Tailscale 或局域网 IP 访问。本文说明原因和两种解决方法"
 date: 2026-06-11
+category: "工具教程"
 tags: ["astro", "dev-server", "tailscale", "remote-access", "troubleshooting"]
 draft: false
 ---
@@ -56,7 +57,7 @@ export default defineConfig({
 
 重启后终端输出包含 `Network` 行即表示成功：
 
-```
+```text
 ┃ Local    http://localhost:4321/
  Network  http://192.168.68.132:4321/
            http://100.65.227.42:4321/

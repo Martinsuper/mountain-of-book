@@ -1,7 +1,8 @@
 ---
-title: "MarkItDown：微软开源的文件转 Markdown 工具深度解析"
+title: "MarkItDown：微软开源的文件转 Markdown 工具"
 description: "MarkItDown 是微软 AutoGen 团队开源的 Python 工具，可将 PDF、Office、图片、音频等 15+ 种格式统一转换为 Markdown，专为 LLM 和 AI 管线设计。本文从使用到源码，拆解它的架构与实现原理。"
 date: 2026-06-14
+category: "工具教程"
 tags: ["markitdown", "microsoft", "llm", "rag", "document-processing", "python"]
 draft: false
 ---
@@ -10,7 +11,7 @@ draft: false
 
 把 PDF、Word、PPT、Excel 转成 Markdown，听起来是个"小而美"的需求。但在 LLM 时代，这个需求的优先级被极大地提升了——Markdown 是 GPT-4o、Claude 等主流模型原生"说"的格式，token 效率极高，又能保留文档结构（标题、列表、表格）。
 
-MarkItDown 就是为此而生的。它由微软 AutoGen 团队开发，目标是**给机器消费**而非人类阅读：用最少的标记，保留最多的结构信息。153k stars 的数据让它成为 2026 年 GitHub 上最火的开源项目之一。
+MarkItDown 就是为此而生的。它由微软 AutoGen 团队开发，目标是**给机器消费**而非人类阅读：用最少的标记，保留最多的结构信息。153k stars，是 2026 年 GitHub 上增长最快的开源项目之一。
 
 本文从安装使用到架构原理，完整拆解这个项目。
 

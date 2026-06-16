@@ -43,6 +43,14 @@ const readingTime = calculateReadingTime(post.body || '');
             })}
           </time>
           <span>· {readingTime} 分钟阅读</span>
+          {post.data.category && (
+            <a
+              href={`/categories/${post.data.category}/`}
+              class="hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              {post.data.category}
+            </a>
+          )}
           {post.data.tags && (
             <div class="flex gap-2">
               {post.data.tags.map((tag) => (

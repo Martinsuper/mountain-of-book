@@ -2,6 +2,7 @@
 title: "Understand-Anything：把任意代码库变成可交互的知识图谱"
 description: "Understand-Anything 是一个开源的代码理解工具，59k stars。它用 Tree-sitter + LLM 的混合方案，把代码、文档转化为可交互的知识图谱，支持浏览、搜索、问答。本文解析它的双引擎架构和多 Agent 流水线。"
 date: 2026-06-14
+category: "工具教程"
 tags: ["knowledge-graph", "code-understanding", "tree-sitter", "llm", "claude-code"]
 draft: false
 ---
@@ -227,7 +228,7 @@ stop
 
 每次代码变更后，Understand-Anything 不需要重新分析整个代码库。它通过 **fingerprint（指纹）** 机制，只更新发生变化的文件：
 
-```
+```text
 1. 计算每个文件的 hash
 2. 对比上次分析时的 hash
 3. 只重新解析 hash 变化的文件

@@ -2,6 +2,7 @@
 title: "AI Engineering from Scratch：从零构建完整 AI 工程体系的 503 节课"
 description: "ai-engineering-from-scratch 是一个开源的 AI 工程课程体系，32.2k stars。503 节课、20 个阶段、约 320 学时，从基础数学到自主多智能体系统，每个算法都从原始数学开始手动实现。本文解析它的课程架构和学习路径。"
 date: 2026-06-14
+category: "AI 工程"
 tags: ["ai-engineering", "education", "machine-learning", "deep-learning", "llm", "course"]
 draft: false
 ---
@@ -12,7 +13,7 @@ AI 领域的学习资源浩如烟海，但大部分是碎片化的——一篇�
 
 ai-engineering-from-scratch 试图解决这个问题。它是一套**完整的 AI 工程课程体系**，503 节课、20 个阶段、约 320 学时，覆盖从基础数学到自主多智能体系统的全链路。核心理念是**"先手写再调库"**——每个算法都从数学推导开始，用纯代码从零实现，等到 PyTorch 出现时，你已经知道它底层在做什么。
 
-32.2k stars，2026 年 3 月创建，不到 3 个月就成为 GitHub 上最火的 AI 教育项目之一。
+32.2k stars，2026 年 3 月创建，不到 3 个月就成为 GitHub 上增长最快的 AI 教育项目之一。
 
 ## 项目概览
 
@@ -56,7 +57,7 @@ ai-engineering-from-scratch 试图解决这个问题。它是一套**完整的 A
 
 ### 每节课的结构
 
-```
+```text
 phases/<NN>-<phase-name>/<NN>-<lesson-name>/
 ├── code/      # 可运行实现（Python/TypeScript/Rust/Julia）
 ├── docs/

@@ -154,6 +154,12 @@ const currentPath = Astro.url.pathname;
             工具
           </a>
           <a
+            href="/categories/"
+            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath.startsWith('/categories') ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+          >
+            分类
+          </a>
+          <a
             href="/tags/"
             class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath.startsWith('/tags') ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
           >
@@ -169,6 +175,7 @@ const currentPath = Astro.url.pathname;
         <a href="/collection/" class={`mobile-nav-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
         <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
         <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
+        <a href="/categories/" class={`mobile-nav-link ${currentPath.startsWith('/categories') ? 'active' : ''}`}>分类</a>
         <a href="/tags/" class={`mobile-nav-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
       </div>
     </header>

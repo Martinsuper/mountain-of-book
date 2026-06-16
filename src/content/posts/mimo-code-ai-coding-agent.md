@@ -2,6 +2,7 @@
 title: "MiMoCode：带跨会话记忆的开源 AI 编程智能体"
 description: "小米 MiMo 团队开源的终端 AI 编程助手 MiMoCode 介绍，涵盖持久化记忆、智能上下文管理、多智能体等核心特性"
 date: 2026-06-11
+category: "AI 工程"
 tags: ["ai", "coding-agent", "mimocode", "open-source", "developer-tools"]
 draft: false
 ---

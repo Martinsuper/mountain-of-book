@@ -1,7 +1,8 @@
 ---
-title: "Academic Research Skills：让 Claude Code 成为学术研究的副驾驶"
+title: "Academic Research Skills：Claude Code 学术研究技能指南"
 description: "academic-research-skills 是一个开源的 Claude Code 学术研究技能套件，31.3k stars。它包含 40+ 个专业 agent，覆盖研究 → 写作 → 审稿 → 修订 → 发表的完整学术流水线，并针对引用幻觉、框架锁定、谄媚等 AI 失败模式做了专门工程。"
 date: 2026-06-14
+category: "AI 工程"
 tags: ["academic-research", "claude-code", "skills", "ai-writing", "peer-review", "citation"]
 draft: false
 ---
@@ -90,7 +91,7 @@ ARS 由 **4 个核心 skill** 组成，共包含 **40+ 个专业 agent**：
 
 10 阶段编排器：
 
-```
+```text
 RESEARCH → WRITE → INTEGRITY (2.5) → REVIEW → RE-REVIEW →
 REVISE → INTEGRITY (4.5) → FINALIZE → PUBLISH → PROCESS SUMMARY
 ```
@@ -118,7 +119,7 @@ REVISE → INTEGRITY (4.5) → FINALIZE → PUBLISH → PROCESS SUMMARY
 
 #### 完整流水线
 
-```
+```text
 You: "I want to write a complete research paper on AI's impact on higher education QA"
 ```
 
@@ -126,7 +127,7 @@ ARS 会自动启动完整流水线：研究 → 写作 → 完整性验证 → �
 
 #### 苏格拉底式引导
 
-```
+```text
 You: "Guide my research on AI in educational evaluation"
 ```
 
@@ -134,7 +135,7 @@ Deep Research 进入 socratic 模式，通过提问引导你澄清研究问题�
 
 #### 单独调用 skill
 
-```
+```text
 You: "Research the impact of AI on higher education"  → Deep Research (full mode)
 You: "Write a paper on X"                            → Academic Paper (full mode)
 You: "Review this paper"                             → Reviewer (full mode)

@@ -1,14 +1,15 @@
 ---
-title: "AgentMemory：AI 编程代理的持久化记忆系统，LongMemEval-S 排名第一"
+title: "AgentMemory：AI 编程代理的持久化记忆系统"
 description: "agentmemory 是一个开源的 AI 编程代理持久化记忆系统，22.8k stars。它基于自研 iii 引擎，通过三流检索融合（BM25 + Vector + Graph）和四层记忆巩固（Working → Episodic → Semantic → Procedural），让 AI 代理记住一切，不用再重复解释。在 LongMemEval-S 基准测试中排名第一。"
 date: 2026-06-14
+category: "AI 工程"
 tags: ["agentmemory", "ai-agent", "memory", "mcp", "rag", "iii-engine"]
 draft: false
 ---
 
 ## 简介
 
-AI 编程代理（Claude Code、Cursor、Codex）有一个普遍的痛点：每次新会话都要重新解释项目背景、技术栈、代码规范。虽然有些工具提供了"记忆"功能，但大多是简单的对话历史存储，缺乏真正的语义理解和长期记忆巩固。
+AI 编程代理（Claude Code、Cursor、Codex）有一个普遍的问题：每次新会话都要重新解释项目背景、技术栈、代码规范。虽然有些工具提供了"记忆"功能，但大多是简单的对话历史存储，缺乏真正的语义理解和长期记忆巩固。
 
 AgentMemory 的做法是模仿人类记忆的分层巩固机制。它通过 12 个 Hook 自动捕获工具调用和会话上下文，将原始观察压缩为结构化知识，存入三流检索系统（BM25 + Vector + Graph）。下次会话时，agent 可以精准召回相关记忆，不用再重复解释。
 
@@ -158,7 +159,7 @@ npx skills add rohitg00/agentmemory -y
 
 ### 使用流程
 
-```
+```text
 1. 启动 agentmemory 服务器
 2. 连接你的 AI 编码 agent
 3. 正常使用 agent，agentmemory 自动捕获和存储记忆
@@ -245,7 +246,7 @@ storage --> viewer
 
 ### 记忆存储管线
 
-```
+```text
 PostToolUse hook
   ↓
 SHA-256 去重（5分钟窗口）

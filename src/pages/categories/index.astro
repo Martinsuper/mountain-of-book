@@ -1,0 +1,55 @@
+---
+// src/pages/categories/index.astro
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+
+// 统计每个分类的文章数量
+const categoryCounts: Record<string, number> = {};
+posts.forEach((post) => {
+  if (post.data.category) {
+    categoryCounts[post.data.category] = (categoryCounts[post.data.category] || 0) + 1;
+  }
+});
+
+// 分类描述
+const categoryDescriptions: Record<string, string> = {
+  'AI 工程': 'AI Agent、LLM、RAG、MCP 相关的工程实践',
+  '工具教程': '各类开发/效率工具的使用指南',
+  '前端开发': '前端框架、样式、静态站点相关',
+  '后端开发': 'Java、Maven、后端架构相关'
+};
+
+// 按文章数量排序
+const categories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="文章分类 - 书山有路">
+  <h1 class="text-2xl lg:text-3xl font-bold mb-8">分类</h1>
+
+  {categories.length === 0 ? (
+    <p class="text-gray-500">暂无分类</p>
+  ) : (
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {categories.map(([category, count]) => (
+        <a
+          href={`/categories/${category}/`}
+          class="group block p-6 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xl font-semibold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {category}
+            </h2>
+            <span class="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+              {count} 篇
+            </span>
+          </div>
+          <p class="text-gray-600 dark:text-gray-400 text-sm">
+            {categoryDescriptions[category] || ''}
+          </p>
+        </a>
+      ))}
+    </div>
+  )}
+</BaseLayout>

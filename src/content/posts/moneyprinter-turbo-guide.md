@@ -1,7 +1,8 @@
 ---
-title: "MoneyPrinterTurbo：一键用 AI 生成短视频的完整流水线"
+title: "MoneyPrinterTurbo：AI 短视频生成流水线"
 description: "MoneyPrinterTurbo 是一个开源的 AI 短视频自动生成工具，87.6k stars。输入一个主题，它会自动完成文案生成、语音合成、素材搜索、字幕生成、视频合成，输出一个完整的短视频。本文解析它的架构和实现原理。"
 date: 2026-06-14
+category: "工具教程"
 tags: ["ai-video", "llm", "tts", "moviepy", "python", "automation"]
 draft: false
 ---
@@ -176,7 +177,7 @@ MoneyPrinterTurbo 支持 15+ 种 LLM，通过统一的适配器模式接入。�
 
 文案生成的 prompt 大致如下：
 
-```
+```text
 请为以下主题生成一个 {duration} 秒的短视频脚本：
 主题：{subject}
 

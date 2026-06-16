@@ -23,3 +23,9 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+# PlantUML 渲染缓存
+.plantuml-cache/
+
+# PlantUML JAR（太大，不提交）
+bin/*.jar
+

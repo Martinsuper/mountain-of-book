@@ -1,14 +1,15 @@
 ---
-title: "Taste-Skill：给 AI 生成 UI 注入设计品味，告别千篇一律的模板感"
+title: "Taste-Skill：提升 AI 生成 UI 的设计品味"
 description: "taste-skill 是一个开源的 AI Agent 技能集，43.5k stars。它不是 UI 组件库，而是一组 Markdown 指令，告诉 AI 编码助手如何生成有设计感的前端界面，而不是千篇一律的居中布局。本文解析它的三旋钮系统和反 AI 平庸化理念。"
 date: 2026-06-14
+category: "AI 工程"
 tags: ["taste-skill", "ai-design", "frontend", "claude-code", "prompt-engineering"]
 draft: false
 ---
 
 ## 简介
 
-让 AI 编码助手（Claude Code、Cursor、Copilot）生成前端界面时，有一个普遍的痛点：产出的 UI 千篇一律——居中对齐、平庸配色、缺乏层次、到处是 em-dash 和渐变按钮。这不是 AI 的错，而是它的训练数据决定了它的"审美偏好"。
+让 AI 编码助手（Claude Code、Cursor、Copilot）生成前端界面时，有一个普遍的问题：产出的 UI 千篇一律——居中对齐、平庸配色、缺乏层次、到处是 em-dash 和渐变按钮。这不是 AI 的错，而是它的训练数据决定了它的"审美偏好"。
 
 Taste-Skill 的做法是给 AI 注入一套**设计品味规则**。它不是 UI 组件库，不是 CSS 框架，而是一组 SKILL.md 文件——每个文件告诉 AI"不要居中万能布局"、"禁止 em-dash"、"用不对称的现代排版"。
 
@@ -72,7 +73,7 @@ npx skills add https://github.com/Leonxlnx/taste-skill --skill "design-taste-fro
 
 安装后，在 Claude Code 中让 AI 生成 UI 时，它会自动加载 taste-skill 的规则：
 
-```
+```text
 > "帮我设计一个 SaaS landing page"
 ```
 
@@ -108,19 +109,19 @@ VISUAL_DENSITY: 4      // 信息密度（低 = 留白多，高 = 密集仪表盘
 skinparam backgroundColor white
 
 rectangle "taste-skill 仓库" as repo {
-  directory "skills/" as skills {
-    file "taste-skill/SKILL.md" as taste
-    file "soft-skill/SKILL.md" as soft
-    file "minimalist-skill/SKILL.md" as min
-    file "brutalist-skill/SKILL.md" as brut
-    file "image-to-code-skill/SKILL.md" as img2code
-    file "..." as more
+  rectangle "skills/" as skills {
+    component "taste-skill/SKILL.md" as taste
+    component "soft-skill/SKILL.md" as soft
+    component "minimalist-skill/SKILL.md" as min
+    component "brutalist-skill/SKILL.md" as brut
+    component "image-to-code-skill/SKILL.md" as img2code
+    component "..." as more
   }
-  directory "research/" as research {
-    file "laziness/" as laziness
+  rectangle "research/" as research {
+    component "laziness/" as laziness
     note bottom: AI UI 平庸化研究
   }
-  file "skill.sh" as installer
+  component "skill.sh" as installer
 }
 
 rectangle "Agent Skills 协议" as protocol {
@@ -199,7 +200,7 @@ VISUAL_DENSITY: 4
 
 taste-skill 遵循 [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) 规范。`npx skills` CLI 的工作流程：
 
-```
+```text
 1. 扫描仓库中的 skills/ 目录
 2. 列出所有可用的 skill（每个 skill 目录下有 SKILL.md）
 3. 让用户选择要安装哪些
