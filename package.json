@@ -14,7 +14,8 @@
     "check-plantuml": "node scripts/check-plantuml.mjs",
     "fetch-plantuml": "node scripts/fetch-plantuml.mjs",
     "inline-plantuml": "node scripts/inline-plantuml.mjs",
-    "build:full": "astro build && node scripts/inline-plantuml.mjs"
+    "build:full": "astro build && node scripts/inline-plantuml.mjs",
+    "trending": "node scripts/fetch-github-trending.mjs"
   },
   "dependencies": {
     "@astrojs/tailwind": "^6.0.0",
