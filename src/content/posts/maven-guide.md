@@ -9,16 +9,41 @@ draft: false
 
 ## 简介
 
-Maven 是 Apache 基金会开源的 Java 项目管理和构建自动化工具。它基于项目对象模型（POM）概念，通过一个中央信息管理模块来管理项目的构建、报告和文档。
+Maven 是 Apache 开源的 Java 项目管理和构建工具，基于项目对象模型（POM）管理项目的构建、依赖和文档。本文覆盖安装配置、项目结构、常用命令、依赖管理和多模块项目这些日常使用场景。
 
-### 核心概念
+几个核心概念：
 
-- **POM (Project Object Model)**：项目对象模型，定义在 `pom.xml` 文件中
-- **坐标 (Coordinates)**：唯一标识一个项目，由 `groupId`、`artifactId`、`version` 组成
-- **仓库 (Repository)**：存储构件的地方，分为本地仓库和远程仓库
-- **生命周期 (Lifecycle)**：定义构建过程的阶段，如 `clean`、`default`、`site`
+- **POM (Project Object Model)**：项目对象模型，定义在 `pom.xml` 中
+- **坐标 (Coordinates)**：`groupId` + `artifactId` + `version` 唯一标识一个项目
+- **仓库 (Repository)**：存储构件的地方，分本地仓库和远程仓库
+- **生命周期 (Lifecycle)**：定义构建过程的阶段
 - **插件 (Plugin)**：执行具体构建任务的单元
 - **依赖 (Dependency)**：项目所需的外部库
+
+Maven 的命令都挂在三套生命周期的「阶段」上，执行某个阶段会自动执行它之前的所有阶段。最常用的 `default` 生命周期主要阶段如下：
+
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+skinparam activity {
+  BackgroundColor #F5F5F5
+  BorderColor #888888
+}
+
+start
+:validate\n校验项目;
+:compile\n编译主代码;
+:test\n运行单元测试;
+:package\n打包 jar/war;
+:verify\n集成测试校验;
+:install\n安装到本地仓库;
+:deploy\n部署到远程仓库;
+stop
+@enduml
+```
+
+执行 `mvn install` 会自动跑完 validate 到 install 的全部阶段；`mvn clean package` 则先清理再打包。理解这一点，后面的命令就不用死记。
 
 ## 安装配置
 
@@ -273,11 +298,11 @@ mvn test-compile
 
 | Scope | 编译 | 测试 | 运行 | 打包 | 说明 |
 |-------|------|------|------|------|------|
-| `compile` | ✅ | ✅ | ✅ | ✅ | 默认范围 |
-| `provided` | ✅ | ✅ | ❌ | ❌ | 容器提供，如 Servlet API |
-| `runtime` | ❌ | ✅ | ✅ | ✅ | 只在运行时需要 |
-| `test` | ❌ | ✅ | ❌ | ❌ | 只在测试时需要 |
-| `system` | ✅ | ✅ | ❌ | ❌ | 需指定本地路径 |
+| `compile` | 是 | 是 | 是 | 是 | 默认范围 |
+| `provided` | 是 | 是 | 否 | 否 | 容器提供，如 Servlet API |
+| `runtime` | 否 | 是 | 是 | 是 | 只在运行时需要 |
+| `test` | 否 | 是 | 否 | 否 | 只在测试时需要 |
+| `system` | 是 | 是 | 否 | 否 | 需指定本地路径 |
 | `import` | - | - | - | - | 用于依赖管理导入 |
 
 ### 依赖管理（dependencyManagement）
@@ -311,6 +336,30 @@ mvn test-compile
 ```
 
 ## 多模块项目
+
+多模块项目用一个父 POM（`packaging` 为 `pom`）聚合多个子模块，统一管理依赖版本和插件配置，子模块之间也可以相互依赖：
+
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
+
+package "parent-project (pom)" {
+  [dependencyManagement\n统一依赖版本] as dm
+  [pluginManagement\n统一插件版本] as pm
+}
+
+[module-a (jar)] as a
+[module-b (jar)] as b
+[module-c (jar)] as c
+
+a ..|> dm : 继承版本
+b ..|> dm : 继承版本
+c ..|> dm : 继承版本
+a --> b : 模块间依赖
+@enduml
+```
 
 ### 父 POM
 
@@ -501,28 +550,91 @@ mvn clean install -U
 
 ## 最佳实践
 
-1. **版本管理**
-   - 使用 `dependencyManagement` 统一管理依赖版本
-   - 生产环境使用 RELEASE 版本，开发环境可用 SNAPSHOT
+### 用 BOM 统一依赖版本
 
-2. **依赖管理**
-   - 定期使用 `dependency:analyze` 检查未使用的依赖
-   - 排除不需要的传递依赖，减少包体积
+多个模块各自声明依赖版本，迟早会出现「同一个库在不同模块版本不一致」导致的诡异冲突。在父 POM 用 `dependencyManagement` 导入 BOM（Bill of Materials），子模块只写 `groupId` / `artifactId`，版本由 BOM 统一决定：
 
-3. **多模块设计**
-   - 按功能或层次划分模块
-   - 公共组件提取为独立模块
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-dependencies</artifactId>
+      <version>3.2.0</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
 
-4. **构建优化**
-   - 使用 `-T` 参数并行构建：`mvn clean install -T 4`
-   - 合理配置 `.m2/settings.xml` 镜像加速
+升级版本时只改一处，所有模块同步生效。生产环境锁定 RELEASE 版本，避免 SNAPSHOT 带来的构建不可重现。
 
-5. **IDE 集成**
-   - IDEA 开箱即用，直接导入 Maven 项目
-   - Eclipse 需安装 M2E 插件
-   - VS Code 可使用 Java Extension Pack
+### 定期清理依赖
 
-## 参考资源
+依赖会随项目演进不断累积，未使用的依赖拖慢构建、增大包体积、扩大安全风险面。用 `dependency:analyze` 定期体检：
+
+```bash
+mvn dependency:analyze
+# Used undeclared dependencies   → 实际用到但没显式声明的，应补上
+# Unused declared dependencies   → 声明了但没用到的，应删除
+```
+
+「Used undeclared」尤其值得注意：你的代码依赖了某个传递进来的库，一旦上游依赖升级把它去掉，编译就会突然失败。
+
+### 排查并排除传递依赖冲突
+
+依赖冲突的根因是同一个库被多条路径传递进来，Maven 按「最短路径优先」仲裁，结果未必是你要的版本。先定位冲突来源：
+
+```bash
+# 查看某个库被哪些路径引入
+mvn dependency:tree -Dincludes=org.slf4j:slf4j-api
+```
+
+确认要保留的版本后，在引入错误版本的依赖上用 `exclusions` 排除，再显式声明正确版本：
+
+```xml
+<dependency>
+  <groupId>com.example</groupId>
+  <artifactId>some-lib</artifactId>
+  <exclusions>
+    <exclusion>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+```
+
+### 加速构建
+
+大型多模块项目的全量构建很慢，两个常用手段：
+
+```bash
+# 多线程并行构建（每核一个线程）
+mvn clean install -T 1C
+
+# 只构建改动的模块及其下游（-am 连带构建依赖的模块）
+mvn install -pl module-a -am
+```
+
+配合 `~/.m2/settings.xml` 配置国内镜像（见前文「配置镜像」），可显著减少依赖下载时间。
+
+### 善用 properties 集中管理
+
+把版本号、编码、JDK 版本等可变项抽到 `<properties>`，避免散落在各处难以维护：
+
+```xml
+<properties>
+  <java.version>17</java.version>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <spring-boot.version>3.2.0</spring-boot.version>
+</properties>
+```
+
+后续引用 `${spring-boot.version}`，升级时只改一处。
+
+## 参考资料
 
 - [Maven 官方文档](https://maven.apache.org/guides/)
 - [Maven 中央仓库](https://search.maven.org/)

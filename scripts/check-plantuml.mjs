@@ -37,9 +37,14 @@ function extractPlantUmlBlocks(content, filePath) {
   return blocks;
 }
 
+// 全局唯一计数器：block.index 只在单个文件内递增，跨文件会重复，
+// 导致全量校验时多个 block 共用同一临时文件路径而相互干扰。
+// 用进程级自增序号保证临时文件名全局唯一。
+let tempFileSeq = 0;
+
 // 校验单个 PlantUML 代码块
 function validateBlock(block) {
-  const tempFile = `/tmp/plantuml-check-${process.pid}-${block.index}.puml`;
+  const tempFile = `/tmp/plantuml-check-${process.pid}-${tempFileSeq++}.puml`;
 
   try {
     // 写入临时文件
@@ -80,8 +85,43 @@ function validateBlock(block) {
   }
 }
 
-// 扫描所有文章
-function scanArticles() {
+// 获取 git 变更的文章文件名（未跟踪 / 已修改 / 已暂存），相对 posts 目录
+// 返回 null 表示无法获取（非 git 仓库或 git 不可用）
+function getChangedPostFiles() {
+  let output;
+  try {
+    output = execSync('git status --porcelain', {
+      cwd: PROJECT_ROOT,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+  } catch {
+    return null;
+  }
+
+  const POSTS_PREFIX = 'src/content/posts/';
+  const files = new Set();
+
+  for (const rawLine of output.split('\n')) {
+    if (!rawLine.trim()) continue;
+
+    // porcelain 格式: "XY <path>"，重命名为 "XY old -> new"
+    let pathPart = rawLine.slice(3);
+    const arrowIdx = pathPart.indexOf(' -> ');
+    if (arrowIdx !== -1) pathPart = pathPart.slice(arrowIdx + 4);
+    pathPart = pathPart.replace(/^"(.*)"$/, '$1'); // 去掉含特殊字符时的引号
+
+    if (pathPart.startsWith(POSTS_PREFIX) && pathPart.endsWith('.md')) {
+      files.add(pathPart.slice(POSTS_PREFIX.length));
+    }
+  }
+
+  return [...files];
+}
+
+// 扫描文章中的 PlantUML 代码块
+// fileNames 为 undefined 时扫描全部文章，否则只扫描指定文件
+function scanArticles(fileNames) {
   const blocks = [];
 
   if (!fs.existsSync(POSTS_DIR)) {
@@ -89,10 +129,11 @@ function scanArticles() {
     process.exit(2);
   }
 
-  const files = fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'));
+  const files = fileNames ?? fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'));
 
   for (const file of files) {
     const filePath = path.join(POSTS_DIR, file);
+    if (!fs.existsSync(filePath)) continue; // 跳过已删除的文件
     const content = fs.readFileSync(filePath, 'utf-8');
     const fileBlocks = extractPlantUmlBlocks(content, file);
     blocks.push(...fileBlocks);
@@ -101,11 +142,47 @@ function scanArticles() {
   return blocks;
 }
 
+// 解析命令行参数，决定要校验哪些文章
+// 返回 { files, scope }：files 为 undefined 表示全量
+function resolveTargetFiles() {
+  const args = process.argv.slice(2);
+  const allFlag = args.includes('--all') || args.includes('-a');
+  const explicitFiles = args
+    .filter(a => !a.startsWith('-'))
+    .map(a => path.basename(a)); // 容忍传入完整路径，只取文件名
+
+  // 1. 显式指定文件优先
+  if (explicitFiles.length > 0) {
+    return { files: explicitFiles, scope: `指定的 ${explicitFiles.length} 篇文章` };
+  }
+
+  // 2. --all 全量校验
+  if (allFlag) {
+    return { files: undefined, scope: '全部文章' };
+  }
+
+  // 3. 默认：只校验 git 变更（新增 / 修改 / 未跟踪）的文章
+  const changed = getChangedPostFiles();
+  if (changed === null) {
+    console.log('⚠️  无法读取 git 状态，回退为全量校验\n');
+    return { files: undefined, scope: '全部文章（git 不可用）' };
+  }
+  return { files: changed, scope: '本次变更的文章' };
+}
+
 // 主函数
 function main() {
-  console.log('🔍 扫描文章中的 PlantUML 代码块...\n');
+  const { files, scope } = resolveTargetFiles();
 
-  const blocks = scanArticles();
+  console.log(`🔍 扫描 PlantUML 代码块（范围：${scope}）...\n`);
+
+  if (files && files.length === 0) {
+    console.log('ℹ️  没有变更的文章需要校验');
+    console.log('💡 如需校验全部文章：pnpm check-plantuml --all');
+    process.exit(0);
+  }
+
+  const blocks = scanArticles(files);
 
   if (blocks.length === 0) {
     console.log('ℹ️  未找到 PlantUML 代码块');

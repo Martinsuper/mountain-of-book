@@ -9,7 +9,7 @@ draft: false
 
 ## 简介
 
-AI 编码助手（Claude Code、Cursor、Copilot）正在改变程序员的工作方式。但一个明显的问题是：AI 倾向于"vibe coding"——氛围到了就写，缺乏工程纪律。它会跳过需求澄清、忘记写测试、不做架构思考，直接输出看起来能跑的代码。
+AI 编码助手（Claude Code、Cursor、Copilot）有一个常见的问题：倾向于"vibe coding"——氛围到了就写，缺乏工程纪律。它会跳过需求澄清、忘记写测试、不做架构思考，直接输出看起来能跑的代码。
 
 Matt Pocock（Total TypeScript 创始人）开源的 `skills` 项目试图解决这个问题。它不是一个框架，也不是一个工具，而是一组 **SKILL.md 文件**——每个文件是一条给 AI 的指令，告诉它"在 TDD 时应该先写失败测试再实现"、"在诊断 bug 时应该先复现再最小化再假设"。
 
@@ -17,7 +17,7 @@ Matt Pocock（Total TypeScript 创始人）开源的 `skills` 项目试图解决
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [mattpocock/skills](https://github.com/mattpocock/skills) |
 | Stars | 128k（截至 2026-06-14） |

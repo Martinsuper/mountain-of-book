@@ -18,7 +18,8 @@
 }
 
 html {
-  overflow-x: hidden;
+  overflow-x: clip;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -26,7 +27,7 @@ body {
   color: var(--text-color);
   font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.6;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 a {
@@ -37,6 +38,11 @@ a {
 .prose {
   max-width: 720px;
   margin: 0 auto;
+}
+
+/* 锚点跳转时为 sticky header (约 66px) 留出空间，避免标题被遮挡 */
+.prose :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 80px;
 }
 
 /* 确保 prose 内块级元素不撑破容器 */

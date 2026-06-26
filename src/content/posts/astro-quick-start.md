@@ -7,9 +7,9 @@ tags: ["astro", "frontend", "static-site", "blog"]
 draft: false
 ---
 
-## Astro 快速上手指南
+## 简介
 
-Astro 是一款现代化的静态站点生成器，专为内容驱动的网站设计。它采用独特的 **Islands 架构**，让你可以在静态页面中按需添加交互组件。
+Astro 是一款现代化的静态站点生成器，专为内容驱动的网站设计。它采用独特的 **Islands 架构**，让你可以在静态页面中按需添加交互组件。本文从安装开始，带你走完项目结构、组件、路由、布局到部署的完整上手流程。
 
 ## 为什么选择 Astro？
 
@@ -17,6 +17,28 @@ Astro 是一款现代化的静态站点生成器，专为内容驱动的网站�
 - **Islands 架构** — 仅在需要交互的地方加载 JavaScript
 - **框架无关** — 可以混用 React、Vue、Svelte 等组件
 - **内容优先** — 完美支持 Markdown、MDX，适合博客、文档站
+
+Islands 架构是 Astro 的核心理念：整个页面默认是零 JS 的静态 HTML，只有标记为交互的"岛屿"组件才单独加载各自的 JavaScript：
+
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
+
+rectangle "一个 Astro 页面（静态 HTML，零 JS）" as page {
+  rectangle "静态内容\n（文章正文 / 页头 / 页脚）" as static
+  rectangle "交互岛屿 A\n搜索框 (React)\n按需加载 JS" as island1
+  rectangle "交互岛屿 B\n主题切换 (Vue)\n按需加载 JS" as island2
+}
+
+note bottom of static : 不发送任何 JS
+note bottom of island1 : 只加载这个组件的 JS
+note bottom of island2 : 只加载这个组件的 JS
+@enduml
+```
+
+相比传统 SPA 把整个页面都做成 JS 应用，Islands 架构只为真正需要交互的部分付出 JS 成本，首屏更轻、更快。
 
 ## 安装要求
 
@@ -311,7 +333,7 @@ Astro 构建的是纯静态文件，可以部署到多种平台：
 - **Cloudflare Pages** — 直接上传 `dist/` 目录
 - **GitHub Pages** — 配置输出目录即可
 
-## 下一步学习
+## 参考资料
 
 - [Astro 官方文档](https://docs.astro.build)
 - [博客教程](https://docs.astro.build/en/tutorial/) — 六单元完整教程

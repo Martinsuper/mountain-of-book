@@ -9,15 +9,15 @@ draft: false
 
 ## 简介
 
-把 PDF、Word、PPT、Excel 转成 Markdown，听起来是个"小而美"的需求。但在 LLM 时代，这个需求的优先级被极大地提升了——Markdown 是 GPT-4o、Claude 等主流模型原生"说"的格式，token 效率极高，又能保留文档结构（标题、列表、表格）。
+MarkItDown 是微软 AutoGen 团队开发的文档转换工具，把 PDF、Word、PPT、Excel 等格式转成 Markdown。它的目标是**给机器消费**而非人类阅读：用最少的标记保留最多的结构信息。
 
-MarkItDown 就是为此而生的。它由微软 AutoGen 团队开发，目标是**给机器消费**而非人类阅读：用最少的标记，保留最多的结构信息。153k stars，是 2026 年 GitHub 上增长最快的开源项目之一。
+在 LLM 时代这个需求很实用——Markdown 是 GPT-4o、Claude 等主流模型原生"说"的格式，token 效率高，又能保留文档结构（标题、列表、表格）。该项目有 153k stars，是 2026 年 GitHub 上增长最快的开源项目之一。
 
 本文从安装使用到架构原理，完整拆解这个项目。
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [microsoft/markitdown](https://github.com/microsoft/markitdown) |
 | Stars | 153k（截至 2026-06-14） |

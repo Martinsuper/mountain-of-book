@@ -17,7 +17,7 @@ draft: false
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [harry0703/MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) |
 | Stars | 87.6k（截至 2026-06-14） |

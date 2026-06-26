@@ -7,11 +7,7 @@ tags: ["codebase-memory-mcp", "c", "mcp", "knowledge-graph", "tree-sitter", "cod
 draft: false
 ---
 
-## codebase-memory-mcp：用纯 C 把代码库变成知识图谱
-
-> *"用 5 次图查询替代 412,000 token 的逐文件 grep——这不是 LLM 的功劳，是图数据结构的选择。"*
-
-## 它要解决什么问题
+## 简介
 
 AI 编码 Agent（Claude Code、Cursor、Copilot 等）面对大型代码库时，通常的工作模式是"搜 → 读 → 搜 → 读"的循环。Agent 发出一条 `grep "ProcessOrder"`，得到 20 个文件匹配，然后逐个 Read，再 grep 下一个关键词。一个中等规模的代码库探索任务，动辄消耗数十万 token，其中大部分是对同一文件上下文窗口的重复加载。
 
@@ -21,7 +17,7 @@ codebase-memory-mcp 的思路是：与其让 LLM 一遍遍读文件，不如提�
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [DeusData/codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp) |
 | Stars | 7.2k（截至 2026-06-19） |
@@ -46,7 +42,7 @@ codebase-memory-mcp 的思路是：与其让 LLM 一遍遍读文件，不如提�
 
 ## 项目结构
 
-```
+```text
 src/
 ├── main.c              # 入口：信号处理、模式分发、看门狗
 ├── mcp/                # MCP 协议层（JSON-RPC 解析、工具注册）
@@ -193,7 +189,7 @@ Pipeline 是整个系统最复杂的部分。`pipeline.c` 是编排器，负责�
 
 以 pass 执行顺序为例，简化后的流程：
 
-```
+```text
 1. pass_parallel.c      → 并行解析所有文件的 AST，提取函数/类定义
 2. pass_definitions.c   → 将定义写入图的节点（Function, Class, Module...）
 3. pass_pkgmap.c        → 扫描 package.json/go.mod/Cargo.toml，建立包映射
@@ -209,11 +205,11 @@ Pipeline 是整个系统最复杂的部分。`pipeline.c` 是编排器，负责�
 
 `pass_parallel.c` 是 113KB 的大文件，它做的事情是**并行化 AST 解析**。具体实现是启动一个 worker pool（`worker_pool.c`），把文件分块分发给多个线程，每个线程用 tree-sitter 解析自己负责的文件块，然后把结果合并到共享的图缓冲区。
 
-### 3. Hybrid LSP — 最有意思的实现细节
+### 3. Hybrid LSP — 跨文件类型推断的实现
 
 文件：`src/pipeline/pass_lsp_cross.c`（24KB）+ `pass_lsp_cross.h`
 
-"Hybrid LSP" 是这个项目最有技术含量的部分。标准做法是让 Agent 启动一个外部 LSP 进程（如 tsserver、pyright），通过 LSP 协议查询类型信息。codebase-memory-mcp 选择用纯 C 重新实现了这些语言的核心类型推断逻辑：
+"Hybrid LSP" 是这个项目技术含量较高的部分。标准做法是让 Agent 启动一个外部 LSP 进程（如 tsserver、pyright），通过 LSP 协议查询类型信息。codebase-memory-mcp 选择用纯 C 重新实现了这些语言的核心类型推断逻辑：
 
 ```c
 /* Hybrid LSP semantic type resolution for:
@@ -249,7 +245,7 @@ Pipeline 是整个系统最复杂的部分。`pipeline.c` 是编排器，负责�
 | 不内置 LLM | 避免 API key 依赖和额外成本 | Agent 必须是 MCP 兼容的，无法独立使用 |
 | 多 pass pipeline | 清晰的依赖管理、可并行化 | 文件多、代码量大（pipeline/ 下 ~700KB C 代码） |
 
-## 和其他方案的对比
+## 与同类方案对比
 
 | 维度 | codebase-memory-mcp | 逐文件 grep + Read | repo-map（Aider） |
 |------|-------------------|-------------------|-----------------|
@@ -262,18 +258,17 @@ Pipeline 是整个系统最复杂的部分。`pipeline.c` 是编排器，负责�
 
 codebase-memory-mcp 和 Aider 的 repo-map 解决的是同一类问题（减少 Agent 的 token 消耗），但路径完全不同。repo-map 是把代码结构压缩成文本传给 LLM，codebase-memory-mcp 是把代码结构建成图让 Agent 查询。前者依赖 LLM 的理解能力，后者依赖图数据库的查询能力。
 
-## 适用场景与边界
+## 适用场景与局限
 
-| 场景 | 推荐？ | 原因 |
-|------|--------|------|
-| 大型代码库探索（> 10 万行） | 强烈推荐 | 索引一次，后续查询 token 节约显著 |
-| 微服务架构跨仓库分析 | 推荐 | CROSS_* 边天然支持跨仓库关联 |
-| 小型脚本项目（< 1000 行） | 不推荐 | 索引成本超过收益，直接 grep 更快 |
-| 需要实时类型推断的场景 | 视语言而定 | Hybrid LSP 覆盖 11 种主流语言，其他语言只有 AST 级精度 |
-| 纯静态代码分析 | 推荐 | 图结构天然支持调用链、影响面分析 |
-| 动态语言（Ruby、Perl 等） | 可用但精度有限 | tree-sitter 可以解析语法，但缺少 LSP 语义层 |
+收益取决于代码库规模——索引有一次性成本，规模越大越划算：
 
-## 参考链接
+- **大型代码库（> 10 万行）、微服务跨仓库分析**：索引一次后查询的 token 节约显著，CROSS_* 边天然支持跨仓库关联。
+- **小型脚本项目（< 1000 行）**：索引成本超过收益，直接 grep 更快。
+- **静态分析**：图结构天然支持调用链、影响面分析。
+
+语言精度差异：Hybrid LSP 覆盖 11 种主流语言，提供语义级精度；其他语言（含 Ruby、Perl 等动态语言）只有 tree-sitter 的 AST 级精度，缺少 LSP 语义层。
+
+## 参考资料
 
 - [GitHub 仓库](https://github.com/DeusData/codebase-memory-mcp)
 - [官方文档](https://deusdata.github.io/codebase-memory-mcp/)

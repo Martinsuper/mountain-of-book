@@ -7,17 +7,15 @@ tags: ["agent-reach", "ai-agent", "twitter", "reddit", "youtube", "bilibili", "p
 draft: false
 ---
 
-## Agent Reach：一句话给 AI Agent 装上全互联网访问能力
+## 简介
 
-AI Agent 能写代码、改文档、管项目——但你让它去网上找点东西，它就抓瞎了。看不了 YouTube 字幕，搜不了 Twitter，Reddit 403，小红书要登录，B站被风控拦截。每个平台都有自己的门槛——付费 API、反爬封锁、登录认证、数据清洗。
+Agent Reach 是一个给 AI Agent 用的**互联网访问能力层**（capability layer），31.7k stars。它不做读取本身，只负责选型、安装、体检、路由——把一句话复制给 Agent，几分钟后它就能读 Twitter、Reddit、YouTube、小红书、B站等 13+ 个平台。
 
-Agent Reach 把这些门槛全部抹平了。它不是一个新工具，而是一个**能力层**（capability layer）——负责选型、安装、体检、路由，不负责底层读取本身。你把一句话复制给你的 Agent，几分钟后它就能读推特、搜 Reddit、看 YouTube、刷小红书了。
-
-31.7k stars，13+ 个平台，零配置即可使用网页、YouTube、RSS、B站搜索和 GitHub 公开仓库。配好 Cookie 后解锁 Twitter 搜索、小红书、Reddit 等。
+零配置即可用网页、YouTube、RSS、B站搜索和 GitHub 公开仓库；配好 Cookie 后解锁 Twitter 搜索、小红书、Reddit 等。
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [Panniantong/Agent-Reach](https://github.com/Panniantong/Agent-Reach) |
 | Stars | 31.7k（截至 2026-06-16） |
@@ -26,7 +24,42 @@ Agent Reach 把这些门槛全部抹平了。它不是一个新工具，而是�
 | 最新版本 | v1.5.0（2026-06-11） |
 | 架构 | 能力层 + 多后端路由 + 渠道注册 + 真体检系统 |
 
-## 核心设计
+## 背景与动机
+
+AI Agent 访问互联网内容时面临一道现实门槛：看不了 YouTube 字幕，搜不了 Twitter，Reddit 返回 403，小红书要登录，B站被风控拦截。每个平台都有自己的障碍——付费 API、反爬封锁、登录认证、数据清洗。
+
+Agent Reach 把这些门槛抹平：它替你选好每个平台当前最稳的接入方式，一键装好依赖，并在接入方式失效时自动切换。
+
+## 快速上手
+
+安装只需把一句话复制给 Agent：
+
+```text
+帮我安装 Agent Reach：https://raw.githubusercontent.com/Panniantong/Agent-Reach/main/docs/install.md
+```
+
+Agent 读取安装文档后自动完成 pip 安装、环境检测、依赖安装、Exa 搜索引擎配置和 SKILL.md 注册。装好后运行体检：
+
+```bash
+agent-reach doctor
+```
+
+零配置即可用的平台：
+
+| 平台 | Agent 调用方式 |
+|------|------|
+| 网页 | `curl https://r.jina.ai/URL` |
+| YouTube | `yt-dlp` 提取字幕 |
+| B站搜索 | `bili search`（无需登录） |
+| GitHub | `gh repo view owner/repo` |
+| RSS | `feedparser` 解析 |
+| 全网搜索 | Exa 语义搜索 |
+
+需要配置的平台（告诉 Agent「帮我配 XXX」即可）：Twitter/X 需 Cookie，小红书/Reddit 需桌面装 OpenCLI 用浏览器登录态，LinkedIn 由 Agent 引导配置。
+
+## 架构与原理
+
+整体流程是「一句话安装 → 体检各渠道 → Agent 直接读取」：
 
 ```plantuml
 @startuml
@@ -37,151 +70,92 @@ actor 用户
 participant "AI Agent" as agent
 participant "install.md" as install
 participant "doctor" as doctor
-participant "web.py\nJina Reader" as web
-participant "twitter.py\ntwitter-cli" as twitter
-participant "youtube.py\nyt-dlp" as youtube
-participant "bilibili.py\nbili-cli" as bili
-participant "reddit.py\nOpenCLI" as reddit
-participant "xiaohongshu.py\nOpenCLI" as xhs
-participant "github.py\ngh CLI" as gh
-participant "rss.py\nfeedparser" as rss
+participant "各渠道后端\nweb/twitter/youtube..." as backends
 
 用户 -> agent: 帮我安装 Agent Reach
 agent -> install: 读取安装文档
-install -> install: pip install agent-reach
-install -> install: 检测环境 + 装依赖
-install -> install: 配置 Exa 搜索引擎
-install -> install: 注册 SKILL.md
+install -> install: pip 安装 + 装依赖\n+ 配 Exa + 注册 SKILL.md
 install --> agent: 安装完成
-
 agent -> doctor: agent-reach doctor
-doctor -> web: 检测
-doctor -> twitter: 检测
-doctor -> youtube: 检测
-doctor -> bili: 检测
-doctor -> reddit: 检测
-doctor -> xhs: 检测
-doctor -> gh: 检测
-doctor -> rss: 检测
+doctor -> backends: 逐个检测渠道状态
+backends --> doctor: 各后端可用性
 doctor --> agent: 各渠道状态报告
-agent -> 用户: 已就绪，可以用了
-
+agent -> 用户: 已就绪
 @enduml
 ```
 
-### 关键机制 1：多后端有序路由
+### 多后端有序路由
 
-这是 Agent Reach 最核心的设计。每个平台不是一个固定工具，而是一个**有序的后端列表**：
+最核心的设计：每个平台不是一个固定工具，而是一个**有序的后端列表**，首选失效就自动降级到下一个。
 
-```
-twitter.py → twitter-cli ▸ OpenCLI ▸ bird
-bilibili.py → bili-cli ▸ OpenCLI（yt-dlp 已被 B站风控封死，退役）
-reddit.py → OpenCLI ▸ rdt-cli（无零配置路径，必须登录态）
-xiaohongshu.py → OpenCLI ▸ xiaohongshu-mcp ▸ xhs-cli
-```
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
 
-某个接入方式失效了？换接入方式是调整列表顺序，不是重写代码。2026 年 6 月，yt-dlp 被 B站风控封死，Agent Reach 切换到 bili-cli，用户零操作。
+[Agent 请求 twitter] as req
 
-`agent-reach doctor` 会告诉你每个平台**当前在用哪个后端**，以及坏掉的怎么修。
+package "twitter.py 后端列表" {
+  [twitter-cli] as t1
+  [OpenCLI] as t2
+  [bird] as t3
+}
 
-### 关键机制 2：能力层而非工具层
+req --> t1 : 首选
+t1 ..> t2 : 失效则降级
+t2 ..> t3 : 再失效再降级
 
-Agent Reach 不是一个读取工具。它不做读取本身——读取由 Agent 直接调用上游工具完成，没有包装层。
-
-```
-Agent Reach 的职责：
-  ✅ 选型 — 当前最稳的工具是哪个
-  ✅ 安装 — 一键装好所有依赖
-  ✅ 体检 — doctor 命令检测每个渠道状态
-  ✅ 路由 — 首选失效自动切换备选
-  ❌ 读取 — 不做，交给 Agent 直接调用上游工具
-```
-
-这个分层很重要。它意味着 Agent Reach 不会因为自己成为瓶颈而拖慢 Agent，也不会在上游工具和 Agent 之间加一层需要维护的抽象。
-
-### 关键机制 3：一句话安装
-
-安装只需要复制一句话给 Agent：
-
-```
-帮我安装 Agent Reach：https://raw.githubusercontent.com/Panniantong/agent-reach/main/docs/install.md
+note right of t3
+  bilibili.py: bili-cli ▸ OpenCLI
+  （yt-dlp 已被 B站风控封死，退役）
+  reddit.py: OpenCLI ▸ rdt-cli
+  xiaohongshu.py: OpenCLI ▸ xiaohongshu-mcp ▸ xhs-cli
+end note
+@enduml
 ```
 
-Agent 读取安装文档后自动完成：
-1. `pip install agent-reach` 装 CLI 工具
-2. 检测环境（本地 vs 服务器），安装 Node.js、gh CLI、mcporter
-3. 配置 Exa 搜索引擎（MCP 接入，免费无需 API Key）
-4. 注册 SKILL.md 到 Agent 的 skills 目录
-5. 列出可选的额外平台，问你要不要装
+接入方式失效时，换接入方式只是调整列表顺序，不用改代码。2026 年 6 月 yt-dlp 被 B站风控封死，Agent Reach 切到 bili-cli，用户零操作。`agent-reach doctor` 会显示每个平台当前在用哪个后端。
 
-## 5 分钟上手
+### 能力层而非工具层
 
-### 安装
+Agent Reach 只做选型、安装、体检、路由四件事，读取交给 Agent 直接调用上游工具，中间不加包装层：
 
-```bash
-# 复制这句话给你的 Agent：
-帮我安装 Agent Reach：https://raw.githubusercontent.com/Panniantong/Agent-Reach/main/docs/install.md
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+
+rectangle "Agent Reach\n（能力层）" as ar {
+  card "选型" as c1
+  card "安装" as c2
+  card "体检" as c3
+  card "路由" as c4
+}
+
+actor "AI Agent" as agent
+cloud "上游工具\nyt-dlp / gh / OpenCLI..." as tools
+
+agent --> ar : 查「该用哪个后端」
+ar --> agent : 返回当前可用后端
+agent --> tools : 直接调用读取（不经 Agent Reach）
+@enduml
 ```
 
-### 装好就能用的（零配置）
+这层分离让 Agent Reach 不会成为读取瓶颈，也不必维护一层包装抽象。
 
-| 平台 | 命令 |
-|------|------|
-| 网页 | Agent 自动用 `curl https://r.jina.ai/URL` 读任意网页 |
-| YouTube | Agent 自动用 `yt-dlp` 提取字幕 |
-| B站搜索 | Agent 自动用 `bili search`（无需登录） |
-| GitHub | Agent 自动用 `gh repo view owner/repo` |
-| RSS | Agent 自动用 `feedparser` 解析 |
-| 全网搜索 | Agent 自动用 Exa 语义搜索 |
+## 适用场景与局限
 
-### 需要配置的平台
+定位清晰的「只读」能力层：
 
-告诉 Agent "帮我配 XXX" 即可，Agent 会引导你完成：
+- **擅长**：让 Agent 读取社交媒体内容（Twitter、Reddit、B站、小红书、YouTube 字幕等）。
+- **不做网页操作**：只读不写，不支持登录、填表单这类交互。
+- **不是爬虫框架**：面向 Agent 的能力调用，不适合高并发批量爬取。
+- **部署差异**：本地直接可用；服务器部署需配代理（约 $1/月）。
 
-- **Twitter/X**：需要 Cookie（浏览器登录 → Cookie-Editor 导出 → 发给 Agent）
-- **小红书**：桌面装 OpenCLI，刷过小红书即可用
-- **Reddit**：桌面装 OpenCLI 用浏览器登录态
-- **LinkedIn**：告诉 Agent "帮我配 LinkedIn"
+几个设计权衡：不做读取包装层换来零性能开销，代价是 Agent 需知道上游工具的具体命令；用 Cookie 认证而非 API Key 换来免费，代价是 Cookie 有时效需定期更新；有序后端列表让切换行为可预测，代价是新增后端要手动改列表。
 
-### 体检
-
-```bash
-agent-reach doctor
-```
-
-输出每个渠道的状态、当前使用的后端、以及坏掉的怎么修。
-
-## 和其他方案的对比
-
-| 维度 | Agent Reach | 自己装各平台 CLI | MCP Servers |
-|------|------------|-----------------|-------------|
-| 安装成本 | 一句话 | 每个平台单独踩坑 | 每个 server 单独配置 |
-| 故障恢复 | 自动切换备选后端 | 自己发现 + 自己修 | 自己修 |
-| 平台覆盖 | 13+ 个统一接口 | 各 CLI 接口不同 | 各 server 接口不同 |
-| 体检 | `doctor` 一键检测 | 自己写脚本 | 无统一体检 |
-| Agent 兼容性 | 所有能跑命令行的 Agent | 同上 | 仅支持 MCP 的 Agent |
-
-Agent Reach 的核心优势是**统一的能力层抽象**。你不需要知道 Twitter 该用 twitter-cli 还是 OpenCLI，不需要知道 yt-dlp 还能不能用在 B站，不需要知道 Reddit 匿名接口什么时候被封。这些它都替你想好了。
-
-## 设计上的权衡
-
-| 决策 | 得到的 | 失去的 |
-|------|--------|--------|
-| 不做读取包装层 | 零性能开销、不成为瓶颈 | Agent 需要知道上游工具的具体命令 |
-| Cookie 认证而非 API Key | 免费、绕过付费 API | Cookie 有时效性，需要定期更新 |
-| 有序后端列表而非自动发现 | 切换行为可预测、可调试 | 新增后端需要手动修改列表 |
-| SKILL.md 作为 Agent 接口 | 跨平台兼容 | Agent 对命令的理解依赖模型能力 |
-
-## 适用场景与边界
-
-| 场景 | 推荐？ | 原因 |
-|------|--------|------|
-| 让 Agent 能读社交媒体 | 强烈推荐 | 这是它的核心场景 |
-| 需要操作网页（登录、表单） | 不推荐 | Agent Reach 只做"读"，不做"操作" |
-| 服务器部署 | 推荐（需代理） | 本地电脑不需要代理，服务器需要（约 $1/月） |
-| 需要高并发爬取 | 不推荐 | 它是给 Agent 用的能力层，不是爬虫框架 |
-
-## 参考链接
+## 参考资料
 
 - [GitHub 仓库](https://github.com/Panniantong/Agent-Reach)
 - [安装文档](https://raw.githubusercontent.com/Panniantong/Agent-Reach/main/docs/install.md)

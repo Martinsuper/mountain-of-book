@@ -5,7 +5,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 import Search from '../components/Search.astro';
 import BackToTop from '../components/BackToTop.astro';
 import Mermaid from '../components/Mermaid.astro';
-import MermaidModal from '../components/MermaidModal.astro';
+import ZoomModal from '../components/ZoomModal.astro';
 import FloatingCompanion from '../components/FloatingCompanion.astro';
 
 interface Props {
@@ -27,6 +27,13 @@ const {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const fullTitle = title === '书山有路' ? title : `${title} | 书山有路`;
 const currentPath = Astro.url.pathname;
+
+// 导航分组：当前路径命中组内任一路由时，高亮该组按钮
+const isPostsSection =
+  ['/archive/', '/timeline/'].includes(currentPath) ||
+  currentPath.startsWith('/categories') ||
+  currentPath.startsWith('/tags');
+const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPath);
 ---
 
 <!doctype html>
@@ -123,67 +130,60 @@ const currentPath = Astro.url.pathname;
           >
             首页
           </a>
-          <a
-            href="/archive/"
-            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/archive/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            归档
-          </a>
-          <a
-            href="/timeline/"
-            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/timeline/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            时间轴
-          </a>
-          <a
-            href="/collection/"
-            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/collection/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            图鉴
-          </a>
-          <a
-            href="/todo/"
-            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/todo/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            待办
-          </a>
-          <a
-            href="/tools/"
-            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/tools/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            工具
-          </a>
-          <a
-            href="/categories/"
-            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath.startsWith('/categories') ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            分类
-          </a>
-          <a
-            href="/tags/"
-            class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath.startsWith('/tags') ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            标签
-          </a>
+
+          <!-- 文章分组 -->
+          <div class="nav-group">
+            <button
+              class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isPostsSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+              aria-haspopup="true"
+            >
+              文章
+              <svg class="nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="nav-dropdown">
+              <a href="/archive/" class={`nav-dropdown-link ${currentPath === '/archive/' ? 'active' : ''}`}>归档</a>
+              <a href="/timeline/" class={`nav-dropdown-link ${currentPath === '/timeline/' ? 'active' : ''}`}>时间轴</a>
+              <a href="/categories/" class={`nav-dropdown-link ${currentPath.startsWith('/categories') ? 'active' : ''}`}>分类</a>
+              <a href="/tags/" class={`nav-dropdown-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
+            </div>
+          </div>
+
+          <!-- 小工具分组 -->
+          <div class="nav-group">
+            <button
+              class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isToolsSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+              aria-haspopup="true"
+            >
+              小工具
+              <svg class="nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="nav-dropdown">
+              <a href="/tools/" class={`nav-dropdown-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
+              <a href="/todo/" class={`nav-dropdown-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
+              <a href="/collection/" class={`nav-dropdown-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
+            </div>
+          </div>
         </div>
       </nav>
       <!-- 移动端：下拉导航菜单 -->
       <div id="mobile-menu" class="mobile-menu lg:hidden">
         <a href="/" class={`mobile-nav-link ${currentPath === '/' ? 'active' : ''}`}>首页</a>
+        <div class="mobile-nav-group-label">文章</div>
         <a href="/archive/" class={`mobile-nav-link ${currentPath === '/archive/' ? 'active' : ''}`}>归档</a>
         <a href="/timeline/" class={`mobile-nav-link ${currentPath === '/timeline/' ? 'active' : ''}`}>时间轴</a>
-        <a href="/collection/" class={`mobile-nav-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
-        <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
-        <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
         <a href="/categories/" class={`mobile-nav-link ${currentPath.startsWith('/categories') ? 'active' : ''}`}>分类</a>
         <a href="/tags/" class={`mobile-nav-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
+        <div class="mobile-nav-group-label">小工具</div>
+        <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
+        <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
+        <a href="/collection/" class={`mobile-nav-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
       </div>
     </header>
     <main class="max-w-4xl mx-auto px-4 py-8">
       <slot />
     </main>
     <Mermaid />
-    <MermaidModal />
+    <ZoomModal />
     <BackToTop />
     <FloatingCompanion />
 
@@ -228,6 +228,124 @@ const currentPath = Astro.url.pathname;
 </html>
 
 <style>
+  /* Nav group dropdown (desktop) */
+  .nav-group {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .nav-group-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: none;
+    cursor: pointer;
+    font-size: inherit;
+  }
+
+  .nav-caret {
+    transition: transform 0.2s ease;
+  }
+
+  .nav-group:hover .nav-caret,
+  .nav-group:focus-within .nav-caret {
+    transform: rotate(180deg);
+  }
+
+  .nav-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    min-width: 9rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    padding: 0.375rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 60;
+  }
+
+  :global(.dark) .nav-dropdown {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  /* 用伪元素填补按钮与面板的间隙，避免 hover 移动时下拉收起 */
+  .nav-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -0.5rem;
+    left: 0;
+    right: 0;
+    height: 0.5rem;
+  }
+
+  .nav-group:hover .nav-dropdown,
+  .nav-group:focus-within .nav-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .nav-dropdown-link {
+    display: block;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  :global(.dark) .nav-dropdown-link {
+    color: #d1d5db;
+  }
+
+  .nav-dropdown-link:hover {
+    background: #f3f4f6;
+    color: #3b82f6;
+  }
+
+  :global(.dark) .nav-dropdown-link:hover {
+    background: #374151;
+    color: #60a5fa;
+  }
+
+  .nav-dropdown-link.active {
+    background: #eff6ff;
+    color: #3b82f6;
+    font-weight: 600;
+  }
+
+  :global(.dark) .nav-dropdown-link.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+  }
+
+  /* Mobile nav group label */
+  .mobile-nav-group-label {
+    padding: 0.5rem 1rem 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+  }
+
+  :global(.dark) .mobile-nav-group-label {
+    color: #6b7280;
+  }
+
   /* Nav companion button */
   .nav-companion-btn {
     position: relative;

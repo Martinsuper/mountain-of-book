@@ -9,7 +9,7 @@ draft: false
 
 ## 简介
 
-AI Agent 有一个隐性的成本黑洞：上下文。当 agent 处理工具输出、日志、文件、RAG 检索结果时，动辄数万 tokens 的内容被塞进 LLM 的 context window。这不仅贵，还慢。
+AI Agent 有一个容易被忽视的成本来源：上下文。当 agent 处理工具输出、日志、文件、RAG 检索结果时，动辄数万 tokens 的内容被塞进 LLM 的 context window。这不仅贵，还慢。
 
 Headroom 在内容到达 LLM **之前**进行压缩。它不是简单的截断或摘要，而是 6 种针对不同内容类型的压缩算法，配合可逆压缩（CCR）和 KV 缓存对齐技术，实现 60-95% 的 token 节省，同时保持回答质量不变。
 
@@ -17,7 +17,7 @@ Headroom 在内容到达 LLM **之前**进行压缩。它不是简单的截断�
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [chopratejas/headroom](https://github.com/chopratejas/headroom) |
 | Stars | 27k（截至 2026-06-14） |
@@ -272,26 +272,56 @@ Anthropic 和 OpenAI 的 API 支持 KV 缓存（prompt caching），但要求前
 
 #### CCR（可逆压缩）
 
-可逆压缩的核心思路：
+可逆压缩的核心思路：压缩版本发给 LLM 省 token，原始内容存本地，仅在 LLM 需要细节时按需检索回来。
 
-```text
-1. 原始内容 → 本地缓存（SQLite）
-2. 压缩版本 → 发给 LLM
-3. LLM 返回结果
-4. 如果 LLM 说"我需要更多细节" → 调用 headroom_retrieve 检索原始内容
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+
+participant "Headroom" as h
+database "本地缓存\n(SQLite)" as db
+participant "LLM" as llm
+
+h -> db: 原始内容存入缓存
+h -> llm: 发送压缩版本（省 token）
+llm --> h: 返回结果
+alt LLM 需要更多细节
+  llm -> h: 请求原始内容
+  h -> db: headroom_retrieve 检索
+  db --> h: 原始内容
+  h -> llm: 补充原始内容
+end
+@enduml
 ```
 
-这样，大部分情况下 LLM 只需要压缩版本（省 token），少数情况下需要原始内容时才检索。
+大部分情况下 LLM 只需要压缩版本，少数需要原始内容时才检索。
 
 ### 管线生命周期
 
-```text
-Setup → Pre-Start → Post-Start → Input Received → Input Cached →
-Input Routed → Input Compressed → Input Remembered → Pre-Send →
-Post-Send → Response Received
+输入到响应要经过一条固定的处理流水线，每个阶段有对应的 Transform：
+
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 10
+start
+:Setup;
+:Pre-Start;
+:Post-Start;
+:Input Received;
+:Input Cached;
+:Input Routed;
+:Input Compressed;
+:Input Remembered;
+:Pre-Send;
+:Post-Send;
+:Response Received;
+stop
+@enduml
 ```
 
-每个阶段有对应的 Transform 处理。核心编排（`wrap.py`、`client.py`、`cli/proxy.py`）只负责生命周期和策略，提供商特定的逻辑隔离在 `headroom/providers/` 下。
+核心编排（`wrap.py`、`client.py`、`cli/proxy.py`）只负责生命周期和策略，提供商特定的逻辑隔离在 `headroom/providers/` 下。
 
 ### 精度基准测试
 

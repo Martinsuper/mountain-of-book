@@ -7,7 +7,7 @@ tags: ["mlx", "apple-silicon", "machine-learning", "cpp", "metal"]
 draft: false
 ---
 
-## MLX：Apple Silicon 上的机器学习数组框架
+## 简介
 
 MLX 是 Apple 机器学习研究团队开源的数组框架，专为 Apple Silicon 硬件设计。截至 2026 年 6 月，该项目在 GitHub 上积累了超过 27,000 stars，最新版本为 v0.31.2，已扩展支持 CUDA 后端以覆盖 Linux 环境。
 
@@ -15,7 +15,7 @@ MLX 是 Apple 机器学习研究团队开源的数组框架，专为 Apple Silic
 
 ## 项目概览
 
-| 字段 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [ml-explore/mlx](https://github.com/ml-explore/mlx) |
 | 主要语言 | C++（核心）+ Python（绑定）+ Swift/C 绑定 |
@@ -31,7 +31,7 @@ MLX 是 Apple 机器学习研究团队开源的数组框架，专为 Apple Silic
 
 MLX 的仓库结构清晰地分离了核心引擎与语言绑定：
 
-```
+```text
 mlx/                    # C++ 核心实现
 ├── array.h / array.cpp # Array 数据结构
 ├── ops.h / ops.cpp     # 算子定义（矩阵乘法、卷积、FFT 等）
@@ -242,17 +242,11 @@ v0.31.2 版本中，调度器新增了完整的线程安全支持，每个线程
 
 ### 适用场景
 
-| 场景 | MLX 适合度 | 说明 |
-|------|-----------|------|
-| Mac 上本地推理 LLM | 高 | 统一内存允许加载大模型，Metal 加速 |
-| Mac 上微调模型（LoRA 等） | 高 | 官方提供 LoRA 示例，内存充足 |
-| 研究原型开发 | 中-高 | API 简洁，但生态小于 PyTorch |
-| 大规模分布式训练 | 低 | 分布式支持尚在早期，缺乏多机方案 |
-| Linux 服务器训练 | 低 | CUDA 后端可用但生态不如 PyTorch 成熟 |
-| 生产部署（云端） | 低 | 缺少成熟的 serving 框架 |
-| 数值计算替代 NumPy | 中 | API 兼容 NumPy，但 GPU 加速仅在 Mac 上 |
-| Stable Diffusion 本地生成 | 高 | 官方示例支持，Metal 优化良好 |
-| 语音识别本地推理 | 高 | Whisper 示例支持 |
+MLX 的能力高度绑定 Apple Silicon，场景适配差异明显：
+
+- **擅长（Mac 本地）**：本地推理 LLM（统一内存可加载大模型，Metal 加速）、LoRA 等模型微调（官方有示例、内存充足）、Stable Diffusion 本地生成、语音识别本地推理（Whisper 示例）。这些是 MLX 的主战场。
+- **可用但生态受限**：研究原型开发（API 简洁但生态小于 PyTorch）、替代 NumPy 做数值计算（API 兼容，但 GPU 加速仅在 Mac）。
+- **不适合**：大规模分布式训练（多机方案尚在早期）、Linux 服务器训练（CUDA 后端可用但生态不如 PyTorch 成熟）、云端生产部署（缺成熟 serving 框架）。
 
 ## 性能特点
 
@@ -276,7 +270,7 @@ MLX 的生态围绕核心框架向外扩展：
 
 对于希望在 Apple 设备上部署机器学习应用的研究者和开发者，MLX 提供了一条从研究到产品的连续路径：在 Python 中用 MLX 训练或微调模型，通过 mlx-swift 在原生应用中加载和运行。
 
-## 使用快速上手
+## 快速上手
 
 安装 MLX：
 

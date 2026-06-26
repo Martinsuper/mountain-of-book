@@ -731,7 +731,7 @@ mvn dependency:resolve -X | grep "repository"
    - 控制仓库数量，避免依赖分散
    - RELEASE 和 SNAPSHOT 分开配置
 
-## 参考资源
+## 参考资料
 
 - [Maven Settings 官方文档](https://maven.apache.org/settings.html)
 - [Maven Settings Schema](https://maven.apache.org/xsd/settings-1.0.0.xsd)

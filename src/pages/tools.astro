@@ -3,168 +3,149 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="开发者工具" description="常用开发工具集合">
+<BaseLayout title="小工具" description="Token 估算、JSON/YAML、Markdown 预览、文本对比、正则测试">
   <div class="tools-page">
-    <!-- 页面标题 -->
     <header class="tools-header">
-      <h1>🔧 开发者工具箱</h1>
-      <p class="tools-subtitle">常用开发工具集合，助力高效开发</p>
+      <h1>小工具</h1>
+      <p class="tools-subtitle">Token 估算 · JSON/YAML · Markdown 预览 · 文本对比 · 正则测试</p>
     </header>
 
     <!-- Tab 导航栏 -->
     <nav class="tools-tabs" id="toolsTabs">
-      <button class="tab-btn active" data-tab="json">📋 JSON</button>
-      <button class="tab-btn" data-tab="timestamp">🕐 时间戳</button>
-      <button class="tab-btn" data-tab="diff">🔀 Diff</button>
-      <button class="tab-btn" data-tab="url">🔗 URL</button>
-      <button class="tab-btn" data-tab="base64">📦 Base64</button>
+      <button class="tab-btn active" data-tab="token">Token 估算</button>
+      <button class="tab-btn" data-tab="json">JSON / YAML</button>
+      <button class="tab-btn" data-tab="markdown">Markdown 预览</button>
+      <button class="tab-btn" data-tab="diff">文本对比</button>
+      <button class="tab-btn" data-tab="regex">正则测试</button>
     </nav>
 
-    <!-- 工具内容区容器 -->
-    <div class="tools-content" id="toolsContent">
-      <!-- 各工具内容将通过 JS 动态显示 -->
+    <div class="tools-content">
+      <!-- Token 估算 -->
+      <div class="tool-panel active" id="panel-token">
+        <div class="tool-section">
+          <label class="tool-label" for="tokenInput">输入文本</label>
+          <textarea class="tool-input" id="tokenInput" placeholder="粘贴 prompt 或任意文本，实时估算 token 数"></textarea>
+          <div class="token-stats" id="tokenStats">
+            <div class="token-stat"><span class="label">字符数</span><span class="value" id="statChars">0</span></div>
+            <div class="token-stat"><span class="label">单词数</span><span class="value" id="statWords">0</span></div>
+            <div class="token-stat"><span class="label">中日韩字符</span><span class="value" id="statCjk">0</span></div>
+            <div class="token-stat token-stat-primary"><span class="label">估算 Token</span><span class="value" id="statTokens">0</span></div>
+          </div>
+          <p class="token-note">估算值，非精确分词；实际 token 数因模型分词器而异。</p>
+          <div class="token-windows" id="tokenWindows"></div>
+        </div>
+      </div>
+
+      <!-- JSON / YAML -->
+      <div class="tool-panel" id="panel-json">
+        <div class="tool-section">
+          <label class="tool-label" for="jsonInput">输入 JSON 或 YAML</label>
+          <textarea class="tool-input" id="jsonInput" placeholder={'{"name": "example", "value": 123}'}></textarea>
+          <div class="tool-actions">
+            <button class="tool-btn tool-btn-primary" data-action="formatJson">格式化 JSON</button>
+            <button class="tool-btn tool-btn-secondary" data-action="minifyJson">压缩 JSON</button>
+            <button class="tool-btn tool-btn-success" data-action="jsonToYaml">JSON → YAML</button>
+            <button class="tool-btn tool-btn-success" data-action="yamlToJson">YAML → JSON</button>
+            <button class="tool-btn tool-btn-secondary" data-action="copyJson">复制</button>
+            <button class="tool-btn tool-btn-danger" data-action="clearJson">清空</button>
+            <span class="json-status" id="jsonStatus"></span>
+          </div>
+          <label class="tool-label" for="jsonOutput">输出结果</label>
+          <textarea class="tool-output" id="jsonOutput" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- Markdown 预览 -->
+      <div class="tool-panel" id="panel-markdown">
+        <div class="tool-section">
+          <div class="md-split">
+            <div class="md-pane">
+              <div class="md-pane-head">
+                <label class="tool-label" for="mdInput">Markdown 源</label>
+                <div class="md-pane-actions">
+                  <button class="tool-btn tool-btn-secondary" data-action="copyMdHtml">复制 HTML</button>
+                  <button class="tool-btn tool-btn-danger" data-action="clearMd">清空</button>
+                </div>
+              </div>
+              <textarea class="tool-input md-input" id="mdInput" placeholder="# 标题&#10;&#10;输入 Markdown，右侧实时预览"></textarea>
+            </div>
+            <div class="md-pane">
+              <label class="tool-label">预览</label>
+              <div class="md-preview prose dark:prose-invert max-w-none" id="mdPreview"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 文本对比 -->
+      <div class="tool-panel" id="panel-diff">
+        <div class="tool-section">
+          <label class="tool-label">文本对比</label>
+          <div class="diff-inputs">
+            <div class="input-group">
+              <label class="tool-label">原始文本</label>
+              <div class="diff-editor-container">
+                <div class="diff-overlay" id="diffOverlayLeft"></div>
+                <textarea class="tool-input diff-editor" id="diffInput1" placeholder="输入原始文本"></textarea>
+              </div>
+            </div>
+            <div class="input-group">
+              <label class="tool-label">新文本</label>
+              <div class="diff-editor-container">
+                <div class="diff-overlay" id="diffOverlayRight"></div>
+                <textarea class="tool-input diff-editor" id="diffInput2" placeholder="输入新文本"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <button class="tool-btn tool-btn-primary" data-action="compareDiff">对比</button>
+            <button class="tool-btn tool-btn-danger" data-action="clearDiff">清空</button>
+          </div>
+          <div class="diff-stats" id="diffStats"></div>
+        </div>
+      </div>
+
+      <!-- 正则测试 -->
+      <div class="tool-panel" id="panel-regex">
+        <div class="tool-section">
+          <label class="tool-label" for="regexPattern">正则表达式</label>
+          <div class="regex-pattern-row">
+            <span class="regex-slash">/</span>
+            <input type="text" id="regexPattern" class="regex-pattern" placeholder="\d{4}-\d{2}-\d{2}" spellcheck="false" />
+            <span class="regex-slash">/</span>
+            <div class="regex-flags">
+              <label><input type="checkbox" data-flag="g" checked /> g</label>
+              <label><input type="checkbox" data-flag="i" /> i</label>
+              <label><input type="checkbox" data-flag="m" /> m</label>
+              <label><input type="checkbox" data-flag="s" /> s</label>
+            </div>
+          </div>
+          <span class="json-status" id="regexStatus"></span>
+          <label class="tool-label" for="regexInput">测试文本</label>
+          <textarea class="tool-input" id="regexInput" placeholder="输入待匹配的文本"></textarea>
+          <label class="tool-label">匹配结果 <span class="regex-count" id="regexCount"></span></label>
+          <div class="regex-result" id="regexResult"></div>
+          <div class="regex-groups" id="regexGroups"></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // 工具面板HTML模板
-    const toolPanels = {
-      json: `
-        <div class="tool-panel active" id="panel-json">
-          <div class="tool-section">
-            <label class="tool-label">输入 JSON</label>
-            <textarea class="tool-input" id="jsonInput" placeholder='{"name": "example", "value": 123}'></textarea>
-            <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" data-action="formatJson">格式化</button>
-              <button class="tool-btn tool-btn-success" data-action="minifyJson">压缩</button>
-              <button class="tool-btn tool-btn-secondary" data-action="copyJson">复制</button>
-              <button class="tool-btn tool-btn-danger" data-action="clearJson">清空</button>
-              <span class="json-status" id="jsonStatus"></span>
-            </div>
-          </div>
-          <div class="tool-section">
-            <label class="tool-label">输出结果</label>
-            <textarea class="tool-output" id="jsonOutput" readonly></textarea>
-          </div>
-        </div>
-      `,
-      timestamp: `
-        <div class="tool-panel" id="panel-timestamp">
-          <div class="tool-section">
-            <label class="tool-label">时间戳转换</label>
-            <div class="timestamp-input-row">
-              <input type="text" id="timestampInput" placeholder="输入时间戳或日期">
-              <div class="unit-toggle">
-                <button class="active" data-unit="s" data-action="setTimestampUnitS">秒</button>
-                <button data-unit="ms" data-action="setTimestampUnitMs">毫秒</button>
-              </div>
-            </div>
-            <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" data-action="convertTimestamp">转换</button>
-              <button class="tool-btn tool-btn-secondary" data-action="getCurrentTimestamp">当前时间</button>
-              <button class="tool-btn tool-btn-secondary" data-action="copyTimestamp">复制结果</button>
-            </div>
-            <div class="timestamp-results" id="timestampResults"></div>
-          </div>
-        </div>
-      `,
-      diff: `
-        <div class="tool-panel" id="panel-diff">
-          <div class="tool-section">
-            <label class="tool-label">文本对比</label>
-            <div class="diff-inputs">
-              <div class="input-group">
-                <label class="tool-label">原始文本</label>
-                <div class="diff-editor-container">
-                  <div class="diff-overlay" id="diffOverlayLeft"></div>
-                  <textarea class="tool-input diff-editor" id="diffInput1" placeholder="输入原始文本"></textarea>
-                </div>
-              </div>
-              <div class="input-group">
-                <label class="tool-label">新文本</label>
-                <div class="diff-editor-container">
-                  <div class="diff-overlay" id="diffOverlayRight"></div>
-                  <textarea class="tool-input diff-editor" id="diffInput2" placeholder="输入新文本"></textarea>
-                </div>
-              </div>
-            </div>
-            <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" data-action="compareDiff">对比</button>
-              <button class="tool-btn tool-btn-secondary" data-action="clearDiff">清空</button>
-            </div>
-            <div class="diff-stats" id="diffStats"></div>
-          </div>
-        </div>
-      `,
-      url: `
-        <div class="tool-panel" id="panel-url">
-          <div class="tool-section">
-            <label class="tool-label">URL 编码/解码</label>
-            <textarea class="tool-input" id="urlInput" placeholder="输入需要编码或解码的URL"></textarea>
-            <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" data-action="encodeUrl">URL编码</button>
-              <button class="tool-btn tool-btn-success" data-action="decodeUrl">URL解码</button>
-              <button class="tool-btn tool-btn-secondary" data-action="copyUrl">复制结果</button>
-              <button class="tool-btn tool-btn-danger" data-action="clearUrl">清空</button>
-            </div>
-            <label class="tool-label">输出结果</label>
-            <textarea class="tool-output" id="urlOutput" readonly></textarea>
-          </div>
-        </div>
-      `,
-      base64: `
-        <div class="tool-panel" id="panel-base64">
-          <div class="tool-section">
-            <label class="tool-label">Base64 编码/解码</label>
-            <div class="file-upload-area" id="fileUploadArea">
-              <div class="file-upload-icon">📁</div>
-              <div class="file-upload-text">点击选择文件或拖拽文件到此处</div>
-              <input type="file" id="fileInput" style="display: none">
-            </div>
-            <div class="file-info" id="fileInfo" style="display: none;">
-              <span class="file-name" id="fileName"></span>
-              <span class="file-size" id="fileSize"></span>
-              <button class="file-remove" data-action="removeFile">×</button>
-            </div>
-            <textarea class="tool-input" id="base64Input" placeholder="输入文本或Base64字符串"></textarea>
-            <div class="tool-actions">
-              <button class="tool-btn tool-btn-primary" data-action="encodeBase64">编码</button>
-              <button class="tool-btn tool-btn-success" data-action="decodeBase64">解码</button>
-              <button class="tool-btn tool-btn-secondary" data-action="copyBase64">复制结果</button>
-              <button class="tool-btn tool-btn-danger" data-action="clearBase64">清空</button>
-            </div>
-            <label class="tool-label">输出结果</label>
-            <textarea class="tool-output" id="base64Output" readonly></textarea>
-          </div>
-        </div>
-      `
-    };
+    import { marked } from 'marked';
+    import * as yaml from 'js-yaml';
 
-    // Toast通知函数
-    function showToast(message, type = 'success') {
-      const existingToast = document.querySelector('.toast');
-      if (existingToast) existingToast.remove();
-
+    // ---------- 通用工具 ----------
+    function showToast(message: string, type: 'success' | 'error' = 'success') {
+      document.querySelector('.toast')?.remove();
       const toast = document.createElement('div');
-      toast.className = 'toast';
+      toast.className = `toast toast-${type}`;
       toast.textContent = message;
-      toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: ${type === 'error' ? '#ef4444' : '#1f2937'};
-        color: #fff;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        z-index: 1000;
-      `;
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 2000);
     }
 
-    // 复制到剪贴板
-    async function copyToClipboard(text) {
+    async function copyToClipboard(text: string) {
       if (!text) {
         showToast('无内容可复制', 'error');
         return;
@@ -177,332 +158,305 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
     }
 
-    // 当前选中的Tab
-    let currentTab = 'json';
-    let timestampUnit = 's';
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
 
-    // 初始化Tab功能
+    function $(id: string) {
+      return document.getElementById(id);
+    }
+
+    // ---------- Tab 切换 ----------
+    let currentTab = 'token';
+    const tabsContainer = $('toolsTabs')!;
+    const validTabs = ['token', 'json', 'markdown', 'diff', 'regex'];
+
+    function updateTabState() {
+      tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
+        const el = btn as HTMLElement;
+        const active = el.dataset.tab === currentTab;
+        el.classList.toggle('active', active);
+        el.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('.tool-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `panel-${currentTab}`);
+      });
+    }
+
     function initTabs() {
-      const tabsContainer = document.getElementById('toolsTabs');
-      const contentContainer = document.getElementById('toolsContent');
-
-      // 渲染所有面板
-      contentContainer.innerHTML = Object.values(toolPanels).join('');
-
-      // 绑定工具按钮事件
-      bindToolActions();
-
-      // 从URL hash获取初始Tab
       const hash = window.location.hash.slice(1);
-      if (hash && toolPanels[hash]) {
-        currentTab = hash;
-      }
-
-      // 设置初始状态
+      if (hash && validTabs.includes(hash)) currentTab = hash;
       updateTabState();
 
-      // 绑定Tab点击事件
-      const tabButtons = tabsContainer.querySelectorAll('.tab-btn');
-      tabButtons.forEach(btn => {
+      tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const tab = btn.dataset.tab;
+          const tab = (btn as HTMLElement).dataset.tab;
           if (tab && tab !== currentTab) {
             currentTab = tab;
             updateTabState();
-            // 更新URL hash
             window.location.hash = tab;
           }
         });
       });
 
-      // 监听hash变化
       window.addEventListener('hashchange', () => {
-        const hash = window.location.hash.slice(1);
-        if (hash && hash !== currentTab && toolPanels[hash]) {
-          currentTab = hash;
+        const h = window.location.hash.slice(1);
+        if (h && h !== currentTab && validTabs.includes(h)) {
+          currentTab = h;
           updateTabState();
         }
       });
 
-      // 键盘导航支持
-      document.addEventListener('keydown', (e) => {
-        if (e.target.classList.contains('tab-btn')) {
-          const tabs = Array.from(tabsContainer.querySelectorAll('.tab-btn'));
-          const currentIndex = tabs.findIndex(t => t === e.target);
-
-          if (e.key === 'ArrowRight' && currentIndex < tabs.length - 1) {
-            tabs[currentIndex + 1].focus();
-          } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-            tabs[currentIndex - 1].focus();
-          } else if (e.key === 'Enter' || e.key === ' ') {
-            e.target.click();
-          }
-        }
+      // 键盘左右切换
+      tabsContainer.addEventListener('keydown', (e: Event) => {
+        const ke = e as KeyboardEvent;
+        const tabs = Array.from(tabsContainer.querySelectorAll('.tab-btn'));
+        const idx = tabs.findIndex(t => t === document.activeElement);
+        if (idx === -1) return;
+        if (ke.key === 'ArrowRight' && idx < tabs.length - 1) (tabs[idx + 1] as HTMLElement).focus();
+        else if (ke.key === 'ArrowLeft' && idx > 0) (tabs[idx - 1] as HTMLElement).focus();
       });
     }
 
-    // 绑定所有工具按钮的事件处理器
-    function bindToolActions() {
-      // 查找所有带有 data-action 属性的按钮
+    // ---------- 事件绑定（data-action） ----------
+    function bindActions() {
+      const handlers: Record<string, () => void> = {
+        formatJson, minifyJson, jsonToYaml, yamlToJson, copyJson, clearJson,
+        copyMdHtml, clearMd,
+        compareDiff, clearDiff,
+      };
       document.querySelectorAll('[data-action]').forEach(el => {
-        const action = el.dataset.action;
-        if (actionHandlers[action]) {
-          el.addEventListener('click', actionHandlers[action]);
-        }
-      });
-
-      // 文件上传区域点击
-      const fileUploadArea = document.getElementById('fileUploadArea');
-      if (fileUploadArea) {
-        fileUploadArea.addEventListener('click', () => {
-          document.getElementById('fileInput').click();
-        });
-      }
-
-      // 文件选择
-      const fileInput = document.getElementById('fileInput');
-      if (fileInput) {
-        fileInput.addEventListener('change', handleFileSelect);
-      }
-    }
-
-    // 事件处理器映射
-    const actionHandlers = {
-      formatJson: formatJson,
-      minifyJson: minifyJson,
-      copyJson: copyJson,
-      clearJson: clearJson,
-      setTimestampUnitS: () => setTimestampUnit('s'),
-      setTimestampUnitMs: () => setTimestampUnit('ms'),
-      convertTimestamp: convertTimestamp,
-      getCurrentTimestamp: getCurrentTimestamp,
-      copyTimestamp: copyTimestamp,
-      compareDiff: compareDiff,
-      clearDiff: clearDiff,
-      encodeUrl: encodeUrl,
-      decodeUrl: decodeUrl,
-      copyUrl: copyUrl,
-      clearUrl: clearUrl,
-      removeFile: removeFile,
-      encodeBase64: encodeBase64,
-      decodeBase64: decodeBase64,
-      copyBase64: copyBase64,
-      clearBase64: clearBase64,
-    };
-
-    // 更新Tab状态
-    function updateTabState() {
-      const tabButtons = document.querySelectorAll('.tab-btn');
-      const panels = document.querySelectorAll('.tool-panel');
-
-      tabButtons.forEach(btn => {
-        if (btn.dataset.tab === currentTab) {
-          btn.classList.add('active');
-          btn.setAttribute('aria-selected', 'true');
-        } else {
-          btn.classList.remove('active');
-          btn.setAttribute('aria-selected', 'false');
-        }
-      });
-
-      panels.forEach(panel => {
-        if (panel.id === `panel-${currentTab}`) {
-          panel.classList.add('active');
-        } else {
-          panel.classList.remove('active');
-        }
+        const action = (el as HTMLElement).dataset.action!;
+        if (handlers[action]) el.addEventListener('click', handlers[action]);
       });
     }
 
-    // JSON工具函数
+    // ---------- Token 估算 ----------
+    const CONTEXT_WINDOWS = [
+      { label: '8K', size: 8192 },
+      { label: '32K', size: 32768 },
+      { label: '128K', size: 131072 },
+      { label: '200K', size: 204800 },
+    ];
+
+    function countCjk(text: string): number {
+      const m = text.match(/[一-鿿㐀-䶿぀-ヿ가-힯]/g);
+      return m ? m.length : 0;
+    }
+
+    function estimateTokens(text: string, cjk: number): number {
+      // 启发式：CJK 字符约 1.6 token/字，其余约 4 字符/token
+      const nonCjk = text.length - cjk;
+      return Math.ceil(cjk * 1.6 + Math.max(0, nonCjk) / 4);
+    }
+
+    function updateTokenStats() {
+      const text = ($('tokenInput') as HTMLTextAreaElement).value;
+      const chars = text.length;
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const cjk = countCjk(text);
+      const tokens = estimateTokens(text, cjk);
+
+      $('statChars')!.textContent = chars.toLocaleString();
+      $('statWords')!.textContent = words.toLocaleString();
+      $('statCjk')!.textContent = cjk.toLocaleString();
+      $('statTokens')!.textContent = tokens.toLocaleString();
+
+      const windowsEl = $('tokenWindows')!;
+      windowsEl.innerHTML = '';
+      CONTEXT_WINDOWS.forEach(w => {
+        const pct = Math.min(100, (tokens / w.size) * 100);
+        const row = document.createElement('div');
+        row.className = 'token-window';
+        const over = tokens > w.size;
+
+        const head = document.createElement('div');
+        head.className = 'token-window-head';
+        const name = document.createElement('span');
+        name.textContent = `${w.label} 上下文`;
+        const ratio = document.createElement('span');
+        ratio.className = over ? 'token-window-over' : '';
+        ratio.textContent = `${pct.toFixed(pct < 1 ? 2 : 1)}%`;
+        head.appendChild(name);
+        head.appendChild(ratio);
+
+        const bar = document.createElement('div');
+        bar.className = 'token-window-bar';
+        const fill = document.createElement('div');
+        fill.className = `token-window-fill${over ? ' over' : ''}`;
+        fill.style.width = `${pct}%`;
+        bar.appendChild(fill);
+
+        row.appendChild(head);
+        row.appendChild(bar);
+        windowsEl.appendChild(row);
+      });
+    }
+
+    // ---------- JSON / YAML ----------
+    function setJsonStatus(ok: boolean, text: string) {
+      const status = $('jsonStatus')!;
+      status.textContent = text;
+      status.className = `json-status ${ok ? 'valid' : 'invalid'}`;
+    }
+
     function formatJson() {
-      const input = document.getElementById('jsonInput').value;
-      const output = document.getElementById('jsonOutput');
-      const status = document.getElementById('jsonStatus');
-
+      const input = ($('jsonInput') as HTMLTextAreaElement).value;
       try {
-        const parsed = JSON.parse(input);
-        output.value = JSON.stringify(parsed, null, 2);
-        status.textContent = '✓ 有效JSON';
-        status.className = 'json-status valid';
+        ($('jsonOutput') as HTMLTextAreaElement).value = JSON.stringify(JSON.parse(input), null, 2);
+        setJsonStatus(true, '✓ 有效 JSON');
         showToast('格式化成功');
       } catch (e) {
-        output.value = '错误: ' + e.message;
-        status.textContent = '✗ 无效JSON';
-        status.className = 'json-status invalid';
-        showToast('JSON格式错误', 'error');
+        ($('jsonOutput') as HTMLTextAreaElement).value = '错误: ' + (e as Error).message;
+        setJsonStatus(false, '✗ 无效 JSON');
+        showToast('JSON 格式错误', 'error');
       }
     }
 
     function minifyJson() {
-      const input = document.getElementById('jsonInput').value;
-      const output = document.getElementById('jsonOutput');
-      const status = document.getElementById('jsonStatus');
-
+      const input = ($('jsonInput') as HTMLTextAreaElement).value;
       try {
-        const parsed = JSON.parse(input);
-        output.value = JSON.stringify(parsed);
-        status.textContent = '✓ 有效JSON';
-        status.className = 'json-status valid';
+        ($('jsonOutput') as HTMLTextAreaElement).value = JSON.stringify(JSON.parse(input));
+        setJsonStatus(true, '✓ 有效 JSON');
         showToast('压缩成功');
       } catch (e) {
-        output.value = '错误: ' + e.message;
-        status.textContent = '✗ 无效JSON';
-        status.className = 'json-status invalid';
-        showToast('JSON格式错误', 'error');
+        ($('jsonOutput') as HTMLTextAreaElement).value = '错误: ' + (e as Error).message;
+        setJsonStatus(false, '✗ 无效 JSON');
+        showToast('JSON 格式错误', 'error');
+      }
+    }
+
+    function jsonToYaml() {
+      const input = ($('jsonInput') as HTMLTextAreaElement).value;
+      try {
+        ($('jsonOutput') as HTMLTextAreaElement).value = yaml.dump(JSON.parse(input), { indent: 2, lineWidth: -1 });
+        setJsonStatus(true, '✓ JSON → YAML');
+        showToast('转换成功');
+      } catch (e) {
+        ($('jsonOutput') as HTMLTextAreaElement).value = '错误: ' + (e as Error).message;
+        setJsonStatus(false, '✗ 无效 JSON');
+        showToast('JSON 解析失败', 'error');
+      }
+    }
+
+    function yamlToJson() {
+      const input = ($('jsonInput') as HTMLTextAreaElement).value;
+      try {
+        ($('jsonOutput') as HTMLTextAreaElement).value = JSON.stringify(yaml.load(input), null, 2);
+        setJsonStatus(true, '✓ YAML → JSON');
+        showToast('转换成功');
+      } catch (e) {
+        ($('jsonOutput') as HTMLTextAreaElement).value = '错误: ' + (e as Error).message;
+        setJsonStatus(false, '✗ 无效 YAML');
+        showToast('YAML 解析失败', 'error');
       }
     }
 
     function copyJson() {
-      const output = document.getElementById('jsonOutput');
-      copyToClipboard(output.value);
+      copyToClipboard(($('jsonOutput') as HTMLTextAreaElement).value);
     }
 
     function clearJson() {
-      document.getElementById('jsonInput').value = '';
-      document.getElementById('jsonOutput').value = '';
-      document.getElementById('jsonStatus').textContent = '';
+      ($('jsonInput') as HTMLTextAreaElement).value = '';
+      ($('jsonOutput') as HTMLTextAreaElement).value = '';
+      $('jsonStatus')!.textContent = '';
+      $('jsonStatus')!.className = 'json-status';
     }
 
-    // 时间戳工具函数
-    function setTimestampUnit(unit) {
-      timestampUnit = unit;
-      document.querySelectorAll('.unit-toggle button').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.unit === unit);
-      });
+    // ---------- Markdown 预览 ----------
+    function renderMarkdown() {
+      const src = ($('mdInput') as HTMLTextAreaElement).value;
+      // 内容为用户本地输入、不存储不分享，渲染结果只影响自身浏览器，故直接 innerHTML。
+      $('mdPreview')!.innerHTML = marked.parse(src) as string;
     }
 
-    function convertTimestamp() {
-      const input = document.getElementById('timestampInput').value.trim();
-      const results = document.getElementById('timestampResults');
+    function copyMdHtml() {
+      copyToClipboard($('mdPreview')!.innerHTML);
+    }
 
-      if (!input) {
-        results.innerHTML = '<p style="color: #ef4444;">请输入时间戳或日期</p>';
-        return;
-      }
+    function clearMd() {
+      ($('mdInput') as HTMLTextAreaElement).value = '';
+      renderMarkdown();
+    }
 
-      let timestamp;
-      // 判断输入是时间戳还是日期字符串
-      if (/^\d+$/.test(input)) {
-        timestamp = parseInt(input);
-        if (timestampUnit === 's' && timestamp < 10000000000) {
-          timestamp *= 1000;
+    // ---------- 文本对比（LCS 字符级差异） ----------
+    function computeLCS(arr1: string[], arr2: string[]): string[] {
+      const m = arr1.length, n = arr2.length;
+      const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          dp[i][j] = arr1[i - 1] === arr2[j - 1]
+            ? dp[i - 1][j - 1] + 1
+            : Math.max(dp[i - 1][j], dp[i][j - 1]);
         }
-      } else {
-        timestamp = new Date(input).getTime();
       }
-
-      if (isNaN(timestamp)) {
-        results.innerHTML = '<p style="color: #ef4444;">无效的输入</p>';
-        return;
+      const lcs: string[] = [];
+      let i = m, j = n;
+      while (i > 0 && j > 0) {
+        if (arr1[i - 1] === arr2[j - 1]) { lcs.unshift(arr1[i - 1]); i--; j--; }
+        else if (dp[i - 1][j] > dp[i][j - 1]) i--;
+        else j--;
       }
-
-      const date = new Date(timestamp);
-      results.innerHTML = `
-        <div class="timestamp-result-item">
-          <span class="label">时间戳（秒）</span>
-          <span class="value">${Math.floor(timestamp / 1000)}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">时间戳（毫秒）</span>
-          <span class="value">${timestamp}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">UTC 时间</span>
-          <span class="value">${date.toUTCString()}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">本地时间</span>
-          <span class="value">${date.toLocaleString('zh-CN')}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">ISO 字符串</span>
-          <span class="value">${date.toISOString()}</span>
-        </div>
-      `;
+      return lcs;
     }
 
-    function getCurrentTimestamp() {
-      const now = Date.now();
-      const results = document.getElementById('timestampResults');
-      const date = new Date(now);
-      results.innerHTML = `
-        <div class="timestamp-result-item">
-          <span class="label">时间戳（秒）</span>
-          <span class="value">${Math.floor(now / 1000)}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">时间戳（毫秒）</span>
-          <span class="value">${now}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">UTC 时间</span>
-          <span class="value">${date.toUTCString()}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">本地时间</span>
-          <span class="value">${date.toLocaleString('zh-CN')}</span>
-        </div>
-        <div class="timestamp-result-item">
-          <span class="label">ISO 字符串</span>
-          <span class="value">${date.toISOString()}</span>
-        </div>
-      `;
+    function computeCharDiff(str1: string, str2: string) {
+      const chars1 = [...str1], chars2 = [...str2];
+      const lcs = computeLCS(chars1, chars2);
+      let leftResult = '', rightResult = '';
+      let i1 = 0, lcsIdx = 0;
+      while (i1 < chars1.length || lcsIdx < lcs.length) {
+        if (lcsIdx < lcs.length && i1 < chars1.length && chars1[i1] === lcs[lcsIdx]) {
+          leftResult += escapeHtml(chars1[i1]); i1++; lcsIdx++;
+        } else if (i1 < chars1.length) {
+          leftResult += `<span class="char-diff removed">${escapeHtml(chars1[i1])}</span>`; i1++;
+        }
+      }
+      let i2 = 0; lcsIdx = 0;
+      while (i2 < chars2.length || lcsIdx < lcs.length) {
+        if (lcsIdx < lcs.length && i2 < chars2.length && chars2[i2] === lcs[lcsIdx]) {
+          rightResult += escapeHtml(chars2[i2]); i2++; lcsIdx++;
+        } else if (i2 < chars2.length) {
+          rightResult += `<span class="char-diff added">${escapeHtml(chars2[i2])}</span>`; i2++;
+        }
+      }
+      return { left: leftResult, right: rightResult };
     }
 
-    function copyTimestamp() {
-      const results = document.getElementById('timestampResults');
-      const text = results.textContent;
-      copyToClipboard(text);
-    }
-
-    // Diff工具函数
     function compareDiff() {
-      const input1 = document.getElementById('diffInput1');
-      const input2 = document.getElementById('diffInput2');
-      const overlayLeft = document.getElementById('diffOverlayLeft');
-      const overlayRight = document.getElementById('diffOverlayRight');
-      const stats = document.getElementById('diffStats');
+      const input1 = $('diffInput1') as HTMLTextAreaElement;
+      const input2 = $('diffInput2') as HTMLTextAreaElement;
+      const overlayLeft = $('diffOverlayLeft')!;
+      const overlayRight = $('diffOverlayRight')!;
+      const stats = $('diffStats')!;
 
-      const text1 = input1.value;
-      const text2 = input2.value;
-
+      const text1 = input1.value, text2 = input2.value;
       if (!text1 && !text2) {
         showToast('请输入文本内容', 'error');
         return;
       }
 
-      const lines1 = text1.split('\n');
-      const lines2 = text2.split('\n');
-
-      let added = 0;
-      let removed = 0;
-      let changed = 0;
-
+      const lines1 = text1.split('\n'), lines2 = text2.split('\n');
+      let added = 0, removed = 0, changed = 0;
       const maxLen = Math.max(lines1.length, lines2.length);
-      let leftHtml = '';
-      let rightHtml = '';
+      let leftHtml = '', rightHtml = '';
 
       for (let i = 0; i < maxLen; i++) {
-        const line1 = lines1[i] !== undefined ? lines1[i] : '';
-        const line2 = lines2[i] !== undefined ? lines2[i] : '';
-
+        const line1 = lines1[i] ?? '', line2 = lines2[i] ?? '';
         if (line1 === line2) {
-          // 完全相同的行
           leftHtml += `<div class="diff-line-overlay same">${escapeHtml(line1) || '&nbsp;'}</div>`;
           rightHtml += `<div class="diff-line-overlay same">${escapeHtml(line2) || '&nbsp;'}</div>`;
         } else if (line1 && !line2) {
-          // 删除行：左边有，右边没有
           leftHtml += `<div class="diff-line-overlay removed"><span class="char-diff removed">${escapeHtml(line1)}</span></div>`;
           rightHtml += `<div class="diff-line-overlay empty">&nbsp;</div>`;
           removed++;
         } else if (!line1 && line2) {
-          // 新增行：左边没有，右边有
           leftHtml += `<div class="diff-line-overlay empty">&nbsp;</div>`;
           rightHtml += `<div class="diff-line-overlay added"><span class="char-diff added">${escapeHtml(line2)}</span></div>`;
           added++;
         } else {
-          // 修改行：字符级别对比
           const charDiff = computeCharDiff(line1, line2);
           leftHtml += `<div class="diff-line-overlay modified">${charDiff.left || '&nbsp;'}</div>`;
           rightHtml += `<div class="diff-line-overlay modified">${charDiff.right || '&nbsp;'}</div>`;
@@ -515,260 +469,140 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <span class="diff-stat removed">-${removed} 删除</span>
         <span class="diff-stat changed">~${changed} 修改</span>
       `;
-
-      // 显示 overlay 高亮层
       overlayLeft.innerHTML = leftHtml;
       overlayRight.innerHTML = rightHtml;
       overlayLeft.classList.add('active');
       overlayRight.classList.add('active');
-
-      // 让 textarea 透明，显示 overlay
       input1.classList.add('diff-mode');
       input2.classList.add('diff-mode');
-
       showToast('对比完成');
     }
 
-    // 字符级别差异计算（使用 LCS 算法）
-    function computeCharDiff(str1, str2) {
-      const chars1 = [...str1];
-      const chars2 = [...str2];
-
-      // 计算 LCS
-      const lcs = computeLCS(chars1, chars2);
-
-      // 标记差异
-      let leftResult = '';
-      let rightResult = '';
-
-      let i1 = 0, i2 = 0, lcsIdx = 0;
-
-      // 处理左边字符串
-      while (i1 < chars1.length || lcsIdx < lcs.length) {
-        if (lcsIdx < lcs.length && i1 < chars1.length && chars1[i1] === lcs[lcsIdx]) {
-          leftResult += escapeHtml(chars1[i1]);
-          i1++;
-          lcsIdx++;
-        } else if (i1 < chars1.length) {
-          leftResult += `<span class="char-diff removed">${escapeHtml(chars1[i1])}</span>`;
-          i1++;
-        }
-      }
-
-      // 重置 LCS 索引，处理右边字符串
-      lcsIdx = 0;
-      while (i2 < chars2.length || lcsIdx < lcs.length) {
-        if (lcsIdx < lcs.length && i2 < chars2.length && chars2[i2] === lcs[lcsIdx]) {
-          rightResult += escapeHtml(chars2[i2]);
-          i2++;
-          lcsIdx++;
-        } else if (i2 < chars2.length) {
-          rightResult += `<span class="char-diff added">${escapeHtml(chars2[i2])}</span>`;
-          i2++;
-        }
-      }
-
-      return { left: leftResult, right: rightResult };
-    }
-
-    // LCS（最长公共子序列）算法
-    function computeLCS(arr1, arr2) {
-      const m = arr1.length;
-      const n = arr2.length;
-
-      // 构建 DP 表
-      const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-
-      for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-          if (arr1[i - 1] === arr2[j - 1]) {
-            dp[i][j] = dp[i - 1][j - 1] + 1;
-          } else {
-            dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-          }
-        }
-      }
-
-      // 回溯提取 LCS
-      const lcs = [];
-      let i = m, j = n;
-      while (i > 0 && j > 0) {
-        if (arr1[i - 1] === arr2[j - 1]) {
-          lcs.unshift(arr1[i - 1]);
-          i--;
-          j--;
-        } else if (dp[i - 1][j] > dp[i][j - 1]) {
-          i--;
-        } else {
-          j--;
-        }
-      }
-
-      return lcs;
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
     function clearDiff() {
-      const input1 = document.getElementById('diffInput1');
-      const input2 = document.getElementById('diffInput2');
-      const overlayLeft = document.getElementById('diffOverlayLeft');
-      const overlayRight = document.getElementById('diffOverlayRight');
-
-      input1.value = '';
-      input2.value = '';
+      const input1 = $('diffInput1') as HTMLTextAreaElement;
+      const input2 = $('diffInput2') as HTMLTextAreaElement;
+      input1.value = ''; input2.value = '';
       input1.classList.remove('diff-mode');
       input2.classList.remove('diff-mode');
-      overlayLeft.innerHTML = '';
-      overlayRight.innerHTML = '';
-      overlayLeft.classList.remove('active');
-      overlayRight.classList.remove('active');
-      document.getElementById('diffStats').innerHTML = '';
+      $('diffOverlayLeft')!.innerHTML = '';
+      $('diffOverlayRight')!.innerHTML = '';
+      $('diffOverlayLeft')!.classList.remove('active');
+      $('diffOverlayRight')!.classList.remove('active');
+      $('diffStats')!.innerHTML = '';
     }
 
-    // URL工具函数
-    function encodeUrl() {
-      const input = document.getElementById('urlInput').value;
-      document.getElementById('urlOutput').value = encodeURIComponent(input);
-      showToast('编码成功');
+    // 编辑时退出 diff 高亮模式，避免文字透明看不见
+    function exitDiffMode(input: HTMLTextAreaElement, overlay: HTMLElement) {
+      input.classList.remove('diff-mode');
+      overlay.classList.remove('active');
     }
 
-    function decodeUrl() {
-      const input = document.getElementById('urlInput').value;
+    // ---------- 正则测试 ----------
+    function getFlags(): string {
+      let flags = '';
+      document.querySelectorAll('#panel-regex .regex-flags input').forEach(el => {
+        const cb = el as HTMLInputElement;
+        if (cb.checked) flags += cb.dataset.flag;
+      });
+      return flags;
+    }
+
+    function runRegex() {
+      const pattern = ($('regexPattern') as HTMLInputElement).value;
+      const text = ($('regexInput') as HTMLTextAreaElement).value;
+      const status = $('regexStatus')!;
+      const result = $('regexResult')!;
+      const groupsEl = $('regexGroups')!;
+      const countEl = $('regexCount')!;
+
+      groupsEl.innerHTML = '';
+      countEl.textContent = '';
+
+      if (!pattern) {
+        status.textContent = '';
+        status.className = 'json-status';
+        result.innerHTML = escapeHtml(text);
+        return;
+      }
+
+      let re: RegExp;
+      let flags = getFlags();
+      if (!flags.includes('g')) flags += 'g'; // 高亮需全局匹配
       try {
-        document.getElementById('urlOutput').value = decodeURIComponent(input);
-        showToast('解码成功');
+        re = new RegExp(pattern, flags);
+        status.textContent = '✓ 有效正则';
+        status.className = 'json-status valid';
       } catch (e) {
-        document.getElementById('urlOutput').value = '解码错误: ' + e.message;
-        showToast('解码失败', 'error');
+        status.textContent = '✗ ' + (e as Error).message;
+        status.className = 'json-status invalid';
+        result.innerHTML = escapeHtml(text);
+        return;
+      }
+
+      let html = '';
+      let lastIndex = 0;
+      let count = 0;
+      const groupRows: string[] = [];
+      let m: RegExpExecArray | null;
+
+      while ((m = re.exec(text)) !== null) {
+        count++;
+        html += escapeHtml(text.slice(lastIndex, m.index));
+        html += `<mark class="regex-match">${escapeHtml(m[0]) || '&nbsp;'}</mark>`;
+        lastIndex = m.index + m[0].length;
+
+        if (m.length > 1) {
+          const caps = m.slice(1).map((g, i) => `<span class="rg-idx">$${i + 1}</span> ${g === undefined ? '<em>undefined</em>' : escapeHtml(g)}`);
+          groupRows.push(`<div class="regex-group-row"><span class="rg-match">匹配 ${count}</span>${caps.join('')}</div>`);
+        }
+        if (m[0] === '') re.lastIndex++; // 防止空匹配死循环
+      }
+      html += escapeHtml(text.slice(lastIndex));
+      result.innerHTML = html || '<span class="regex-empty">无内容</span>';
+      countEl.textContent = count ? `${count} 处匹配` : '无匹配';
+
+      if (groupRows.length) {
+        groupsEl.innerHTML = `<div class="regex-groups-title">捕获组</div>${groupRows.join('')}`;
       }
     }
 
-    function copyUrl() {
-      const output = document.getElementById('urlOutput');
-      copyToClipboard(output.value);
-    }
+    // ---------- 初始化 ----------
+    initTabs();
+    bindActions();
 
-    function clearUrl() {
-      document.getElementById('urlInput').value = '';
-      document.getElementById('urlOutput').value = '';
-    }
+    // Token 实时
+    $('tokenInput')!.addEventListener('input', updateTokenStats);
+    updateTokenStats();
 
-    // Base64工具函数
-    let selectedFile = null;
+    // Markdown 实时
+    $('mdInput')!.addEventListener('input', renderMarkdown);
+    renderMarkdown();
 
-    // Base64编码 (UTF-8 to Base64)
-    function encodeBase64Unicode(str) {
-      const encoder = new TextEncoder();
-      const bytes = encoder.encode(str);
-      return btoa(String.fromCharCode(...bytes));
-    }
+    // Diff 编辑即退出高亮
+    const diffInput1 = $('diffInput1') as HTMLTextAreaElement;
+    const diffInput2 = $('diffInput2') as HTMLTextAreaElement;
+    diffInput1.addEventListener('input', () => exitDiffMode(diffInput1, $('diffOverlayLeft')!));
+    diffInput2.addEventListener('input', () => exitDiffMode(diffInput2, $('diffOverlayRight')!));
 
-    // Base64解码 (Base64 to UTF-8)
-    function decodeBase64Unicode(base64) {
-      const binaryStr = atob(base64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-      const decoder = new TextDecoder();
-      return decoder.decode(bytes);
-    }
-
-    function handleFileSelect(event) {
-      const file = event.target.files[0];
-      if (file) {
-        selectedFile = file;
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('fileSize').textContent = formatFileSize(file.size);
-        document.getElementById('fileInfo').style.display = 'flex';
-      }
-    }
-
-    function formatFileSize(bytes) {
-      if (bytes < 1024) return bytes + ' B';
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-    }
-
-    function removeFile() {
-      selectedFile = null;
-      document.getElementById('fileInput').value = '';
-      document.getElementById('fileInfo').style.display = 'none';
-    }
-
-    function encodeBase64() {
-      if (selectedFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('base64Output').value = e.target.result;
-          showToast('文件编码成功');
-        };
-        reader.readAsDataURL(selectedFile);
-      } else {
-        const input = document.getElementById('base64Input').value;
-        document.getElementById('base64Output').value = encodeBase64Unicode(input);
-        showToast('编码成功');
-      }
-    }
-
-    function decodeBase64() {
-      const input = document.getElementById('base64Input').value;
-      try {
-        document.getElementById('base64Output').value = decodeBase64Unicode(input);
-        showToast('解码成功');
-      } catch (e) {
-        document.getElementById('base64Output').value = '解码错误: ' + e.message;
-        showToast('解码失败', 'error');
-      }
-    }
-
-    function copyBase64() {
-      const output = document.getElementById('base64Output');
-      copyToClipboard(output.value);
-    }
-
-    function clearBase64() {
-      document.getElementById('base64Input').value = '';
-      document.getElementById('base64Output').value = '';
-      removeFile();
-    }
-
-    // 页面加载完成后初始化
-    document.addEventListener('DOMContentLoaded', initTabs);
+    // 正则实时
+    $('regexPattern')!.addEventListener('input', runRegex);
+    $('regexInput')!.addEventListener('input', runRegex);
+    document.querySelectorAll('#panel-regex .regex-flags input').forEach(el => {
+      el.addEventListener('change', runRegex);
+    });
   </script>
 </BaseLayout>
 
 <style is:inline>
   /* 基础页面样式 */
-  .tools-page {
-    padding: 1rem 0;
-  }
+  .tools-page { padding: 1rem 0; }
 
-  .tools-header {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
+  .tools-header { text-align: center; margin-bottom: 2rem; }
+  .tools-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+  .tools-subtitle { color: #666; font-size: 0.9rem; }
+  :global(.dark) .tools-subtitle { color: #aaa; }
 
-  .tools-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .tools-subtitle {
-    color: #666;
-    font-size: 0.9rem;
-  }
-
-  :global(.dark) .tools-subtitle {
-    color: #aaa;
-  }
-
-  /* Tab导航栏样式 */
+  /* Tab 导航栏 */
   .tools-tabs {
     display: flex;
     justify-content: center;
@@ -787,48 +621,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     cursor: pointer;
     transition: all 0.2s ease;
   }
-
-  :global(.dark) .tab-btn {
-    background: #374151;
-    color: #d1d5db;
-  }
-
-  .tab-btn:hover {
-    background: #e5e7eb;
-  }
-
-  :global(.dark) .tab-btn:hover {
-    background: #4b5563;
-  }
-
-  .tab-btn.active {
-    background: #3b82f6;
-    color: #fff;
-  }
-
-  :global(.dark) .tab-btn.active {
-    background: #2563eb;
-  }
+  :global(.dark) .tab-btn { background: #374151; color: #d1d5db; }
+  .tab-btn:hover { background: #e5e7eb; }
+  :global(.dark) .tab-btn:hover { background: #4b5563; }
+  .tab-btn.active { background: #3b82f6; color: #fff; }
+  :global(.dark) .tab-btn.active { background: #2563eb; }
 
   /* 工具内容区 */
-  .tools-content {
-    min-height: 400px;
-  }
+  .tools-content { min-height: 400px; }
+  .tool-panel { display: none; }
+  .tool-panel.active { display: block; animation: panelFade 0.3s ease; }
+  @keyframes panelFade { from { opacity: 0; } to { opacity: 1; } }
 
-  .tool-panel {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .tool-panel.active {
-    display: block;
-    opacity: 1;
-  }
-
-  /* 公共输入输出区样式 */
-  .tool-input,
-  .tool-output {
+  /* 输入输出区 */
+  .tool-input, .tool-output {
     width: 100%;
     min-height: 150px;
     padding: 1rem;
@@ -838,30 +644,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 0.9rem;
     resize: vertical;
     background: #fff;
+    color: #111827;
   }
-
-  :global(.dark) .tool-input,
-  :global(.dark) .tool-output {
+  :global(.dark) .tool-input, :global(.dark) .tool-output {
     background: #1f2937;
     border-color: #4b5563;
     color: #f3f4f6;
   }
-
-  .tool-input:focus,
-  .tool-output:focus {
+  .tool-input:focus, .tool-output:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
-  /* 操作按钮样式 */
-  .tool-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin: 1rem 0;
-    flex-wrap: wrap;
-  }
-
+  /* 操作按钮 */
+  .tool-actions { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; align-items: center; }
   .tool-btn {
     padding: 0.5rem 1rem;
     border-radius: 8px;
@@ -870,62 +667,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 0.85rem;
     transition: all 0.2s ease;
   }
+  .tool-btn-primary { background: #3b82f6; color: #fff; }
+  .tool-btn-primary:hover { background: #2563eb; }
+  .tool-btn-success { background: #10b981; color: #fff; }
+  .tool-btn-success:hover { background: #059669; }
+  .tool-btn-danger { background: #ef4444; color: #fff; }
+  .tool-btn-danger:hover { background: #dc2626; }
+  .tool-btn-secondary { background: #f3f4f6; color: #4b5563; }
+  :global(.dark) .tool-btn-secondary { background: #374151; color: #d1d5db; }
+  .tool-btn-secondary:hover { background: #e5e7eb; }
+  :global(.dark) .tool-btn-secondary:hover { background: #4b5563; }
 
-  .tool-btn-primary {
-    background: #3b82f6;
-    color: #fff;
-  }
-
-  .tool-btn-primary:hover {
-    background: #2563eb;
-  }
-
-  .tool-btn-success {
-    background: #10b981;
-    color: #fff;
-  }
-
-  .tool-btn-success:hover {
-    background: #059669;
-  }
-
-  .tool-btn-warning {
-    background: #f59e0b;
-    color: #fff;
-  }
-
-  .tool-btn-warning:hover {
-    background: #d97706;
-  }
-
-  .tool-btn-danger {
-    background: #ef4444;
-    color: #fff;
-  }
-
-  .tool-btn-danger:hover {
-    background: #dc2626;
-  }
-
-  .tool-btn-secondary {
-    background: #f3f4f6;
-    color: #4b5563;
-  }
-
-  :global(.dark) .tool-btn-secondary {
-    background: #374151;
-    color: #d1d5db;
-  }
-
-  .tool-btn-secondary:hover {
-    background: #e5e7eb;
-  }
-
-  :global(.dark) .tool-btn-secondary:hover {
-    background: #4b5563;
-  }
-
-  /* 工具区块通用样式 */
+  /* 工具区块卡片 */
   .tool-section {
     background: #fff;
     border-radius: 12px;
@@ -933,11 +686,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin-bottom: 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
-
-  :global(.dark) .tool-section {
-    background: #1f2937;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
+  :global(.dark) .tool-section { background: #1f2937; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
 
   .tool-label {
     display: block;
@@ -946,176 +695,95 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #374151;
     font-size: 0.9rem;
   }
+  :global(.dark) .tool-label { color: #f3f4f6; }
 
-  :global(.dark) .tool-label {
-    color: #f3f4f6;
-  }
-
-  /* 时间戳工具样式 */
-  .timestamp-input-row {
-    display: flex;
-    gap: 1rem;
+  /* JSON 状态 */
+  .json-status {
+    display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-  }
-
-  .timestamp-input-row input {
-    flex: 1;
-    min-width: 200px;
-    padding: 0.6rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 0.9rem;
-  }
-
-  :global(.dark) .timestamp-input-row input {
-    background: #1f2937;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
-
-  .timestamp-input-row input:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
-
-  .unit-toggle {
-    display: flex;
     gap: 0.5rem;
-  }
-
-  .unit-toggle button {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid #e5e7eb;
-    background: #fff;
+    padding: 0.4rem 0.9rem;
     border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-  }
-
-  :global(.dark) .unit-toggle button {
-    background: #374151;
-    border-color: #4b5563;
-    color: #d1d5db;
-  }
-
-  .unit-toggle button.active {
-    background: #3b82f6;
-    color: #fff;
-    border-color: #3b82f6;
-  }
-
-  .timestamp-results {
-    margin-top: 1rem;
-  }
-
-  .timestamp-result-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.75rem;
-    background: #f9fafb;
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-  }
-
-  :global(.dark) .timestamp-result-item {
-    background: #374151;
-  }
-
-  .timestamp-result-item .label {
-    color: #6b7280;
     font-size: 0.85rem;
   }
+  .json-status.valid { background: #d1fae5; color: #065f46; }
+  .json-status.invalid { background: #fee2e2; color: #991b1b; }
+  :global(.dark) .json-status.valid { background: #064e3b; color: #6ee7b7; }
+  :global(.dark) .json-status.invalid { background: #7f1d1d; color: #fca5a5; }
 
-  :global(.dark) .timestamp-result-item .label {
-    color: #9ca3af;
-  }
-
-  .timestamp-result-item .value {
-    font-family: monospace;
-    color: #111827;
-  }
-
-  :global(.dark) .timestamp-result-item .value {
-    color: #f3f4f6;
-  }
-
-  /* Diff工具样式 */
-  .diff-inputs {
+  /* ===== Token 估算 ===== */
+  .token-stats {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
   }
-
-  @media (max-width: 768px) {
-    .diff-inputs {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .diff-inputs .input-group {
+  @media (max-width: 640px) { .token-stats { grid-template-columns: repeat(2, 1fr); } }
+  .token-stat {
     display: flex;
     flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.9rem;
+    background: #f9fafb;
+    border-radius: 10px;
+    text-align: center;
   }
+  :global(.dark) .token-stat { background: #374151; }
+  .token-stat .label { font-size: 0.75rem; color: #6b7280; }
+  :global(.dark) .token-stat .label { color: #9ca3af; }
+  .token-stat .value { font-size: 1.5rem; font-weight: 700; color: #111827; font-family: monospace; }
+  :global(.dark) .token-stat .value { color: #f3f4f6; }
+  .token-stat-primary { background: rgba(59, 130, 246, 0.1); }
+  :global(.dark) .token-stat-primary { background: rgba(59, 130, 246, 0.2); }
+  .token-stat-primary .value { color: #3b82f6; }
+  :global(.dark) .token-stat-primary .value { color: #60a5fa; }
+  .token-note { font-size: 0.8rem; color: #9ca3af; margin: 0.5rem 0 1rem; }
 
-  .diff-stats {
-    display: flex;
-    gap: 1rem;
-    margin: 1rem 0;
-    flex-wrap: wrap;
+  .token-windows { display: flex; flex-direction: column; gap: 0.75rem; }
+  .token-window-head { display: flex; justify-content: space-between; font-size: 0.8rem; color: #6b7280; margin-bottom: 0.25rem; }
+  :global(.dark) .token-window-head { color: #9ca3af; }
+  .token-window-over { color: #ef4444; font-weight: 600; }
+  .token-window-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  :global(.dark) .token-window-bar { background: #374151; }
+  .token-window-fill { height: 100%; background: #3b82f6; border-radius: 4px; transition: width 0.3s ease; }
+  .token-window-fill.over { background: #ef4444; }
+
+  /* ===== Markdown 预览 ===== */
+  .md-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 768px) { .md-split { grid-template-columns: 1fr; } }
+  .md-pane { display: flex; flex-direction: column; min-width: 0; }
+  .md-pane-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  .md-pane-actions { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .md-input { min-height: 360px; }
+  .md-preview {
+    min-height: 360px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    overflow: auto;
   }
+  :global(.dark) .md-preview { background: #1f2937; border-color: #4b5563; }
+  .md-preview > :first-child { margin-top: 0; }
 
-  .diff-stat {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-  }
+  /* ===== 文本对比 ===== */
+  .diff-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 768px) { .diff-inputs { grid-template-columns: 1fr; } }
+  .diff-inputs .input-group { display: flex; flex-direction: column; }
 
-  .diff-stat.added {
-    background: #d1fae5;
-    color: #065f46;
-  }
+  .diff-stats { display: flex; gap: 1rem; margin: 1rem 0 0; flex-wrap: wrap; }
+  .diff-stat { padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; }
+  .diff-stat.added { background: #d1fae5; color: #065f46; }
+  .diff-stat.removed { background: #fee2e2; color: #991b1b; }
+  .diff-stat.changed { background: #fef3c7; color: #92400e; }
+  :global(.dark) .diff-stat.added { background: #064e3b; color: #6ee7b7; }
+  :global(.dark) .diff-stat.removed { background: #7f1d1d; color: #fca5a5; }
+  :global(.dark) .diff-stat.changed { background: #78350f; color: #fcd34d; }
 
-  .diff-stat.removed {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .diff-stat.changed {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  :global(.dark) .diff-stat.added {
-    background: #064e3b;
-    color: #6ee7b7;
-  }
-
-  :global(.dark) .diff-stat.removed {
-    background: #7f1d1d;
-    color: #fca5a5;
-  }
-
-  :global(.dark) .diff-stat.changed {
-    background: #78350f;
-    color: #fcd34d;
-  }
-
-  /* Diff输入框内高亮样式 */
-  .diff-editor-container {
-    position: relative;
-    width: 100%;
-  }
-
+  .diff-editor-container { position: relative; width: 100%; }
   .diff-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     padding: 1rem;
     font-family: monospace;
     font-size: 0.9rem;
@@ -1129,267 +797,121 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-radius: 8px;
     display: none;
   }
+  .diff-overlay.active { display: block; }
+  :global(.dark) .diff-overlay { color: #f3f4f6; }
+  .diff-editor { position: relative; z-index: 2; caret-color: #374151; }
+  .diff-editor.diff-mode { color: transparent; background: transparent; }
+  :global(.dark) .diff-editor.diff-mode { caret-color: #f3f4f6; }
 
-  .diff-overlay.active {
-    display: block;
-  }
+  .diff-line-overlay { min-height: 1.6em; padding: 0; white-space: pre-wrap; }
+  .diff-line-overlay.same { color: #374151; }
+  :global(.dark) .diff-line-overlay.same { color: #f3f4f6; }
+  .diff-line-overlay.removed { background: rgba(254, 202, 202, 0.6); border-radius: 2px; }
+  :global(.dark) .diff-line-overlay.removed { background: rgba(136, 19, 55, 0.6); }
+  .diff-line-overlay.added { background: rgba(187, 247, 208, 0.6); border-radius: 2px; }
+  :global(.dark) .diff-line-overlay.added { background: rgba(22, 101, 52, 0.6); }
+  .diff-line-overlay.modified { background: rgba(254, 243, 199, 0.4); border-radius: 2px; }
+  :global(.dark) .diff-line-overlay.modified { background: rgba(120, 53, 15, 0.4); }
+  .diff-line-overlay.empty { background: rgba(229, 231, 235, 0.3); }
+  :global(.dark) .diff-line-overlay.empty { background: rgba(55, 65, 81, 0.3); }
 
-  :global(.dark) .diff-overlay {
-    color: #f3f4f6;
-  }
+  .char-diff { border-radius: 2px; padding: 0 1px; }
+  .char-diff.removed { background: #fecaca; color: #be123c; font-weight: 600; }
+  :global(.dark) .char-diff.removed { background: #881337; color: #fda4af; }
+  .char-diff.added { background: #bbf7d0; color: #15803d; font-weight: 600; }
+  :global(.dark) .char-diff.added { background: #166534; color: #a7f3d0; }
 
-  .diff-editor {
-    position: relative;
-    z-index: 2;
-    caret-color: #374151;
-  }
-
-  .diff-editor.diff-mode {
-    color: transparent;
-    background: transparent;
-  }
-
-  :global(.dark) .diff-editor.diff-mode {
-    caret-color: #f3f4f6;
-  }
-
-  .diff-line-overlay {
-    min-height: 1.6em;
-    padding: 0;
-    white-space: pre;
-  }
-
-  .diff-line-overlay.same {
-    color: #374151;
-  }
-
-  :global(.dark) .diff-line-overlay.same {
-    color: #f3f4f6;
-  }
-
-  .diff-line-overlay.removed {
-    background: rgba(254, 202, 202, 0.6);
-    border-radius: 2px;
-  }
-
-  :global(.dark) .diff-line-overlay.removed {
-    background: rgba(136, 19, 55, 0.6);
-  }
-
-  .diff-line-overlay.added {
-    background: rgba(187, 247, 208, 0.6);
-    border-radius: 2px;
-  }
-
-  :global(.dark) .diff-line-overlay.added {
-    background: rgba(22, 101, 52, 0.6);
-  }
-
-  .diff-line-overlay.modified {
-    background: rgba(254, 243, 199, 0.4);
-    border-radius: 2px;
-  }
-
-  :global(.dark) .diff-line-overlay.modified {
-    background: rgba(120, 53, 15, 0.4);
-  }
-
-  .diff-line-overlay.empty {
-    background: rgba(229, 231, 235, 0.3);
-  }
-
-  :global(.dark) .diff-line-overlay.empty {
-    background: rgba(55, 65, 81, 0.3);
-  }
-
-  /* 字符级别差异高亮 */
-  .char-diff {
-    border-radius: 2px;
-    padding: 0 1px;
-  }
-
-  .char-diff.removed {
-    background: #fecaca;
-    color: #be123c;
-    font-weight: 600;
-  }
-
-  :global(.dark) .char-diff.removed {
-    background: #881337;
-    color: #fda4af;
-  }
-
-  .char-diff.added {
-    background: #bbf7d0;
-    color: #15803d;
-    font-weight: 600;
-  }
-
-  :global(.dark) .char-diff.added {
-    background: #166534;
-    color: #a7f3d0;
-  }
-
-  @media (max-width: 768px) {
-    .diff-inputs {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* Base64文件上传样式 */
-  .file-upload-area {
-    border: 2px dashed #e5e7eb;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 1rem;
-  }
-
-  .file-upload-area:hover {
-    border-color: #3b82f6;
-    background: #f0f9ff;
-  }
-
-  :global(.dark) .file-upload-area:hover {
-    background: #1e3a5f;
-  }
-
-  .file-upload-area.dragover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-  }
-
-  :global(.dark) .file-upload-area.dragover {
-    background: #1e3a8a;
-  }
-
-  .file-upload-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .file-upload-text {
-    color: #6b7280;
-    font-size: 0.9rem;
-  }
-
-  :global(.dark) .file-upload-text {
-    color: #9ca3af;
-  }
-
-  .file-info {
+  /* ===== 正则测试 ===== */
+  .regex-pattern-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: #f3f4f6;
-    border-radius: 8px;
-    margin-bottom: 1rem;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
   }
-
-  :global(.dark) .file-info {
-    background: #374151;
-  }
-
-  .file-name {
-    font-weight: 500;
+  .regex-slash { color: #9ca3af; font-family: monospace; font-size: 1.1rem; }
+  .regex-pattern {
     flex: 1;
+    min-width: 180px;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    background: #fff;
+    color: #111827;
   }
+  :global(.dark) .regex-pattern { background: #1f2937; border-color: #4b5563; color: #f3f4f6; }
+  .regex-pattern:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+  .regex-flags { display: flex; gap: 0.75rem; }
+  .regex-flags label { display: flex; align-items: center; gap: 0.25rem; font-family: monospace; font-size: 0.9rem; cursor: pointer; color: #4b5563; }
+  :global(.dark) .regex-flags label { color: #d1d5db; }
 
-  .file-size {
-    color: #6b7280;
-    font-size: 0.85rem;
+  .regex-count { font-weight: 400; font-size: 0.8rem; color: #6b7280; }
+  .regex-result {
+    min-height: 100px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #fff;
+    color: #111827;
   }
+  :global(.dark) .regex-result { background: #1f2937; border-color: #4b5563; color: #f3f4f6; }
+  .regex-match { background: #fde68a; color: #92400e; border-radius: 2px; padding: 0 1px; }
+  :global(.dark) .regex-match { background: #b45309; color: #fef3c7; }
+  .regex-empty { color: #9ca3af; }
 
-  :global(.dark) .file-size {
-    color: #9ca3af;
-  }
-
-  .file-remove {
-    background: none;
-    border: none;
-    color: #ef4444;
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 0.25rem;
-  }
-
-  /* 移动端响应式样式 */
-  @media (max-width: 768px) {
-    .tools-header h1 {
-      font-size: 1.5rem;
-    }
-
-    .tools-tabs {
-      gap: 0.4rem;
-    }
-
-    .tab-btn {
-      padding: 0.4rem 0.8rem;
-      font-size: 0.8rem;
-    }
-
-    .tool-section {
-      padding: 1rem;
-    }
-
-    .tool-actions {
-      flex-direction: column;
-    }
-
-    .tool-btn {
-      width: 100%;
-      text-align: center;
-    }
-
-    .timestamp-input-row {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .unit-toggle {
-      justify-content: center;
-    }
-  }
-
-  /* JSON状态样式 */
-  .json-status {
-    display: inline-flex;
+  .regex-groups { margin-top: 1rem; }
+  .regex-groups-title { font-size: 0.8rem; font-weight: 600; color: #6b7280; margin-bottom: 0.5rem; }
+  :global(.dark) .regex-groups-title { color: #9ca3af; }
+  .regex-group-row {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
+    background: #f9fafb;
     border-radius: 6px;
+    margin-bottom: 0.4rem;
+    font-family: monospace;
     font-size: 0.85rem;
-    margin-left: 1rem;
+  }
+  :global(.dark) .regex-group-row { background: #374151; }
+  .rg-match { font-weight: 600; color: #3b82f6; }
+  .rg-idx { color: #10b981; font-weight: 600; }
+
+  /* ===== 移动端 ===== */
+  @media (max-width: 768px) {
+    .tools-header h1 { font-size: 1.5rem; }
+    .tools-tabs { gap: 0.4rem; }
+    .tab-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+    .tool-section { padding: 1rem; }
+    .tool-actions .tool-btn { flex: 1; min-width: 0; text-align: center; }
   }
 
-  .json-status.valid {
-    background: #d1fae5;
-    color: #065f46;
-  }
-
-  .json-status.invalid {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  :global(.dark) .json-status.valid {
-    background: #064e3b;
-    color: #6ee7b7;
-  }
-
-  :global(.dark) .json-status.invalid {
-    background: #7f1d1d;
-    color: #fca5a5;
-  }
-
-  /* Toast样式 */
+  /* ===== Toast ===== */
   .toast {
-    animation: fadeIn 0.3s ease;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    padding: 0.85rem 1.5rem;
+    border-radius: 12px;
+    z-index: 1000;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: toastIn 0.3s ease;
   }
-  @keyframes fadeIn {
+  .toast-success { background: #1f2937; }
+  :global(.dark) .toast-success { background: #374151; }
+  .toast-error { background: #ef4444; }
+  @keyframes toastIn {
     from { opacity: 0; transform: translateX(-50%) translateY(20px); }
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
   }

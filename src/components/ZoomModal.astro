@@ -1,0 +1,489 @@
+---
+// src/components/ZoomModal.astro
+// 通用图表放大查看器：统一处理 Mermaid（内联 SVG）与 PlantUML（远程 <img>）。
+// 支持缩放（按钮 / 键盘 +-0 / 滚轮）、拖拽平移、Esc / 背景 / 关闭按钮关闭。
+---
+
+<div id="zoom-modal" class="zoom-modal">
+  <div class="zoom-modal-content">
+    <button class="zoom-modal-close" aria-label="关闭">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+
+    <div class="zoom-modal-controls">
+      <button class="zoom-modal-btn" id="zoom-out" aria-label="缩小" title="缩小 (-)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+      <span class="zoom-modal-level" id="zoom-level">100%</span>
+      <button class="zoom-modal-btn" id="zoom-in" aria-label="放大" title="放大 (+)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+      <button class="zoom-modal-btn" id="zoom-reset" aria-label="重置" title="重置 (0)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="zoom-modal-body">
+      <div class="zoom-modal-stage"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('zoom-modal');
+  const modalBody = modal?.querySelector('.zoom-modal-body') as HTMLElement | null;
+  const stage = modalBody?.querySelector('.zoom-modal-stage') as HTMLElement | null;
+  const closeBtn = modal?.querySelector('.zoom-modal-close');
+  const zoomInBtn = document.getElementById('zoom-in');
+  const zoomOutBtn = document.getElementById('zoom-out');
+  const zoomResetBtn = document.getElementById('zoom-reset');
+  const zoomLevelEl = document.getElementById('zoom-level');
+
+  const ZOOM_STEP = 20;
+  const MIN_ZOOM = 20;
+  const MAX_ZOOM = 800;
+
+  let currentZoom = 100;
+  // 当前展示元素（克隆出来的 svg 或 img）及其 100% 时的基准尺寸
+  let stageEl: HTMLElement | null = null;
+  let baseW = 0;
+  let baseH = 0;
+
+  // 拖拽平移
+  let isDragging = false;
+  let dragMoved = false;
+  let startX = 0;
+  let startY = 0;
+  let scrollStartX = 0;
+  let scrollStartY = 0;
+
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    resetZoom();
+  }
+
+  function updateZoom(newZoom: number) {
+    currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    if (stageEl && baseW > 0) {
+      const w = (baseW * currentZoom) / 100;
+      if (stageEl.tagName.toLowerCase() === 'svg') {
+        // SVG：用属性设置尺寸，矢量放大不失真
+        stageEl.setAttribute('width', String(w));
+        stageEl.setAttribute('height', String((baseH * currentZoom) / 100));
+        stageEl.removeAttribute('style');
+        stageEl.style.cursor = 'grab';
+      } else {
+        // <img>：用 style 设置宽度，高度自适应
+        stageEl.style.width = `${w}px`;
+        stageEl.style.height = 'auto';
+      }
+    }
+    if (zoomLevelEl) zoomLevelEl.textContent = `${Math.round(currentZoom)}%`;
+  }
+
+  const zoomIn = () => updateZoom(currentZoom + ZOOM_STEP);
+  const zoomOut = () => updateZoom(currentZoom - ZOOM_STEP);
+  const resetZoom = () => updateZoom(100);
+
+  // 把一个准备好的展示元素放进舞台并打开模态框
+  function show(el: HTMLElement, w: number, h: number) {
+    if (!stage || !modal) return;
+    stageEl = el;
+    baseW = w > 0 ? w : 800;
+    baseH = h > 0 ? h : 400;
+
+    el.style.cursor = 'grab';
+    el.addEventListener('mousedown', (e) => {
+      if (!modalBody) return;
+      isDragging = true;
+      dragMoved = false;
+      el.style.cursor = 'grabbing';
+      el.style.userSelect = 'none';
+      startX = (e as MouseEvent).clientX;
+      startY = (e as MouseEvent).clientY;
+      scrollStartX = modalBody.scrollLeft;
+      scrollStartY = modalBody.scrollTop;
+      e.preventDefault();
+    });
+
+    stage.innerHTML = '';
+    stage.appendChild(el);
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    resetZoom();
+  }
+
+  // 打开 Mermaid 内联 SVG
+  function openSvg(svg: SVGElement) {
+    const clone = svg.cloneNode(true) as SVGElement;
+    clone.removeAttribute('style');
+    const viewBox = svg.getAttribute('viewBox');
+    let w = 800;
+    let h = 400;
+    if (viewBox) {
+      const parts = viewBox.split(/\s+/).map(Number);
+      if (parts.length === 4) {
+        w = parts[2];
+        h = parts[3];
+      }
+      clone.setAttribute('viewBox', viewBox);
+      clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    }
+    show(clone as unknown as HTMLElement, w, h);
+  }
+
+  // 打开 PlantUML 远程图片
+  function openImg(sourceImg: HTMLImageElement) {
+    const img = new Image();
+    img.src = sourceImg.currentSrc || sourceImg.src;
+    img.alt = sourceImg.alt || 'PlantUML diagram';
+    img.draggable = false;
+
+    const place = () => show(img, img.naturalWidth || 800, img.naturalHeight || 400);
+    if (img.complete && img.naturalWidth) {
+      place();
+    } else {
+      img.addEventListener('load', place, { once: true });
+      img.addEventListener('error', () => show(img, 800, 400), { once: true });
+    }
+  }
+
+  // —— 全局交互 ——
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging || !modalBody) return;
+    dragMoved = true;
+    modalBody.scrollLeft = scrollStartX - (e.clientX - startX);
+    modalBody.scrollTop = scrollStartY - (e.clientY - startY);
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    if (stageEl) {
+      stageEl.style.cursor = 'grab';
+      stageEl.style.userSelect = '';
+    }
+  });
+
+  zoomInBtn?.addEventListener('click', zoomIn);
+  zoomOutBtn?.addEventListener('click', zoomOut);
+  zoomResetBtn?.addEventListener('click', resetZoom);
+
+  document.addEventListener('keydown', (e) => {
+    if (!modal?.classList.contains('active')) return;
+    if (e.key === 'Escape') {
+      closeModal();
+    } else if (e.key === '=' || e.key === '+') {
+      e.preventDefault();
+      zoomIn();
+    } else if (e.key === '-') {
+      e.preventDefault();
+      zoomOut();
+    } else if (e.key === '0') {
+      e.preventDefault();
+      resetZoom();
+    }
+  });
+
+  modalBody?.addEventListener('wheel', (e) => {
+    if (!modal?.classList.contains('active')) return;
+    e.preventDefault();
+    if (e.deltaY < 0) zoomIn();
+    else zoomOut();
+  }, { passive: false });
+
+  // 事件委托：点击正文中的 Mermaid 或 PlantUML 图打开放大
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (modal?.contains(target)) return;
+
+    const mermaid = target.closest('.mermaid');
+    if (mermaid) {
+      const svg = mermaid.querySelector('svg');
+      if (svg) {
+        e.preventDefault();
+        openSvg(svg as SVGElement);
+      }
+      return;
+    }
+
+    const plantuml = target.closest('.plantuml-img');
+    if (plantuml) {
+      const img = plantuml.querySelector('img');
+      if (img) {
+        e.preventDefault();
+        openImg(img as HTMLImageElement);
+      }
+    }
+  });
+
+  closeBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeModal();
+  });
+
+  modal?.addEventListener('click', (e) => {
+    // 拖拽平移结束后的 click 不应触发关闭
+    if (dragMoved) {
+      dragMoved = false;
+      return;
+    }
+    const target = e.target as HTMLElement;
+    // 点击图片本身、缩放控制条、关闭按钮以外的任意区域都关闭
+    if (stageEl?.contains(target)) return;
+    if (target.closest('.zoom-modal-controls')) return;
+    if (target.closest('.zoom-modal-close')) return;
+    closeModal();
+  });
+</script>
+
+<style is:global>
+  /* ==================== 放大模态框 ==================== */
+  .zoom-modal {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
+  .zoom-modal.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .zoom-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    padding-top: 60px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    width: calc(100vw - 48px);
+    height: calc(100vh - 48px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: zoom-out;
+  }
+
+  .dark .zoom-modal-content {
+    background: #1f2937;
+  }
+
+  .zoom-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.06);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+    z-index: 10;
+    padding: 0;
+  }
+
+  .zoom-modal-close:hover {
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  .dark .zoom-modal-close {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .dark .zoom-modal-close:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .zoom-modal-close svg {
+    width: 16px;
+    height: 16px;
+    color: #6b7280;
+  }
+
+  .dark .zoom-modal-close svg {
+    color: #9ca3af;
+  }
+
+  /* 缩放控制条 */
+  .zoom-modal-controls {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 6px 12px;
+    border-radius: 24px;
+    z-index: 10;
+    cursor: default;
+  }
+
+  .dark .zoom-modal-controls {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .zoom-modal-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+    padding: 0;
+    color: #6b7280;
+  }
+
+  .zoom-modal-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #374151;
+  }
+
+  .dark .zoom-modal-btn {
+    color: #9ca3af;
+  }
+
+  .dark .zoom-modal-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
+  }
+
+  .zoom-modal-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .zoom-modal-level {
+    min-width: 48px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    font-family: monospace;
+    user-select: none;
+  }
+
+  .dark .zoom-modal-level {
+    color: #d1d5db;
+  }
+
+  /* 显示区域 */
+  .zoom-modal-body {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .zoom-modal-stage {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: fit-content;
+    min-height: fit-content;
+    padding: 20px;
+  }
+
+  .zoom-modal-stage svg {
+    display: block;
+    cursor: grab;
+  }
+
+  .zoom-modal-stage img {
+    display: block;
+    cursor: grab;
+    background: white;
+    border-radius: 4px;
+  }
+
+  /* ==================== 正文中的图表容器 ==================== */
+  .mermaid {
+    background: transparent;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    display: flex;
+    justify-content: center;
+    cursor: zoom-in;
+    position: relative;
+    overflow: visible;
+  }
+
+  .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .mermaid svg:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .dark .mermaid svg:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .plantuml-img {
+    background: transparent;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  .plantuml-img img {
+    max-width: 100%;
+    height: auto;
+    cursor: zoom-in;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .plantuml-img img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .dark .plantuml-img img:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+</style>

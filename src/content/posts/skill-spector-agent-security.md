@@ -7,7 +7,7 @@ tags: ["security", "ai-agent", "nvidia", "skill-audit", "prompt-injection"]
 draft: false
 ---
 
-## NVIDIA SkillSpector：AI Agent 技能的安全扫描器
+## 简介
 
 AI Agent 的技能（Skill）正在成为新的攻击面。Claude Code、Codex CLI、Gemini CLI 等工具的技能文件在执行时享有隐式信任，几乎不受审查。Liu 等人 2026 年的研究对 42,447 个技能进行抽样分析，发现 26.1% 包含至少一个安全漏洞，5.2% 表现出明显的恶意意图。
 
@@ -17,7 +17,7 @@ NVIDIA 开源的 [SkillSpector](https://github.com/NVIDIA/SkillSpector) 针对�
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | github.com/NVIDIA/SkillSpector |
 | 语言 | Python 3.12+ |
@@ -221,17 +221,13 @@ LLM 分析是可选的，这个设计值得肯定。在很多场景下（CI 集�
 
 ---
 
-## 适用场景
+## 适用场景与局限
 
-| 场景 | 是否适用 | 说明 |
-|------|---------|------|
-| 安装第三方技能前的安全检查 | 适用 | 这是核心使用场景 |
-| CI/CD 流水线中扫描技能变更 | 适用 | 使用 `--no-llm` 和 SARIF 输出集成到 GitHub |
-| 自研技能的安全自查 | 适用 | 开发阶段发现潜在问题 |
-| 通用 Python 代码安全审计 | 不适用 | 用 Bandit 或 Semgrep 更合适 |
-| ML 模型对抗攻击测试 | 不适用 | 用 Giskard 或 Adversarial Robustness Toolbox |
-| 运行时代为拦截恶意行为 | 不适用 | 这是静态分析工具，不拦截运行时行为 |
-| 非英文技能的安全扫描 | 部分适用 | 代码层面的检测不受语言影响，但文本模式匹配可能漏检 |
+SkillSpector 是针对 AI Agent 技能的**静态**安全扫描器，场景边界清晰：
+
+- **适用**：安装第三方技能前的安全检查（核心场景）、CI/CD 流水线中扫描技能变更（用 `--no-llm` + SARIF 输出集成 GitHub）、自研技能的开发期安全自查。
+- **不适用**：通用 Python 代码审计（用 Bandit / Semgrep 更合适）、ML 模型对抗攻击测试（用 Giskard 等）、运行时拦截恶意行为（它是静态分析，不拦截运行时）。
+- **部分适用**：非英文技能扫描——代码层检测不受语言影响，但文本模式匹配可能漏检。
 
 ---
 
@@ -239,7 +235,7 @@ LLM 分析是可选的，这个设计值得肯定。在很多场景下（CI 集�
 
 仓库结构相对紧凑：
 
-```
+```text
 SkillSpector/
 ├── src/                # 核心源代码
 ├── tests/              # 测试套件

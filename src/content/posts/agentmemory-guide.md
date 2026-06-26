@@ -17,7 +17,7 @@ AgentMemory 的做法是模仿人类记忆的分层巩固机制。它通过 12 �
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) |
 | Stars | 22.8k（截至 2026-06-14） |

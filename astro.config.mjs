@@ -2,12 +2,26 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import remarkPlantUml from './src/lib/remark-plantuml';
 import remarkMermaid from './src/lib/remark-mermaid';
-import { writeFileSync, readFileSync, existsSync, readdirSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 // 获取项目根目录
 const projectRoot = dirname(fileURLToPath(import.meta.url));
+const POSTS_DIR = join(projectRoot, 'src/content/posts');
+
+// 将外部传入的 slug 解析为 posts 目录下的安全路径，防止路径遍历（../、绝对路径等）。
+// 非法 slug 返回 null。
+function resolveSafePostPath(slug) {
+  if (typeof slug !== 'string' || !slug.trim()) return null;
+  // 只取最后一段文件名，剥离任何目录成分
+  const base = slug.replace(/\.md$/, '');
+  if (base.includes('/') || base.includes('\\') || base.includes('..')) return null;
+  const filePath = join(POSTS_DIR, `${base}.md`);
+  // 双重保险：确保最终路径仍位于 posts 目录内
+  if (!filePath.startsWith(POSTS_DIR + '/')) return null;
+  return filePath;
+}
 
 // 开发模式下创建和发布文章的中间件
 const devMiddleware = () => ({
@@ -46,7 +60,12 @@ draft: true
 在这里开始写你的文章...
 `;
 
-            const filePath = join(projectRoot, 'src/content/posts', `${slug}.md`);
+            const filePath = resolveSafePostPath(slug);
+            if (!filePath) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: '无法从标题生成合法的文件名' }));
+              return;
+            }
             writeFileSync(filePath, content, 'utf-8');
 
             res.setHeader('Content-Type', 'application/json');
@@ -70,15 +89,15 @@ draft: true
               return;
             }
 
-            const filePath = join(projectRoot, 'src/content/posts', `${slug}.md`);
+            const filePath = resolveSafePostPath(slug);
+            if (!filePath) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: '非法的文章标识' }));
+              return;
+            }
             if (!existsSync(filePath)) {
-              // 尝试查找可能匹配的文件
-              const postsDir = join(projectRoot, 'src/content/posts');
-              const files = readdirSync(postsDir);
-              console.log('Looking for:', slug);
-              console.log('Available files:', files);
               res.statusCode = 404;
-              res.end(JSON.stringify({ error: `文章不存在: ${slug}`, path: filePath }));
+              res.end(JSON.stringify({ error: `文章不存在: ${slug}` }));
               return;
             }
 
@@ -108,7 +127,12 @@ draft: true
               return;
             }
 
-            const filePath = join(projectRoot, 'src/content/posts', `${slug}.md`);
+            const filePath = resolveSafePostPath(slug);
+            if (!filePath) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: '非法的文章标识' }));
+              return;
+            }
             if (!existsSync(filePath)) {
               res.statusCode = 404;
               res.end(JSON.stringify({ error: '文章不存在' }));

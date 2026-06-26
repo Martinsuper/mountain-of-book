@@ -17,11 +17,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <button id="addTaskBtn" class="add-task-btn">+ 新任务</button>
         <button id="batchModeBtn" class="batch-mode-btn">批量操作</button>
         <button id="clearCompletedBtn" class="clear-completed-btn">清除已完成</button>
+        <button class="export-btn" id="exportJsonBtn" title="导出 JSON">导出 JSON</button>
+        <button class="export-btn" id="exportCsvBtn" title="导出 CSV">导出 CSV</button>
       </div>
     </header>
 
-    <!-- 四象限网格 -->
-    <div class="quadrant-grid">
+    <!-- 左右分栏：左四象限+统计，右日历 -->
+    <div class="todo-split">
+      <div class="todo-col-left">
+        <!-- 四象限网格 -->
+        <div class="quadrant-grid">
       <!-- Q1: 重要且紧急 -->
       <div class="quadrant-card quadrant-q1" data-quadrant="1">
         <div class="quadrant-header">
@@ -94,60 +99,41 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </button>
       </div>
     </div>
+      </div><!-- /.todo-col-left -->
 
-    <!-- 统计面板 -->
-    <div class="stats-panel">
-      <div class="stats-header">
-        <span class="stats-icon">📊</span>
-        <span>任务统计</span>
+      <div class="todo-col-right">
+      <!-- 日历视图 -->
+      <div class="calendar-view" id="calendarView">
+      <div class="cal-toolbar">
+        <button class="cal-nav-btn" id="prevMonthBtn" title="上个月">‹</button>
+        <span class="cal-title" id="calTitle"></span>
+        <button class="cal-nav-btn" id="nextMonthBtn" title="下个月">›</button>
+        <button class="cal-today-btn" id="todayBtn">回今天</button>
       </div>
-      <div class="stats-grid">
-        <div class="stat-item stat-total">
-          <span class="stat-value" id="stat-total">0</span>
-          <span class="stat-label">总任务</span>
-        </div>
-        <div class="stat-item stat-completed">
-          <span class="stat-value" id="stat-completed">0</span>
-          <span class="stat-label">已完成</span>
-        </div>
-        <div class="stat-item stat-pending">
-          <span class="stat-value" id="stat-pending">0</span>
-          <span class="stat-label">待处理</span>
-        </div>
-        <div class="stat-item stat-rate">
-          <span class="stat-value" id="stat-rate">0%</span>
-          <span class="stat-label">完成率</span>
-        </div>
+      <div class="cal-weekdays">
+        <span class="cal-weekday">一</span>
+        <span class="cal-weekday">二</span>
+        <span class="cal-weekday">三</span>
+        <span class="cal-weekday">四</span>
+        <span class="cal-weekday">五</span>
+        <span class="cal-weekday cal-weekend">六</span>
+        <span class="cal-weekday cal-weekend">日</span>
       </div>
-      <div class="progress-bars">
-        <div class="progress-item" data-quadrant="1">
-          <span class="progress-label">Q1</span>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-q1"></div>
-          </div>
-          <span class="progress-text" id="progress-text-q1">0%</span>
-        </div>
-        <div class="progress-item" data-quadrant="2">
-          <span class="progress-label">Q2</span>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-q2"></div>
-          </div>
-          <span class="progress-text" id="progress-text-q2">0%</span>
-        </div>
-        <div class="progress-item" data-quadrant="3">
-          <span class="progress-label">Q3</span>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-q3"></div>
-          </div>
-          <span class="progress-text" id="progress-text-q3">0%</span>
-        </div>
-        <div class="progress-item" data-quadrant="4">
-          <span class="progress-label">Q4</span>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-q4"></div>
-          </div>
-          <span class="progress-text" id="progress-text-q4">0%</span>
-        </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-unscheduled" id="calUnscheduled"></div>
+      </div><!-- /#calendarView -->
+      </div><!-- /.todo-col-right -->
+    </div><!-- /.todo-split -->
+
+    <!-- 归档：已完成任务（可折叠，通栏） -->
+    <div class="todo-archive collapsed" id="todoArchive">
+      <button class="archive-header" id="archiveToggle" aria-expanded="false">
+        <span class="archive-title">✅ 已完成</span>
+        <span class="archive-count" id="archiveCount">0</span>
+        <span class="archive-arrow" aria-hidden="true">▾</span>
+      </button>
+      <div class="archive-body" id="archiveBody">
+        <div class="archive-list" id="archiveList"></div>
       </div>
     </div>
   </div>
@@ -169,8 +155,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <textarea id="taskDesc" placeholder="输入任务描述" rows="3"></textarea>
         </div>
         <div class="form-group">
-          <label for="taskDue">截止日期</label>
-          <input type="date" id="taskDue" min="" />
+          <label for="taskDue">截止时间</label>
+          <input type="datetime-local" id="taskDue" min="" />
         </div>
         <div class="form-group">
           <label>选择象限</label>
@@ -215,8 +201,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <textarea id="editTaskDesc" placeholder="输入任务描述" rows="3"></textarea>
         </div>
         <div class="form-group">
-          <label for="editTaskDue">截止日期</label>
-          <input type="date" id="editTaskDue" />
+          <label for="editTaskDue">截止时间</label>
+          <input type="datetime-local" id="editTaskDue" />
         </div>
         <div class="form-group">
           <label>选择象限</label>
@@ -295,7 +281,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <span class="detail-badge" id="detailPriority"></span>
           </div>
           <div class="detail-section">
-            <label class="detail-label">截止日期</label>
+            <label class="detail-label">截止时间</label>
             <span class="detail-value" id="detailDue"></span>
           </div>
           <div class="detail-section">
@@ -320,23 +306,46 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <span class="undo-message">任务已删除</span>
     <button class="undo-btn" id="undoBtn">撤销</button>
   </div>
-
-  <!-- 导出面板 -->
-  <div class="export-panel" id="exportPanel">
-    <button class="export-btn" id="exportJsonBtn" title="导出 JSON">导出 JSON</button>
-    <button class="export-btn" id="exportCsvBtn" title="导出 CSV">导出 CSV</button>
-  </div>
 </BaseLayout>
 
 <style is:inline>
   .todo-page {
     padding: 1rem 0;
+    /* 突破 main 的 max-w-4xl，加宽到约 1400px 并居中 */
+    width: min(1400px, 100vw - 2rem);
+    margin-left: calc(50% - min(1400px, 100vw - 2rem) / 2);
+    margin-right: calc(50% - min(1400px, 100vw - 2rem) / 2);
+  }
+
+  /* 左右分栏：左四象限+统计，右日历 */
+  .todo-split {
+    display: flex;
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .todo-col-left,
+  .todo-col-right {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* 窄屏：取消加宽，上下堆叠 */
+  @media (max-width: 1100px) {
+    .todo-page {
+      width: auto;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    .todo-split {
+      flex-direction: column;
+    }
   }
 
   /* 页面头部 */
   .todo-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .todo-header h1 {
@@ -350,7 +359,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin-bottom: 1rem;
   }
 
-  :global(.dark) .todo-subtitle {
+  .dark .todo-subtitle {
     color: #aaa;
   }
 
@@ -393,15 +402,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #ef4444;
   }
 
-  :global(.dark) .search-clear-btn {
+  .dark .search-clear-btn {
     color: #6b7280;
   }
 
-  :global(.dark) .search-clear-btn:hover {
+  .dark .search-clear-btn:hover {
     color: #f87171;
   }
 
-  :global(.dark) .search-input {
+  .dark .search-input {
     background: #1f2937;
     border-color: #4b5563;
     color: #f3f4f6;
@@ -441,8 +450,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transition: all 0.2s ease;
   }
 
-  :global(.dark) .batch-mode-btn,
-  :global(.dark) .clear-completed-btn {
+  .dark .batch-mode-btn,
+  .dark .clear-completed-btn {
     background: #374151;
     color: #d1d5db;
     border-color: #4b5563;
@@ -454,8 +463,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transform: translateY(-1px);
   }
 
-  :global(.dark) .batch-mode-btn:hover,
-  :global(.dark) .clear-completed-btn:hover {
+  .dark .batch-mode-btn:hover,
+  .dark .clear-completed-btn:hover {
     background: #4b5563;
   }
 
@@ -470,7 +479,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: #fecaca;
   }
 
-  :global(.dark) .clear-completed-btn:hover {
+  .dark .clear-completed-btn:hover {
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.3);
   }
@@ -491,7 +500,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     align-items: center;
   }
 
-  :global(.dark) .batch-actions-panel {
+  .dark .batch-actions-panel {
     background: #1f2937;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
@@ -549,7 +558,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin-right: 0.5rem;
   }
 
-  :global(.dark) .task-batch-checkbox {
+  .dark .task-batch-checkbox {
     border-color: #4b5563;
     background: #111827;
   }
@@ -588,7 +597,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     .add-task-btn,
     .batch-mode-btn,
-    .clear-completed-btn {
+    .clear-completed-btn,
+    .export-btn {
       width: 100%;
       justify-content: center;
     }
@@ -627,7 +637,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin-bottom: 0.25rem;
   }
 
-  :global(.dark) .detail-label {
+  .dark .detail-label {
     color: #9ca3af;
   }
 
@@ -637,7 +647,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin: 0;
   }
 
-  :global(.dark) .detail-value {
+  .dark .detail-value {
     color: #f3f4f6;
   }
 
@@ -738,26 +748,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     background: #2563eb;
   }
 
-  /* 导出面板 */
-  .export-panel {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    margin-top: 1rem;
-  }
-
+  /* 导出按钮（已并入顶部操作区） */
   .export-btn {
     background: #f3f4f6;
     color: #4b5563;
     border: 1px solid #e5e7eb;
     padding: 0.5rem 1rem;
-    border-radius: 8px;
+    border-radius: 25px;
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
-  :global(.dark) .export-btn {
+  .dark .export-btn {
     background: #374151;
     color: #d1d5db;
     border-color: #4b5563;
@@ -768,7 +771,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #3b82f6;
   }
 
-  :global(.dark) .export-btn:hover {
+  .dark .export-btn:hover {
     background: #4b5563;
     color: #60a5fa;
   }
@@ -782,7 +785,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #3b82f6;
   }
 
-  :global(.dark) .task-title:hover {
+  .dark .task-title:hover {
     color: #60a5fa;
   }
 
@@ -790,14 +793,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .quadrant-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
+    height: 100%;
   }
 
   @media (max-width: 768px) {
     .quadrant-grid {
       grid-template-columns: 1fr;
+      grid-template-rows: none;
       gap: 1rem;
+      height: auto;
     }
   }
 
@@ -815,7 +822,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: rgba(239, 68, 68, 0.3);
   }
 
-  :global(.dark) .quadrant-q1 {
+  .dark .quadrant-q1 {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.5);
   }
@@ -825,7 +832,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: rgba(59, 130, 246, 0.3);
   }
 
-  :global(.dark) .quadrant-q2 {
+  .dark .quadrant-q2 {
     background: rgba(59, 130, 246, 0.15);
     border-color: rgba(59, 130, 246, 0.5);
   }
@@ -835,7 +842,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: rgba(245, 158, 11, 0.3);
   }
 
-  :global(.dark) .quadrant-q3 {
+  .dark .quadrant-q3 {
     background: rgba(245, 158, 11, 0.15);
     border-color: rgba(245, 158, 11, 0.5);
   }
@@ -845,7 +852,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: rgba(107, 114, 128, 0.3);
   }
 
-  :global(.dark) .quadrant-q4 {
+  .dark .quadrant-q4 {
     background: rgba(107, 114, 128, 0.15);
     border-color: rgba(107, 114, 128, 0.5);
   }
@@ -855,7 +862,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   }
 
-  :global(.dark) .quadrant-card:hover {
+  .dark .quadrant-card:hover {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   }
 
@@ -868,11 +875,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  :global(.dark) .quadrant-header {
+  .dark .quadrant-header {
     border-bottom-color: rgba(255, 255, 255, 0.1);
   }
 
-  :global(:not(.dark)) .quadrant-header {
+  :not(.dark) .quadrant-header {
     border-bottom-color: rgba(0, 0, 0, 0.1);
   }
 
@@ -887,11 +894,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     background: rgba(255, 255, 255, 0.1);
   }
 
-  :global(.dark) .quadrant-icon {
+  .dark .quadrant-icon {
     background: rgba(255, 255, 255, 0.1);
   }
 
-  :global(:not(.dark)) .quadrant-icon {
+  :not(.dark) .quadrant-icon {
     background: rgba(0, 0, 0, 0.05);
   }
 
@@ -924,7 +931,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-weight: 600;
   }
 
-  :global(.dark) .quadrant-count {
+  .dark .quadrant-count {
     background: rgba(255, 255, 255, 0.15);
   }
 
@@ -956,7 +963,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border: 1px dashed #d1d5db;
   }
 
-  :global(.dark) .task-list:empty::after {
+  .dark .task-list:empty::after {
     background: rgba(255, 255, 255, 0.05);
     border-color: #374151;
   }
@@ -979,7 +986,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     overflow: hidden;
   }
 
-  :global(.dark) .task-item {
+  .dark .task-item {
     background: #1f2937;
     border-color: #374151;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -991,7 +998,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: #d1d5db;
   }
 
-  :global(.dark) .task-item:hover {
+  .dark .task-item:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     border-color: #4b5563;
   }
@@ -1026,7 +1033,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-color: #e5e7eb;
   }
 
-  :global(.dark) .task-item.completed {
+  .dark .task-item.completed {
     background: #111827;
     border-color: #1f2937;
   }
@@ -1045,7 +1052,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     background: rgba(59, 130, 246, 0.1);
   }
 
-  :global(.dark) .task-item.dragging {
+  .dark .task-item.dragging {
     border-color: #60a5fa;
     background: rgba(59, 130, 246, 0.2);
   }
@@ -1060,7 +1067,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transition: all 0.2s ease;
   }
 
-  :global(.dark) .drag-placeholder {
+  .dark .drag-placeholder {
     border-color: #60a5fa;
     background: rgba(59, 130, 246, 0.1);
   }
@@ -1139,7 +1146,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     background: #fff;
   }
 
-  :global(.dark) .task-checkbox {
+  .dark .task-checkbox {
     border-color: #4b5563;
     background: #111827;
   }
@@ -1149,7 +1156,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     background: #eff6ff;
   }
 
-  :global(.dark) .task-checkbox:hover {
+  .dark .task-checkbox:hover {
     background: #1e3a5f;
   }
 
@@ -1197,7 +1204,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     text-overflow: ellipsis;
   }
 
-  :global(.dark) .task-desc {
+  .dark .task-desc {
     color: #9ca3af;
   }
 
@@ -1211,7 +1218,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     flex-shrink: 0;
   }
 
-  :global(.dark) .task-meta {
+  .dark .task-meta {
     color: #6b7280;
   }
 
@@ -1277,7 +1284,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transition: all 0.2s ease;
   }
 
-  :global(.dark) .task-action-btn {
+  .dark .task-action-btn {
     border-color: #374151;
     background: #1f2937;
   }
@@ -1287,7 +1294,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transform: scale(1.05);
   }
 
-  :global(.dark) .task-action-btn:hover {
+  .dark .task-action-btn:hover {
     background: #374151;
   }
 
@@ -1297,7 +1304,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #ef4444;
   }
 
-  :global(.dark) .task-action-btn.delete:hover {
+  .dark .task-action-btn.delete:hover {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.3);
   }
@@ -1308,7 +1315,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #3b82f6;
   }
 
-  :global(.dark) .task-action-btn.edit:hover {
+  .dark .task-action-btn.edit:hover {
     background: rgba(59, 130, 246, 0.15);
     border-color: rgba(59, 130, 246, 0.3);
   }
@@ -1326,7 +1333,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transition: all 0.2s ease;
   }
 
-  :global(.dark) .quadrant-add-btn {
+  .dark .quadrant-add-btn {
     border-color: rgba(255, 255, 255, 0.2);
   }
 
@@ -1336,126 +1343,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #3b82f6;
   }
 
-  :global(.dark) .quadrant-add-btn:hover {
+  .dark .quadrant-add-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-  }
-
-  /* 统计面板 */
-  .stats-panel {
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-top: 1rem;
-  }
-
-  :global(.dark) .stats-panel {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .stats-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-
-  .stats-icon {
-    font-size: 1.25rem;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  @media (max-width: 768px) {
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  .stat-item {
-    text-align: center;
-    padding: 1rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.3);
-  }
-
-  :global(.dark) .stat-item {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    display: block;
-  }
-
-  .stat-total .stat-value { color: #3b82f6; }
-  .stat-completed .stat-value { color: #10b981; }
-  .stat-pending .stat-value { color: #f59e0b; }
-  .stat-rate .stat-value { color: #8b5cf6; }
-
-  .stat-label {
-    font-size: 0.75rem;
-    color: #888;
-  }
-
-  /* 进度条 */
-  .progress-bars {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .progress-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .progress-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    width: 30px;
-  }
-
-  .progress-item[data-quadrant="1"] .progress-label { color: #ef4444; }
-  .progress-item[data-quadrant="2"] .progress-label { color: #3b82f6; }
-  .progress-item[data-quadrant="3"] .progress-label { color: #f59e0b; }
-  .progress-item[data-quadrant="4"] .progress-label { color: #6b7280; }
-
-  .progress-bar {
-    flex: 1;
-    height: 8px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  :global(.dark) .progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .progress-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.5s ease;
-  }
-
-  .progress-item[data-quadrant="1"] .progress-fill { background: #ef4444; }
-  .progress-item[data-quadrant="2"] .progress-fill { background: #3b82f6; }
-  .progress-item[data-quadrant="3"] .progress-fill { background: #f59e0b; }
-  .progress-item[data-quadrant="4"] .progress-fill { background: #6b7280; }
-
-  .progress-text {
-    font-size: 0.75rem;
-    color: #888;
-    width: 50px;
-    text-align: right;
   }
 
   /* 弹窗样式 */
@@ -1489,7 +1378,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     overflow: hidden;
   }
 
-  :global(.dark) .modal {
+  .dark .modal {
     background: #1f2937;
   }
 
@@ -1509,7 +1398,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-bottom: 1px solid #e5e7eb;
   }
 
-  :global(.dark) .modal-header {
+  .dark .modal-header {
     border-bottom-color: #374151;
   }
 
@@ -1532,7 +1421,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #333;
   }
 
-  :global(.dark) .modal-close:hover {
+  .dark .modal-close:hover {
     color: #fff;
   }
 
@@ -1545,7 +1434,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #666;
   }
 
-  :global(.dark) .modal-body p {
+  .dark .modal-body p {
     color: #aaa;
   }
 
@@ -1574,8 +1463,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transition: all 0.2s ease;
   }
 
-  :global(.dark) .form-group input,
-  :global(.dark) .form-group textarea {
+  .dark .form-group input,
+  .dark .form-group textarea {
     background: #111827;
     border-color: #4b5563;
     color: #f3f4f6;
@@ -1607,8 +1496,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transition: all 0.2s ease;
   }
 
-  :global(.dark) .quadrant-btn,
-  :global(.dark) .priority-btn {
+  .dark .quadrant-btn,
+  .dark .priority-btn {
     border-color: #4b5563;
   }
 
@@ -1633,7 +1522,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-top: 1px solid #e5e7eb;
   }
 
-  :global(.dark) .modal-footer {
+  .dark .modal-footer {
     border-top-color: #374151;
   }
 
@@ -1654,7 +1543,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: #333;
   }
 
-  :global(.dark) .btn-cancel {
+  .dark .btn-cancel {
     background: #374151;
     color: #f3f4f6;
   }
@@ -1663,7 +1552,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     background: #d1d5db;
   }
 
-  :global(.dark) .btn-cancel:hover {
+  .dark .btn-cancel:hover {
     background: #4b5563;
   }
 
@@ -1708,6 +1597,489 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   @keyframes particleBurst {
     0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0); opacity: 0; }
+  }
+
+  /* ============ 日历视图 ============ */
+  .cal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .cal-nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #4b5563;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .dark .cal-nav-btn {
+    background: #1f2937;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .cal-nav-btn:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+
+  .dark .cal-nav-btn:hover {
+    background: rgba(59, 130, 246, 0.15);
+  }
+
+  .cal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 7rem;
+    text-align: center;
+  }
+
+  .cal-today-btn {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .dark .cal-today-btn {
+    background: #374151;
+    color: #d1d5db;
+    border-color: #4b5563;
+  }
+
+  .cal-today-btn:hover {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+  }
+
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .cal-weekday {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6b7280;
+    padding: 0.25rem 0;
+  }
+
+  .dark .cal-weekday {
+    color: #9ca3af;
+  }
+
+  .cal-weekday.cal-weekend {
+    color: #ef4444;
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #e5e7eb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .dark .cal-grid {
+    background: #374151;
+    border-color: #374151;
+  }
+
+  .cal-cell {
+    min-height: 96px;
+    background: #fff;
+    padding: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .dark .cal-cell {
+    background: #1f2937;
+  }
+
+  .cal-cell:hover {
+    background: #f9fafb;
+  }
+
+  .dark .cal-cell:hover {
+    background: #283548;
+  }
+
+  .cal-cell-other {
+    opacity: 0.4;
+  }
+
+  .cal-cell-today {
+    box-shadow: inset 0 0 0 2px #3b82f6;
+  }
+
+  .cal-cell.cal-drop-over {
+    background: rgba(59, 130, 246, 0.1);
+    box-shadow: inset 0 0 0 2px #3b82f6;
+  }
+
+  .dark .cal-cell.cal-drop-over {
+    background: rgba(59, 130, 246, 0.2);
+  }
+
+  .cal-date {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    align-self: flex-start;
+  }
+
+  .dark .cal-date {
+    color: #9ca3af;
+  }
+
+  .cal-cell-today .cal-date {
+    background: #3b82f6;
+    color: #fff;
+    border-radius: 50%;
+    width: 1.4rem;
+    height: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cal-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 5px;
+    background: rgba(59, 130, 246, 0.08);
+    cursor: grab;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: background 0.15s ease;
+  }
+
+  .dark .cal-chip {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .cal-chip:hover {
+    background: rgba(59, 130, 246, 0.18);
+  }
+
+  .cal-chip.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+
+  .cal-chip.completed .cal-chip-title {
+    text-decoration: line-through;
+    color: #9ca3af;
+  }
+
+  .cal-chip.overdue .cal-chip-time {
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .cal-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .cal-chip-dot.high { background: #ef4444; }
+  .cal-chip-dot.medium { background: #f59e0b; }
+  .cal-chip-dot.low { background: #6b7280; }
+
+  .cal-chip-time {
+    color: #6b7280;
+    flex-shrink: 0;
+  }
+
+  .dark .cal-chip-time {
+    color: #9ca3af;
+  }
+
+  .cal-chip-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cal-more {
+    font-size: 0.7rem;
+    color: #3b82f6;
+    cursor: pointer;
+    padding: 0.1rem 0.35rem;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.1);
+    align-self: flex-start;
+  }
+
+  .cal-more:hover {
+    background: rgba(59, 130, 246, 0.2);
+  }
+
+  /* 无截止日期任务区 */
+  .cal-unscheduled {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.02);
+    min-height: 2.5rem;
+  }
+
+  .dark .cal-unscheduled {
+    border-color: #374151;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .cal-unscheduled:empty {
+    display: none;
+  }
+
+  .cal-unscheduled-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-right: 0.25rem;
+  }
+
+  @media (max-width: 768px) {
+    .cal-cell {
+      min-height: 64px;
+      padding: 0.2rem;
+    }
+
+    .cal-chip-time {
+      display: none;
+    }
+
+    .cal-chip-title {
+      font-size: 0.65rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .cal-title {
+      font-size: 1rem;
+      min-width: 5.5rem;
+    }
+  }
+
+  /* ============ 归档（已完成）面板 ============ */
+  .todo-archive {
+    margin-top: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .dark .todo-archive {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .archive-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #4b5563;
+    transition: background 0.2s ease;
+  }
+
+  .dark .archive-header {
+    color: #d1d5db;
+  }
+
+  .archive-header:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .dark .archive-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .archive-count {
+    min-width: 1.5rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .dark .archive-count {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .archive-arrow {
+    margin-left: auto;
+    font-size: 0.9rem;
+    color: #9ca3af;
+    transition: transform 0.25s ease;
+  }
+
+  .todo-archive.collapsed .archive-arrow {
+    transform: rotate(-90deg);
+  }
+
+  .archive-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
+  }
+
+  .todo-archive.collapsed .archive-body {
+    max-height: 0;
+    overflow: hidden;
+  }
+
+  .archive-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 1.1rem 1rem;
+  }
+
+  .archive-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+  }
+
+  .dark .archive-item {
+    border-color: #1f2937;
+    background: #111827;
+  }
+
+  .archive-item-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #9ca3af;
+    text-decoration: line-through;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .archive-item-title:hover {
+    color: #6b7280;
+  }
+
+  .dark .archive-item-title:hover {
+    color: #d1d5db;
+  }
+
+  .archive-item-time {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+
+  .archive-item-actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .archive-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+  }
+
+  .dark .archive-action-btn {
+    border-color: #374151;
+    background: #1f2937;
+  }
+
+  .archive-action-btn.restore:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #3b82f6;
+  }
+
+  .dark .archive-action-btn.restore:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .archive-action-btn.delete:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #ef4444;
+  }
+
+  .dark .archive-action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .archive-empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.85rem;
+    padding: 1.5rem 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .archive-item-time {
+      display: none;
+    }
   }
 </style>
 
@@ -1761,6 +2133,18 @@ function formatDate(timestamp: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+// 给 datetime-local 输入框用的格式：YYYY-MM-DDTHH:mm（本地时间）
+function formatDateTimeLocal(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${formatDate(timestamp)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+// 展示用：YYYY-MM-DD HH:mm
+function formatDateTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${formatDate(timestamp)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
 function isDueSoon(dueDate?: number): boolean {
   if (!dueDate) return false;
   const now = Date.now();
@@ -1790,9 +2174,11 @@ function getPriorityOrder(p: string): number {
 
 // 设置日期输入的最小值（今天）
 function setDateMinToday() {
-  const today = formatDate(Date.now());
-  taskDue.min = today;
-  editTaskDue.min = today;
+  // datetime-local 的 min 用「今天 00:00」，保证今天任意时刻都可选
+  const now = new Date();
+  const todayStart = formatDateTimeLocal(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0).getTime());
+  taskDue.min = todayStart;
+  editTaskDue.min = todayStart;
 }
 
 // 清空添加表单
@@ -1879,6 +2265,14 @@ let lastDeletedTask: TodoItem | null = null;
 let undoTimer: number | null = null;
 let viewingTaskId: string | null = null;
 
+// 日历视图状态
+const CAL_MAX_PER_DAY = 3; // 单格最多显示的任务数（移动端会调小）
+const _now = new Date();
+let calYear: number = _now.getFullYear();
+let calMonth: number = _now.getMonth(); // 0-indexed
+let expandedDays: Set<string> = new Set();
+let calDraggedId: string | null = null;
+
 // 创建任务项 DOM
 function createTaskElement(task: TodoItem): HTMLElement {
   const item = document.createElement('div');
@@ -1886,7 +2280,7 @@ function createTaskElement(task: TodoItem): HTMLElement {
   item.dataset.id = task.id;
   item.draggable = !batchModeActive; // 批量模式下禁用拖拽
 
-  const dueText = task.dueDate ? formatDate(task.dueDate) : '';
+  const dueText = task.dueDate ? formatDateTime(task.dueDate) : '';
   const overdueClass = isOverdue(task.dueDate) ? 'overdue' : '';
 
   // 安全构建 DOM，避免 XSS
@@ -1963,6 +2357,44 @@ function createTaskElement(task: TodoItem): HTMLElement {
   return item;
 }
 
+// 创建归档（已完成）任务的紧凑条目，全程 createElement + textContent 防 XSS
+function createArchiveItem(task: TodoItem): HTMLElement {
+  const item = document.createElement('div');
+  item.className = 'archive-item';
+  item.dataset.id = task.id;
+
+  const titleP = document.createElement('p');
+  titleP.className = 'archive-item-title'; // 不用 task-title，避免被 .task-list 委托误捕获
+  titleP.textContent = task.title;
+  item.appendChild(titleP);
+
+  const time = document.createElement('span');
+  time.className = 'archive-item-time';
+  time.textContent = task.completedAt ? `✔ ${formatDateTime(task.completedAt)}` : '✔ 已完成';
+  item.appendChild(time);
+
+  const actions = document.createElement('div');
+  actions.className = 'archive-item-actions';
+
+  const restoreBtn = document.createElement('button');
+  restoreBtn.className = 'archive-action-btn restore';
+  restoreBtn.dataset.id = task.id;
+  restoreBtn.title = '恢复到四象限';
+  restoreBtn.textContent = '↩';
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'archive-action-btn delete';
+  deleteBtn.dataset.id = task.id;
+  deleteBtn.title = '删除';
+  deleteBtn.textContent = '🗑️';
+
+  actions.appendChild(restoreBtn);
+  actions.appendChild(deleteBtn);
+  item.appendChild(actions);
+
+  return item;
+}
+
 // 创建完成粒子效果
 function createCompletionParticles(taskId: string) {
   const container = document.getElementById(`particles-${taskId}`);
@@ -2010,9 +2442,10 @@ function renderTasks(filter?: string) {
     );
   }
 
-  // 按象限分组
+  // 按象限分组（已完成任务不进四象限，改由归档面板展示）
   const quadrants: Record<string, TodoItem[]> = { '1': [], '2': [], '3': [], '4': [] };
   items.forEach(item => {
+    if (item.completed) return;
     const key = String(item.quadrant);
     if (quadrants[key]) {
       quadrants[key].push(item);
@@ -2047,35 +2480,167 @@ function renderTasks(filter?: string) {
     }
   });
 
-  updateStats();
+  // 日历常驻，任何任务变更后同步刷新日历
+  renderCalendar(filter);
+  // 归档面板同步刷新（已完成任务）
+  renderArchive(filter);
 }
 
-// 更新统计数据
-function updateStats() {
+// 渲染归档面板（已完成任务，按完成时间降序）
+function renderArchive(filter?: string) {
+  const listEl = document.getElementById('archiveList');
+  const countEl = document.getElementById('archiveCount');
+  if (!listEl) return;
+
   const storage = getStorage();
-  const items = storage.items;
+  let items = storage.items.filter(i => i.completed);
 
-  const total = items.length;
-  const completed = items.filter(i => i.completed).length;
-  const pending = total - completed;
-  const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+  if (filter) {
+    const lowerFilter = filter.toLowerCase();
+    items = items.filter(item =>
+      item.title.toLowerCase().includes(lowerFilter) ||
+      (item.description && item.description.toLowerCase().includes(lowerFilter))
+    );
+  }
 
-  (document.getElementById('stat-total') as HTMLElement).textContent = String(total);
-  (document.getElementById('stat-completed') as HTMLElement).textContent = String(completed);
-  (document.getElementById('stat-pending') as HTMLElement).textContent = String(pending);
-  (document.getElementById('stat-rate') as HTMLElement).textContent = `${rate}%`;
+  // 最近完成在前
+  items.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
-  // 各象限进度
-  for (let q = 1; q <= 4; q++) {
-    const quadrantItems = items.filter(i => i.quadrant === q);
-    const quadrantCompleted = quadrantItems.filter(i => i.completed).length;
-    const quadrantRate = quadrantItems.length > 0 ? Math.round((quadrantCompleted / quadrantItems.length) * 100) : 0;
+  listEl.innerHTML = '';
+  if (items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'archive-empty';
+    empty.textContent = filter ? '没有匹配的已完成任务' : '暂无已完成任务';
+    listEl.appendChild(empty);
+  } else {
+    items.forEach(task => listEl.appendChild(createArchiveItem(task)));
+  }
 
-    const progressFill = document.getElementById(`progress-q${q}`) as HTMLElement;
-    const progressText = document.getElementById(`progress-text-q${q}`) as HTMLElement;
+  if (countEl) countEl.textContent = String(items.length);
+}
 
-    if (progressFill) progressFill.style.width = `${quadrantRate}%`;
-    if (progressText) progressText.textContent = `${quadrantRate}%`;
+// ============ 日历视图渲染 ============
+
+// 创建日历内的紧凑任务条（独立于 createTaskElement，全程 createElement + textContent 防 XSS）
+function createCalChip(task: TodoItem): HTMLElement {
+  const chip = document.createElement('div');
+  chip.className = `cal-chip${task.completed ? ' completed' : ''}${isOverdue(task.dueDate) && !task.completed ? ' overdue' : ''}`;
+  chip.draggable = true;
+  chip.dataset.id = task.id;
+
+  const dot = document.createElement('span');
+  dot.className = `cal-chip-dot ${task.priority}`;
+  chip.appendChild(dot);
+
+  if (task.dueDate) {
+    const date = new Date(task.dueDate);
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'cal-chip-time';
+    timeSpan.textContent = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    chip.appendChild(timeSpan);
+  }
+
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'cal-chip-title';
+  titleSpan.textContent = task.title;
+  chip.appendChild(titleSpan);
+
+  return chip;
+}
+
+// 渲染月历
+function renderCalendar(filter?: string) {
+  const calTitle = document.getElementById('calTitle');
+  const calGrid = document.getElementById('calGrid');
+  const calUnscheduled = document.getElementById('calUnscheduled');
+  if (!calTitle || !calGrid || !calUnscheduled) return;
+
+  calTitle.textContent = `${calYear}年${calMonth + 1}月`;
+
+  // 按本地日期把任务分组到日期桶（避开 UTC 时区错位）
+  const storage = getStorage();
+  let items = storage.items;
+  if (filter) {
+    const lowerFilter = filter.toLowerCase();
+    items = items.filter(item =>
+      item.title.toLowerCase().includes(lowerFilter) ||
+      (item.description && item.description.toLowerCase().includes(lowerFilter))
+    );
+  }
+
+  const buckets = new Map<string, TodoItem[]>();
+  const unscheduled: TodoItem[] = [];
+  items.forEach(item => {
+    if (!item.dueDate) {
+      unscheduled.push(item);
+      return;
+    }
+    const key = formatDate(item.dueDate);
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(item);
+  });
+
+  // 格内排序：未完成在前 → 截止时间升序 → 优先级降序
+  buckets.forEach(list => {
+    list.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      const dueDiff = (a.dueDate || 0) - (b.dueDate || 0);
+      if (dueDiff !== 0) return dueDiff;
+      return getPriorityOrder(b.priority) - getPriorityOrder(a.priority);
+    });
+  });
+
+  // 42 格（6 周）布局，周一起
+  const first = new Date(calYear, calMonth, 1);
+  const lead = (first.getDay() + 6) % 7; // 周一起的首日偏移
+  const gridStart = new Date(calYear, calMonth, 1 - lead);
+  const todayKey = formatDate(Date.now());
+  const maxPerDay = window.innerWidth <= 768 ? 2 : CAL_MAX_PER_DAY;
+
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    const key = formatDate(d.getTime());
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    if (d.getMonth() !== calMonth) cell.classList.add('cal-cell-other');
+    if (key === todayKey) cell.classList.add('cal-cell-today');
+    cell.dataset.date = key;
+
+    const dateLabel = document.createElement('span');
+    dateLabel.className = 'cal-date';
+    dateLabel.textContent = String(d.getDate());
+    cell.appendChild(dateLabel);
+
+    const dayTasks = buckets.get(key) || [];
+    const expanded = expandedDays.has(key);
+    const visible = expanded ? dayTasks : dayTasks.slice(0, maxPerDay);
+    visible.forEach(task => cell.appendChild(createCalChip(task)));
+
+    if (!expanded && dayTasks.length > maxPerDay) {
+      const more = document.createElement('div');
+      more.className = 'cal-more';
+      more.dataset.date = key;
+      more.textContent = `+${dayTasks.length - maxPerDay} 更多`;
+      cell.appendChild(more);
+    }
+
+    fragment.appendChild(cell);
+  }
+
+  calGrid.innerHTML = '';
+  calGrid.appendChild(fragment);
+
+  // 无截止日期任务区
+  calUnscheduled.innerHTML = '';
+  if (unscheduled.length > 0) {
+    const label = document.createElement('span');
+    label.className = 'cal-unscheduled-label';
+    label.textContent = '无截止日期：';
+    calUnscheduled.appendChild(label);
+    unscheduled.forEach(task => calUnscheduled.appendChild(createCalChip(task)));
   }
 }
 
@@ -2141,7 +2706,7 @@ function openEditModal(taskId: string) {
   editTaskId.value = taskId;
   editTaskTitle.value = task.title;
   editTaskDesc.value = task.description || '';
-  editTaskDue.value = task.dueDate ? formatDate(task.dueDate) : '';
+  editTaskDue.value = task.dueDate ? formatDateTimeLocal(task.dueDate) : '';
 
   currentQuadrant = task.quadrant;
   currentPriority = task.priority;
@@ -2216,6 +2781,28 @@ function toggleComplete(taskId: string) {
   }
 
   renderTasks(searchInput.value);
+}
+
+// 恢复已完成任务：取消完成，退回原象限（quadrant 不变）
+function restoreTask(taskId: string) {
+  const storage = getStorage();
+  const task = storage.items.find(i => i.id === taskId);
+  if (!task) return;
+
+  task.completed = false;
+  task.completedAt = undefined;
+  task.updatedAt = Date.now();
+
+  saveStorage(storage);
+  renderTasks(searchInput.value);
+}
+
+// 折叠/展开归档面板
+function toggleArchive() {
+  const archive = document.getElementById('todoArchive');
+  if (!archive) return;
+  const collapsed = archive.classList.toggle('collapsed');
+  document.getElementById('archiveToggle')?.setAttribute('aria-expanded', String(!collapsed));
 }
 
 // 更新按钮状态
@@ -2327,7 +2914,7 @@ function openDetailModal(taskId: string) {
   }
 
   if (detailDue) {
-    detailDue.textContent = task.dueDate ? formatDate(task.dueDate) : '无截止日期';
+    detailDue.textContent = task.dueDate ? formatDateTime(task.dueDate) : '无截止日期';
     if (isOverdue(task.dueDate)) {
       detailDue.style.color = '#ef4444';
     } else {
@@ -2395,14 +2982,14 @@ function exportToJson() {
 
 function exportToCsv() {
   const storage = getStorage();
-  const headers = ['ID', '标题', '描述', '象限', '优先级', '截止日期', '状态', '创建时间'];
+  const headers = ['ID', '标题', '描述', '象限', '优先级', '截止时间', '状态', '创建时间'];
   const rows = storage.items.map(item => [
     item.id,
     item.title,
     item.description || '',
     item.quadrant,
     item.priority,
-    item.dueDate ? formatDate(item.dueDate) : '',
+    item.dueDate ? formatDateTime(item.dueDate) : '',
     item.completed ? '已完成' : '待处理',
     formatDate(item.createdAt)
   ]);
@@ -2588,6 +3175,87 @@ function getDragAfterElement(container: Element, y: number): Element | null {
   }, { offset: Number.NEGATIVE_INFINITY, element: null as Element | null }).element;
 }
 
+// ============ 日历视图交互 ============
+
+// 月份导航
+function changeMonth(delta: number) {
+  const d = new Date(calYear, calMonth + delta, 1);
+  calYear = d.getFullYear();
+  calMonth = d.getMonth();
+  expandedDays.clear();
+  renderCalendar(searchInput.value);
+}
+
+function goToToday() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  expandedDays.clear();
+  renderCalendar(searchInput.value);
+}
+
+// 拖拽改期
+function handleCalDragStart(e: DragEvent) {
+  const chip = (e.target as HTMLElement).closest('.cal-chip') as HTMLElement | null;
+  if (!chip) return;
+  calDraggedId = chip.dataset.id || null;
+  chip.classList.add('dragging');
+  e.dataTransfer!.effectAllowed = 'move';
+  e.dataTransfer!.setData('text/plain', calDraggedId || '');
+}
+
+function handleCalDragOver(e: DragEvent) {
+  if (!calDraggedId) return;
+  e.preventDefault();
+  e.dataTransfer!.dropEffect = 'move';
+  const cell = (e.target as HTMLElement).closest('.cal-cell');
+  if (cell) {
+    document.querySelectorAll('.cal-cell.cal-drop-over').forEach(c => c.classList.remove('cal-drop-over'));
+    cell.classList.add('cal-drop-over');
+  }
+}
+
+function handleCalDrop(e: DragEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+  const cell = (e.target as HTMLElement).closest('.cal-cell') as HTMLElement | null;
+  if (!cell || !calDraggedId || !cell.dataset.date) return;
+
+  const [y, m, dd] = cell.dataset.date.split('-').map(Number);
+  const storage = getStorage();
+  const task = storage.items.find(i => i.id === calDraggedId);
+  if (task) {
+    // 只改日期部分，保留原时分；无原时分默认 9:00
+    const prev = task.dueDate ? new Date(task.dueDate) : null;
+    const hh = prev ? prev.getHours() : 9;
+    const mi = prev ? prev.getMinutes() : 0;
+    task.dueDate = new Date(y, m - 1, dd, hh, mi, 0, 0).getTime();
+    task.updatedAt = Date.now();
+    saveStorage(storage);
+    renderCalendar(searchInput.value);
+  }
+  calDraggedId = null;
+  document.querySelectorAll('.cal-cell.cal-drop-over').forEach(c => c.classList.remove('cal-drop-over'));
+}
+
+function handleCalDragEnd() {
+  document.querySelectorAll('.cal-chip.dragging').forEach(c => c.classList.remove('dragging'));
+  document.querySelectorAll('.cal-cell.cal-drop-over').forEach(c => c.classList.remove('cal-drop-over'));
+  calDraggedId = null;
+}
+
+// 点击日历格子空白处快速新建（截止该天 9:00）
+function openAddForDate(dateKey: string) {
+  const [y, m, dd] = dateKey.split('-').map(Number);
+  currentQuadrant = 1;
+  currentPriority = 'medium';
+  updateQuadrantBtns(quadrantBtns, currentQuadrant);
+  updatePriorityBtns(priorityBtns, currentPriority);
+  showModal(addModal!);
+  taskDue.value = formatDateTimeLocal(new Date(y, m - 1, dd, 9, 0).getTime());
+  taskTitle.focus();
+}
+
 // 事件绑定
 function initEvents() {
   // 搜索（带防抖）
@@ -2733,6 +3401,23 @@ function initEvents() {
     list.addEventListener('dragend', handleDragEnd);
   });
 
+  // 归档面板：折叠 + 列表事件委托
+  document.getElementById('archiveToggle')?.addEventListener('click', toggleArchive);
+  document.getElementById('archiveList')?.addEventListener('click', (e: Event) => {
+    const target = e.target as HTMLElement;
+
+    const restore = target.closest('.restore') as HTMLElement | null;
+    if (restore?.dataset.id) { restoreTask(restore.dataset.id); return; }
+
+    const del = target.closest('.delete') as HTMLElement | null;
+    if (del?.dataset.id) { openDeleteModal(del.dataset.id); return; }
+
+    if (target.classList.contains('archive-item-title')) {
+      const item = target.closest('.archive-item') as HTMLElement | null;
+      if (item?.dataset.id) openDetailModal(item.dataset.id);
+    }
+  });
+
   // 详情弹窗
   detailModalClose?.addEventListener('click', () => hideModal(detailModal!));
   detailBtnCancel?.addEventListener('click', () => hideModal(detailModal!));
@@ -2765,6 +3450,42 @@ function initEvents() {
     if (e.key === 'Enter') addTask();
   });
 
+  // ============ 日历视图事件 ============
+  // 月份导航
+  document.getElementById('prevMonthBtn')?.addEventListener('click', () => changeMonth(-1));
+  document.getElementById('nextMonthBtn')?.addEventListener('click', () => changeMonth(1));
+  document.getElementById('todayBtn')?.addEventListener('click', goToToday);
+
+  // 日历格子点击：chip→详情，more→展开，空白→新建
+  const calGrid = document.getElementById('calGrid');
+  calGrid?.addEventListener('click', (e: Event) => {
+    const target = e.target as HTMLElement;
+    const more = target.closest('.cal-more') as HTMLElement | null;
+    if (more && more.dataset.date) {
+      expandedDays.add(more.dataset.date);
+      renderCalendar(searchInput.value);
+      return;
+    }
+    const chip = target.closest('.cal-chip') as HTMLElement | null;
+    if (chip && chip.dataset.id) {
+      openDetailModal(chip.dataset.id);
+      return;
+    }
+    const cell = target.closest('.cal-cell') as HTMLElement | null;
+    if (cell && cell.dataset.date) {
+      openAddForDate(cell.dataset.date);
+    }
+  });
+
+  // 拖拽改期（calGrid 与无日期区共用 handler）
+  const calUnscheduled = document.getElementById('calUnscheduled');
+  [calGrid, calUnscheduled].forEach(el => {
+    el?.addEventListener('dragstart', handleCalDragStart);
+    el?.addEventListener('dragover', handleCalDragOver);
+    el?.addEventListener('drop', handleCalDrop);
+    el?.addEventListener('dragend', handleCalDragEnd);
+  });
+
   // 浏览器通知
   requestNotificationPermission();
   // 每30分钟检查截止日期通知
@@ -2773,5 +3494,5 @@ function initEvents() {
 
 // 初始化
 initEvents();
-renderTasks();
+renderTasks(); // 末尾会同步渲染日历（renderCalendar）
 </script>

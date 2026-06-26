@@ -1,5 +1,5 @@
 ---
-title: "Open Notebook：一个 31k Star 的 NotebookLM 开源替代，架构设计与核心取舍"
+title: "Open Notebook：31k Star 的 NotebookLM 开源替代架构解析"
 description: "分析 Open Notebook 的架构设计、多 AI 提供商抽象层、与 Google NotebookLM 的差异，以及自建知识笔记工具面临的核心工程取舍。"
 date: 2026-06-16
 category: "AI 工程"
@@ -7,7 +7,7 @@ tags: ["notebooklm", "ai-notes", "open-source", "typescript"]
 draft: false
 ---
 
-## Open Notebook：一个 31k Star 的 NotebookLM 开源替代，架构设计与核心取舍
+## 简介
 
 Open Notebook 是一个自托管的知识笔记工具，定位为 Google NotebookLM 的开源替代。项目于 2024 年 10 月启动，截至 2026 年 6 月已积累超过 31,000 GitHub Stars，最新版本为 v1.9.0。
 
@@ -17,7 +17,7 @@ Open Notebook 是一个自托管的知识笔记工具，定位为 Google Noteboo
 
 ## 项目概览
 
-| 字段 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) |
 | Stars | 31,000+ |
@@ -37,7 +37,7 @@ Open Notebook 是一个自托管的知识笔记工具，定位为 Google Noteboo
 
 ## 目录结构与模块划分
 
-```
+```text
 open-notebook/
 ├── open_notebook/        # Python 后端核心
 │   ├── ai/               # AI 抽象层（Esperanto 集成）
@@ -191,17 +191,13 @@ NotebookLM 的优势（零配置、Google 模型质量稳定、引用系统成�
 
 ---
 
-## 适用场景分析
+## 适用场景与局限
 
-| 场景 | 是否适合 | 原因 |
-|------|---------|------|
-| 个人研究笔记，注重隐私 | 适合 | 数据完全本地，不依赖 Google |
-| 需要混合使用多家 AI 模型 | 适合 | 18+ 提供商可自由组合 |
-| 需要通过 API 自动化工作流 | 适合 | 提供完整 REST API |
-| 想要零配置的浏览器体验 | 不适合 | 需要自行部署 Docker |
-| 对引用准确性要求极高的学术研究 | 需谨慎 | 引用功能仍在改进中 |
-| 本地离线使用（无网络） | 部分适合 | 搭配 Ollama 可完全本地化，但文档解析能力受限 |
-| 企业级多用户协作 | 不适合 | 当前版本无多用户权限管理 |
+它的定位是自托管、可自由组合多模型的知识工具，这决定了它的能力边界：
+
+- **适合**：注重隐私的个人研究笔记（数据完全本地，不依赖 Google）、需要混合使用多家 AI 模型（18+ 提供商自由组合）、需要通过 API 自动化工作流（提供完整 REST API）。
+- **需谨慎**：对引用准确性要求极高的学术研究（引用功能仍在改进中）；纯离线使用搭配 Ollama 可完全本地化，但文档解析能力受限。
+- **不适合**：想要零配置浏览器体验的用户（需自行部署 Docker）、企业级多用户协作（当前版本无多用户权限管理）。
 
 ---
 
@@ -229,7 +225,7 @@ docker compose up -d
 
 ---
 
-## 几个值得关注的点
+## 值得关注的工程问题
 
 **SurrealDB 的采用**。在 AI 应用开发中，向量数据库的选择往往决定了系统的扩展上限。SurrealDB 目前够用，但如果项目需要支持更大规模的知识库，可能需要提供 PostgreSQL + pgvector 作为备选后端。
 
@@ -241,7 +237,7 @@ docker compose up -d
 
 ---
 
-## 参考链接
+## 参考资料
 
 - GitHub 仓库：[lfnovo/open-notebook](https://github.com/lfnovo/open-notebook)
 - 项目官网：[open-notebook.ai](https://www.open-notebook.ai)

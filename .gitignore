@@ -29,3 +29,9 @@ npm-debug.log*
 # PlantUML JAR（太大，不提交）
 bin/*.jar
 
+# CodeGraph 本地索引（机器本地，不提交）
+.codegraph/
+
+# drawio 设计草稿（二进制）
+docs/diagrams/
+

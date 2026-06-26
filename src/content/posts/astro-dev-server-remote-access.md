@@ -7,7 +7,7 @@ tags: ["astro", "dev-server", "tailscale", "remote-access", "troubleshooting"]
 draft: false
 ---
 
-## 问题
+## 问题现象
 
 Astro 开发服务器默认绑定 `localhost`（127.0.0.1），只接受本机连接。通过 Tailscale IP 或局域网 IP 访问时连接超时。
 
@@ -21,9 +21,35 @@ node  12345  user  23u  IPv4  ...  TCP 127.0.0.1:4321 (LISTEN)
 
 ---
 
-## 原因
+## 原因分析
 
 Astro（以及 Vite、Next.js 等框架）出于安全考虑，开发服务器默认绑定 `localhost`，只有本机进程能连接。其他网络接口（包括 Tailscale 虚拟网卡）被排除在外。
+
+绑定地址决定了哪些来源能连上：
+
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+
+actor "本机浏览器" as local
+actor "局域网设备" as lan
+actor "Tailscale 设备" as ts
+
+rectangle "绑定 127.0.0.1\n（默认）" as bind1
+rectangle "绑定 0.0.0.0\n（host: true）" as bind2
+
+local --> bind1 : 可访问
+lan ..> bind1 : 被拒绝
+ts ..> bind1 : 被拒绝
+
+local --> bind2 : 可访问
+lan --> bind2 : 可访问
+ts --> bind2 : 可访问
+@enduml
+```
+
+默认的 `127.0.0.1` 只放行本机，把绑定地址改成 `0.0.0.0`（监听所有接口）后，局域网和 Tailscale 设备才能连上。
 
 ---
 
@@ -72,7 +98,7 @@ node  12345  user  23u  IPv4  ...  TCP *:4321 (LISTEN)
 
 ---
 
-## 其他框架
+## 延伸场景
 
 | 框架 | 配置方式 |
 |------|---------|
@@ -91,7 +117,7 @@ node  12345  user  23u  IPv4  ...  TCP *:4321 (LISTEN)
 
 ---
 
-## 参考链接
+## 参考资料
 
 - [Astro 官方文档 — server.host](https://docs.astro.build/en/reference/configuration-reference/#serverhost)
 - [Vite 官方文档 — server.host](https://vitejs.dev/config/server-options.html#server-host)

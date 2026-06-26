@@ -7,9 +7,9 @@ tags: ["agent-skill", "search-engine", "reddit", "social-media", "ai-agent", "py
 draft: false
 ---
 
-## last30days-skill：让 AI Agent 搜遍全网社交平台，用真人互动数据打分
+## 简介
 
-你让 AI Agent 帮你调研一个人或一个话题，它能做什么？Google 搜一下？那得到的是 2023 年的 LinkedIn 和几篇 SEO 文章。Reddit 上的人怎么说？X 上有什么讨论？YouTube 有没有深度评测？Polymarket 上的预测赔率是多少？
+last30days-skill 是一个让 AI Agent 跨社交平台搜索的技能。它解决的是 Agent 调研人物或话题时的数据来源问题：直接用 Google 搜往往只能得到过时的 LinkedIn 资料和 SEO 文章，而 Reddit 的讨论、X 的实时观点、YouTube 的深度评测、Polymarket 的预测赔率这些真实信号散落在各个平台，难以统一获取。
 
 每个平台都是一座围城——自己的 API、自己的认证、自己的反爬。ChatGPT 和 Reddit 有合作但搜不了 X，Gemini 有 YouTube 但没 Reddit，Claude 原生一个都没有。
 
@@ -19,7 +19,7 @@ last30days-skill 的做法是：一个 Agent 技能，并行搜索 14+ 个平台
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) |
 | Stars | 43.3k（截至 2026-06-16） |
@@ -28,7 +28,7 @@ last30days-skill 的做法是：一个 Agent 技能，并行搜索 14+ 个平台
 | 最新版本 | v3.3.0（2026-05-17） |
 | 架构 | AI Agent 技能 + 多平台搜索引擎 + 评分裁判系统 |
 
-## 核心设计
+## 架构与原理
 
 ```plantuml
 @startuml
@@ -83,7 +83,7 @@ agent -> 用户: 输出结果 + HTML brief
 
 v3 的核心改进是搜索前先"理解"你的话题。不是拿关键词直接去搜，而是先用一个 Python 预研究模块解析话题：
 
-```
+```text
 "Peter Steinberger"
   → @steipete (X)
   → steipete (GitHub)  
@@ -112,7 +112,7 @@ Google 用 PageRank 评分——编辑和站长投票。last30days 用**真人�
 
 同一条消息出现在 Reddit、X 和 YouTube 上时，v3 引擎会把它们合并成一个 cluster，而不是展示三条重复内容。基于实体的重叠检测，即使标题用了不同的词也能匹配。
 
-## 5 分钟上手
+## 快速上手
 
 ### 安装（Claude Code）
 
@@ -129,19 +129,19 @@ npx skills add mvanhorn/last30days-skill -g
 
 ### 基本使用
 
-```
+```text
 /last30days Peter Steinberger
 ```
 
 开会前调研一个人：他最近加入了 OpenAI 的 Codex 团队、在 X 上和 Anthropic 的第三方 Agent 禁令争论、GitHub 上 23 个 PR 以 85% 合并率合入、r/ClaudeCode 有 569 票的帖子讨论他是不是英雄。这些在 Google 和 LinkedIn 上都找不到。
 
-```
+```text
 /last30days OpenClaw vs Hermes vs Paperclip
 ```
 
 对比工具：v3 单次 pass 同时搜索两个实体，3 分钟出结果（v2 串行要 12 分钟）。
 
-```
+```text
 /last30days Universal Epic Universe
 ```
 
@@ -149,13 +149,13 @@ npx skills add mvanhorn/last30days-skill -g
 
 ### HTML Brief
 
-```
+```text
 /last30days OpenClaw --emit=html
 ```
 
 生成一个自包含的 HTML 文件：暗色主题、打印友好、可离线查看。可以直接丢到 Slack、邮件或 Notion 里。
 
-## 和其他方案的对比
+## 与同类方案对比
 
 | 维度 | last30days | Google | ChatGPT with browsing | Perplexity |
 |------|-----------|--------|----------------------|------------|
@@ -178,17 +178,15 @@ last30days 的核心差异在于：它不是又一个搜索引擎，而是**一�
 | 评分基于互动量而非编辑质量 | 反映真实关注度 | 高互动不等于高质量（标题党也能拿高票） |
 | 14+ 平台并行搜索 | 速度快、覆盖广 | 单个平台故障可能影响整体延迟（有 timeout 预算缓解） |
 
-## 适用场景与边界
+## 适用场景与局限
 
-| 场景 | 推荐？ | 原因 |
-|------|--------|------|
-| 会议前调研对方背景 | 强烈推荐 | 比 LinkedIn 实时 10 倍 |
-| 技术选型前看社区反馈 | 推荐 | Reddit + HN + GitHub 数据最真实 |
-| 竞品对比 | 推荐 | 单次 pass 并行对比，自动发现竞品 |
-| 学术调研 | 不推荐 | 社交平台数据不适合学术场景 |
-| 实时新闻 | 部分推荐 | 覆盖社交平台但不替代专业新闻源 |
+它的数据来自社交平台（Reddit、HN、X、GitHub 等），这决定了它擅长和不擅长什么：
 
-## 参考链接
+- **调研人物背景、看社区反馈、竞品对比**：社交平台数据实时且真实，单次 pass 可并行对比、自动发现竞品。
+- **学术调研**：社交平台数据不适合学术场景，不要用它替代论文检索。
+- **实时新闻**：覆盖社交平台讨论，但不替代专业新闻源。
+
+## 参考资料
 
 - [GitHub 仓库](https://github.com/mvanhorn/last30days-skill)
 - [v3 更新日志](https://github.com/mvanhorn/last30days-skill/blob/main/CHANGELOG.md)

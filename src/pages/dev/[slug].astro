@@ -4,7 +4,9 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 // 生成静态路径
+// 仅开发模式生成；生产构建返回空数组，避免开发预览页泄漏到线上站点
 export async function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
   const posts = await getCollection('posts');
   posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
   return posts.map((post) => ({

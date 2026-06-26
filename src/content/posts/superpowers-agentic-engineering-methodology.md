@@ -7,11 +7,7 @@ tags: ["superpowers", "agentic-engineering", "claude-code", "tdd", "software-met
 draft: false
 ---
 
-## superpowers：给 AI 编码 Agent 一套软件工程方法论
-
-> *"你的 Agent 不是缺能力，是缺纪律。给它 Superpowers，不是给它更多工具，而是给它一套工作流程。"*
-
-## 它要解决什么问题
+## 简介
 
 AI 编码 Agent 现在可以写代码了——但"可以写"和"写得好"是两回事。
 
@@ -21,7 +17,7 @@ superpowers 的核心洞察是：**Agent 的问题不在于生成代码的能力
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [obra/superpowers](https://github.com/obra/superpowers) |
 | Stars | 232.5k（截至 2026-06-19） |
@@ -32,7 +28,7 @@ superpowers 的核心洞察是：**Agent 的问题不在于生成代码的能力
 | 支持 Agent | Claude Code、Cursor、Codex CLI、Gemini CLI、KiloCode 等 11 种 |
 | 技能数量 | 14 个核心技能 |
 
-## 核心设计
+## 架构与原理
 
 ```plantuml
 @startuml
@@ -92,7 +88,7 @@ superpowers 的架构不是传统意义上的"代码架构"——它本质上是
 
 这是 superpowers 最有特色的能力。当实现计划准备好后，主 Agent 不自己写代码，而是为每个任务派发一个**全新的子 Agent**。每个子 Agent 带着任务描述独立工作，完成后提交实现报告。
 
-```
+```text
 主 Agent 的职责：
 1. 派发任务给子 Agent
 2. 等待子 Agent 返回实现报告
@@ -105,7 +101,7 @@ superpowers 的架构不是传统意义上的"代码架构"——它本质上是
 3. 返回实现报告（改了哪些文件、测试是否通过）
 ```
 
-这个设计的核心优势是**上下文隔离**。如果一个 Agent 持续工作 2 小时，它的上下文窗口会被大量中间状态占满，导致后续决策质量下降。子 Agent 每个都是干净的上下文，只带着当前任务需要的信息开始工作。
+这个设计的关键作用是**上下文隔离**。如果一个 Agent 持续工作 2 小时，它的上下文窗口会被大量中间状态占满，导致后续决策质量下降。子 Agent 每个都是干净的上下文，只带着当前任务需要的信息开始工作。
 
 v6.0.3 的更新（SDD 暂存文件从 `.git/` 移到 `.superpowers/sdd/`）反映了一个实际遇到的问题：Claude Code 把 `.git/` 视为受保护路径，拒绝 Agent 写入。这种工程细节只有真实使用后才能发现。
 
@@ -139,7 +135,7 @@ superpowers 的技能分为四个类别：
 - `writing-skills` — 如何写新技能
 - `using-superpowers` — 技能系统介绍
 
-## 5 分钟上手
+## 快速上手
 
 ### 安装（以 Claude Code 为例）
 
@@ -173,7 +169,7 @@ Agent 会（按设计）：
 - 关闭遥测：`export SUPERPOWERS_DISABLE_TELEMETRY=true`
 - 技能文件位于仓库的 `skills/` 目录，可以 fork 后自定义
 
-## 和其他方案的对比
+## 与同类方案对比
 
 | 维度 | superpowers | CLAUDE.md / AGENTS.md | 手动提示词 |
 |------|-------------|----------------------|-----------|
@@ -195,17 +191,16 @@ superpowers 和 CLAUDE.md/AGENTS.md 不是竞争关系——CLAUDE.md 描述的�
 | 不内置项目特定规则 | 通用性强 | 每个项目需要搭配 CLAUDE.md 补充 |
 | 14 个固定技能 | 覆盖完整 SDLC | 不容易扩展新的工作流阶段 |
 
-## 适用场景与边界
+## 适用场景与局限
 
-| 场景 | 推荐？ | 原因 |
-|------|--------|------|
-| 中大型功能开发（多天工作量） | 强烈推荐 | 流程约束的价值在复杂度上升时显现 |
-| 简单 bug 修复 | 不推荐 | 流程开销超过收益 |
-| 多人协作项目 | 推荐 | 标准化的工作流减少沟通成本 |
-| 探索性原型开发 | 视情况 | TDD 约束可能拖慢原型迭代速度 |
-| CI/CD 自动化 | 可以 | `kilo run --auto` 模式支持无监督执行 |
+流程约束的价值在复杂度上升时才显现，因此项目规模决定了它划不划算：
 
-## 参考链接
+- **中大型功能开发（多天工作量）、多人协作**：标准化工作流能减少沟通成本，流程约束的收益随复杂度放大。
+- **简单 bug 修复**：流程开销往往超过收益。
+- **探索性原型开发**：TDD 约束可能拖慢原型迭代速度，视情况取舍。
+- **CI/CD 自动化**：`kilo run --auto` 模式支持无监督执行。
+
+## 参考资料
 
 - [GitHub 仓库](https://github.com/obra/superpowers)
 - [作者博客：原始发布公告](https://blog.fsck.com/2025/10/09/superpowers/)

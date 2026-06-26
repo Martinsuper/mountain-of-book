@@ -2,6 +2,10 @@
   "name": "mountain-of-book",
   "type": "module",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "pnpm check-plantuml && astro build",
@@ -20,6 +24,8 @@
   "dependencies": {
     "@astrojs/tailwind": "^6.0.0",
     "astro": "^5.0.0",
+    "js-yaml": "^5.1.0",
+    "marked": "^18.0.5",
     "mermaid": "^11.14.0",
     "plantuml-encoder": "^1.4.0",
     "shiki": "^1.0.0",

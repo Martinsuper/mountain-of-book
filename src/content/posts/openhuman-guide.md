@@ -17,7 +17,7 @@ OpenHuman 的做法是**本地优先**。它的核心记忆系统（Memory Tree�
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [tinyhumansai/openhuman](https://github.com/tinyhumansai/openhuman) |
 | Stars | 32k（截至 2026-06-14） |

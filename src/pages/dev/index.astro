@@ -4,6 +4,11 @@ import { getCollection } from 'astro:content';
 import { sortPostsByDate } from '../../lib/post-utils';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
+// 生产构建时该开发工具不应出现在线上站点，直接重定向到首页
+if (!import.meta.env.DEV) {
+  return Astro.redirect('/');
+}
+
 const allPosts = await getCollection('posts');
 sortPostsByDate(allPosts);
 

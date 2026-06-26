@@ -7,11 +7,11 @@ tags: ["kilocode", "ai-coding", "vscode-extension", "cli", "open-source"]
 draft: false
 ---
 
-## Kilo Code：开源的多模型 AI 编码 Agent 平台
+## 简介
 
-> *"你不需要另一个 AI 编码工具，你需要一个可以换模型的 AI 编码工具。"*
+Kilo Code 是一个开源的 AI 编码 Agent 平台，22k stars。它支持 VS Code、JetBrains、CLI 三种形态，通过 Kilo 账户接入 500+ 模型且按提供商原价计费、不加价，还能在同一会话中途切换模型，并内置代码审查和 CI/CD 自主模式。
 
-## 它要解决什么问题
+## 背景与动机
 
 当前 AI 编码工具的商业模式有两种：要么绑定单一模型提供商（Cursor 绑定 Claude/GPT，Windsurf 绑定自研模型），要么让你自带 API key 但界面体验粗糙。
 
@@ -23,7 +23,7 @@ Kilo Code 的做法是：**开源、多模型、零加价**。你注册 Kilo 账
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) |
 | Stars | 22.2k（截至 2026-06-19） |
@@ -34,7 +34,7 @@ Kilo Code 的做法是：**开源、多模型、零加价**。你注册 Kilo 账
 | 来源 | OpenCode 的 fork，增加了 Kilo 平台集成 |
 | 支持模型 | 500+（GPT-5.5、Claude Opus 4.7、Gemini 3.1 Pro 等） |
 
-## 核心设计
+## 架构与原理
 
 ```plantuml
 @startuml
@@ -121,11 +121,18 @@ Kilo 的 `kilo-gateway` 是一个 LLM 代理层，所有模型请求通过它路
 1. **统一认证**：用户只需要 Kilo 账户，不需要分别注册 OpenAI、Anthropic、Google 的账号
 2. **中途切换**：同一个会话中，可以根据任务阶段选择不同模型
 
-```
-任务：重构用户模块
-  ├─ 阶段 1（架构设计）：Claude Opus 4.7（推理能力强）
-  ├─ 阶段 2（批量重命名）：Claude Haiku 4.5（便宜快速）
-  └─ 阶段 3（代码审查）：GPT-5.5（审查提示词优化）
+同一个会话可以根据任务阶段选择不同模型，例如重构用户模块时：
+
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+start
+:阶段 1 架构设计\n→ Claude Opus 4.7（推理能力强）;
+:阶段 2 批量重命名\n→ Claude Haiku 4.5（便宜快速）;
+:阶段 3 代码审查\n→ GPT-5.5（审查提示词优化）;
+stop
+@enduml
 ```
 
 代价是中间多了一层代理，但 Kilo 声称按提供商原价计费，不加价——收入来源可能来自企业版服务或未来的增值服务。
@@ -140,7 +147,7 @@ kilo run --auto "run tests and fix any failures"
 
 这个模式的风险很明确：Agent 可以执行任何操作，不需要人工确认。文档里写了"Only use it in trusted environments"，这不是一个可以在生产环境直接开放的功能，更适合在 staging 分支或 CI 隔离环境中使用。
 
-## 5 分钟上手
+## 快速上手
 
 ### VS Code
 
@@ -184,7 +191,7 @@ kilo
 
 ## 项目结构（monorepo）
 
-```
+```text
 packages/
 ├── kilo-vscode/       # VS Code 扩展入口
 ├── kilo-jetbrains/    # JetBrains 插件
@@ -206,7 +213,7 @@ packages/
 └── http-recorder/     # HTTP 请求录制（测试用）
 ```
 
-## 和其他方案的对比
+## 与同类方案对比
 
 | 维度 | Kilo Code | Cursor | Claude Code | Aider |
 |------|-----------|--------|-------------|-------|
@@ -232,18 +239,18 @@ Kilo 和 Claude Code 的差异在于**模型多样性**。Claude Code 只能用 
 | 不加价（按提供商原价） | 用户成本透明 | 盈利依赖企业版或增值服务 |
 | monorepo（turbo + bun） | 跨包代码共享方便 | 构建系统复杂，新人贡献门槛高 |
 
-## 适用场景与边界
+## 适用场景与局限
 
-| 场景 | 推荐？ | 原因 |
-|------|--------|------|
-| 需要在多个模型间灵活切换 | 强烈推荐 | 这是 Kilo 的核心优势 |
-| VS Code / JetBrains 用户 | 推荐 | 原生扩展体验好 |
-| 需要 CI/CD 集成 | 推荐 | `kilo run --auto` 原生支持 |
-| 深度依赖 Claude 特定能力 | 可选 | Claude Code 的原生支持更完整 |
-| 预算敏感、需要成本控制 | 推荐 | 按使用量计费，没有月费锁定 |
-| 需要 JetBrains 原生体验 | 推荐 | 目前少数支持 JetBrains 的 AI Agent |
+Kilo 的能力特点：
 
-## 参考链接
+- **多模型切换**：可在多个模型间灵活切换，不锁定单一供应商。
+- **编辑器集成**：提供 VS Code / JetBrains 原生扩展，是目前少数支持 JetBrains 的 AI Agent。
+- **CI/CD 集成**：`kilo run --auto` 原生支持自动化流水线。
+- **计费方式**：按使用量计费，无月费锁定。
+
+需要注意：如果深度依赖 Claude 的特定能力，Claude Code 的原生支持更完整。
+
+## 参考资料
 
 - [GitHub 仓库](https://github.com/Kilo-Org/kilocode)
 - [官方网站](https://kilo.ai)

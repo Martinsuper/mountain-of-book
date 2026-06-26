@@ -17,7 +17,7 @@ Academic Research Skills（ARS）的做法不是让 AI 替你写论文，而是�
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [Imbad0202/academic-research-skills](https://github.com/Imbad0202/academic-research-skills) |
 | Stars | 31.3k（截至 2026-06-14） |

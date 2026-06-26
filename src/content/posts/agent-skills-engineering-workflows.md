@@ -7,7 +7,7 @@ tags: ["agent-skills", "claude-code", "cursor", "ai-coding", "software-engineeri
 draft: false
 ---
 
-## Agent Skills：让 AI 编程 Agent 按工程规范干活的 24 个工作流
+## 简介
 
 AI 编程 Agent 能写代码、改文件、跑测试——但你怎么确保它写出的代码符合你的工程规范？怎么防止它跳过测试、忽略安全审查、直接提交一个大而全的 commit？
 
@@ -17,7 +17,7 @@ Agent Skills 的答案是：把高级工程师的工作流编码成 Agent 可执
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) |
 | Stars | 61.0k（截至 2026-06-16） |
@@ -26,7 +26,7 @@ Agent Skills 的答案是：把高级工程师的工作流编码成 Agent 可执
 | 最新版本 | v0.6.2（2026-06-11） |
 | 架构 | 24 个独立 SKILL.md + 7 个 slash commands + 4 个 Agent personas |
 
-## 核心设计
+## 架构与原理
 
 ```plantuml
 @startuml
@@ -88,7 +88,7 @@ review -right-> ship
 
 每个 SKILL.md 遵循统一的结构：
 
-```
+```text
 SKILL.md
 ├── Frontmatter（name, description, 触发条件）
 ├── Overview（做什么）
@@ -184,7 +184,7 @@ gemini skills install https://github.com/addyosmani/agent-skills.git --path skil
 
 7 个 slash commands 对应开发生命周期的 7 个阶段：
 
-```
+```text
 /spec        → 定义要做什么
 /plan        → 规划怎么做
 /build       → 增量实现
@@ -196,7 +196,7 @@ gemini skills install https://github.com/addyosmani/agent-skills.git --path skil
 
 还有一个快捷方式：`/build auto`。给定 spec 后，它自动生成 plan 并逐个实现所有任务——你只需批准 plan 一次。每个任务仍然是测试驱动、独立提交的，遇到失败或高风险步骤会暂停。
 
-## 和其他方案的对比
+## 与同类方案对比
 
 | 维度 | Agent Skills | CLAUDE.md / .cursorrules | 手写 prompt |
 |------|-------------|--------------------------|------------|
@@ -206,7 +206,7 @@ gemini skills install https://github.com/addyosmani/agent-skills.git --path skil
 | 可组合性 | 技能间可组合，command 自动编排 | 无编排 | 无 |
 | 维护成本 | 社区维护，持续更新 | 自己维护 | 自己维护 |
 
-Agent Skills 的核心优势在于**可执行性**。它不是一个"最佳实践列表"，而是一个 Agent 必须遵循的工作流引擎。CLAUDE.md 说"要写测试"，Agent Skills 的 TDD 技能说"先写一个失败的测试（Red），再写最少的代码让测试通过（Green），再重构（Refactor），三个步骤缺一不可，证据是测试输出"。
+Agent Skills 的关键特点在于**可执行性**。它不是一个"最佳实践列表"，而是一个 Agent 必须遵循的工作流引擎。CLAUDE.md 说"要写测试"，Agent Skills 的 TDD 技能说"先写一个失败的测试（Red），再写最少的代码让测试通过（Green），再重构（Refactor），三个步骤缺一不可，证据是测试输出"。
 
 ## 设计上的权衡
 
@@ -217,17 +217,15 @@ Agent Skills 的核心优势在于**可执行性**。它不是一个"最佳实�
 | 技能按需加载（progressive disclosure） | 减少上下文占用 | 需要 Agent 正确判断何时加载哪个技能 |
 | 验证门不可协商 | 输出质量有保障 | 灵活性降低，简单任务也要走完整流程 |
 
-## 适用场景与边界
+## 适用场景与局限
 
-| 场景 | 推荐？ | 原因 |
-|------|--------|------|
-| 中大型项目开发 | 推荐 | 流程保障能显著减少返工 |
-| 快速原型 / hackathon | 不推荐 | 流程开销大于收益 |
-| 多人协作项目 | 推荐 | 统一 Agent 行为标准 |
-| 个人小脚本 | 不推荐 | 杀鸡用牛刀 |
-| 安全敏感项目 | 强烈推荐 | security-and-hardening 技能覆盖 OWASP Top 10 |
+这套工作流的价值随项目复杂度上升而显现，本质是用流程开销换取返工成本的下降：
 
-## 参考链接
+- **中大型项目、多人协作**：流程保障能显著减少返工，并统一多个 Agent 的行为标准。
+- **安全敏感项目**：security-and-hardening 技能覆盖 OWASP Top 10，价值更突出。
+- **快速原型 / hackathon / 个人小脚本**：流程开销往往大于收益，可以简化或跳过大部分环节。
+
+## 参考资料
 
 - [GitHub 仓库](https://github.com/addyosmani/agent-skills)
 - [技能列表与安装文档](https://github.com/addyosmani/agent-skills#all-24-skills)

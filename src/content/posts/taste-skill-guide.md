@@ -17,7 +17,7 @@ Taste-Skill 的做法是给 AI 注入一套**设计品味规则**。它不是 UI
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) |
 | Stars | 43.5k（截至 2026-06-14） |

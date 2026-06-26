@@ -7,7 +7,7 @@ tags: ["system-prompts", "claude", "chatgpt", "gemini", "prompt-engineering"]
 draft: false
 ---
 
-## system_prompts_leaks：42k Star 项目如何揭开 AI 系统提示词的面纱
+## 简介
 
 System prompt 是 AI 产品与用户之间的"隐形契约"——它定义了模型的身份、能力边界、行为准则和输出风格。用户在对话中感受到的"语气"和"规则"，几乎全部来自这段不对外展示的文本。
 
@@ -19,7 +19,7 @@ System prompt 是 AI 产品与用户之间的"隐形契约"——它定义了模
 
 ## 项目概览
 
-| 维度 | 信息 |
+| 属性 | 详情 |
 |------|------|
 | 仓库 | [asgeirtj/system_prompts_leaks](https://github.com/asgeirtj/system_prompts_leaks) |
 | Stars | 42.7k（截至 2026-06-16） |
@@ -53,7 +53,7 @@ System prompt 是 AI 产品与用户之间的"隐形契约"——它定义了模
 
 Anthropic 的 Claude 系列采用 XML 标签来组织 prompt 结构，这是最显著的特征：
 
-```
+```xml
 <claude_behavior>
   <product_information> ... </product_information>
   <refusal_handling> ... </refusal_handling>
@@ -241,7 +241,7 @@ System prompt 中的安全策略是各厂商差异最大的部分。
 
 ---
 
-## 参考链接
+## 参考资料
 
 - 仓库地址：[github.com/asgeirtj/system_prompts_leaks](https://github.com/asgeirtj/system_prompts_leaks)
 - 在线浏览：[asgeirtj.github.io/system_prompts_leaks](https://asgeirtj.github.io/system_prompts_leaks/)

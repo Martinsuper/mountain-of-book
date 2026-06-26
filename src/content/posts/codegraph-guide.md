@@ -17,7 +17,7 @@ CodeGraph 的做法是**预先构建代码的知识图谱**。它用 tree-sitter
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [colbymchenry/codegraph](https://github.com/colbymchenry/codegraph) |
 | Stars | 48.9k（截至 2026-06-14） |
@@ -189,21 +189,18 @@ end note
 
 ### 索引流程
 
-```text
-1. 解析阶段
-   └─ 使用 web-tree-sitter 将源代码解析为 AST
-
-2. 提取阶段
-   └─ 从 AST 中提取符号节点（函数、类、变量）和边（调用关系、导入关系）
-
-3. 存储阶段
-   └─ 写入 SQLite 数据库，包含 FTS5 全文搜索索引
-
-4. 解析阶段
-   └─ 符号引用解析（resolution/ 模块）
-
-5. 同步阶段
-   └─ 通过原生 OS 文件监听实现增量更新，带防抖机制
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+start
+:解析 — web-tree-sitter\n将源代码解析为 AST;
+:提取 — 从 AST 提取符号节点\n（函数/类/变量）和边（调用/导入）;
+:存储 — 写入 SQLite\n含 FTS5 全文搜索索引;
+:引用解析 — resolution/ 模块\n解析符号引用;
+:同步 — 原生 OS 文件监听\n增量更新（带防抖）;
+stop
+@enduml
 ```
 
 ### 源码结构
@@ -263,29 +260,36 @@ CREATE VIRTUAL TABLE fts USING fts5(
 
 ### Smart Context Building
 
-这是 CodeGraph 最核心的功能。传统的 AI 编程代理需要这样探索代码：
+这是 CodeGraph 最核心的功能。传统 AI 编程代理探索代码要反复 grep + read，而 CodeGraph 一次调用就能拿到完整上下文：
 
-```text
-1. grep "handleRequest" → 找到 15 个文件
-2. read 第 1 个文件 → 不是我要的
-3. read 第 2 个文件 → 找到了，但不知道它调用了什么
-4. grep "processOrder" → 又找到 10 个文件
-5. read 第 3 个文件 → 终于找到完整的调用链
-...
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+
+participant "AI 代理" as ai
+participant "传统方式\n(grep + read)" as old
+participant "CodeGraph\n(explore)" as new
+
+group 传统方式：多轮往返
+  ai -> old: grep "handleRequest"
+  old --> ai: 15 个文件
+  ai -> old: read 文件1
+  old --> ai: 不是要的
+  ai -> old: read 文件2 …
+  old --> ai: 找到，但不知调用了谁
+  ai -> old: grep "processOrder" …
+  old --> ai: 又 10 个文件（反复 N 轮）
+end
+
+group CodeGraph：一次调用
+  ai -> new: codegraph_explore("handleRequest")
+  new --> ai: handleRequest 源码\n+ 它调用的 processOrder/validateUser 源码\n+ 调用它的 Controller 源码\n+ 文件路径和行号
+end
+@enduml
 ```
 
-有了 CodeGraph，AI 代理可以：
-
-```text
-codegraph_explore("handleRequest")
-→ 一次返回：
-   - handleRequest 函数源码
-   - 它调用的 processOrder、validateUser 等函数源码
-   - 调用它的 Controller 源码
-   - 完整的文件路径和行号
-```
-
-这种"一次调用，完整上下文"的模式，大幅减少了 token 消耗和工具调用次数。
+"一次调用、完整上下文"的模式，大幅减少了 token 消耗和工具调用次数。
 
 ## 关键设计决策
 

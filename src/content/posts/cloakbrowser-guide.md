@@ -9,7 +9,7 @@ draft: false
 
 ## 简介
 
-Playwright 和 Puppeteer 是主流的浏览器自动化工具，但它们有一个致命问题：容易被反 bot 系统检测。Cloudflare Turnstile、FingerprintJS、reCAPTCHA v3 等检测服务可以轻易识别自动化浏览器。
+Playwright 和 Puppeteer 是主流的浏览器自动化工具，但它们有一个共同的局限：容易被反 bot 系统检测。Cloudflare Turnstile、FingerprintJS、reCAPTCHA v3 等检测服务可以识别出自动化浏览器。
 
 市面上的解决方案（undetected-chromedriver、Patchright 等）主要通过 JavaScript 注入或 CDP 协议层面的修补来隐藏自动化痕迹。但这有一个根本性的弱点：修改发生在运行时，TLS 指纹、Canvas/WebGL 指纹等底层特征仍然暴露。
 
@@ -19,7 +19,7 @@ CloakBrowser 的做法更激进——**在 C++ 源码级别修改 Chromium**，�
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [CloakHQ/CloakBrowser](https://github.com/CloakHQ/CloakBrowser) |
 | Stars | 26k（截至 2026-06-14） |
@@ -279,12 +279,22 @@ page.mouse.wheel(0, 300)  # 非匀速，模拟人类惯性
 
 CloakBrowser 后台检查更新，始终使用最新隐身构建：
 
-```text
-1. 启动时检查 GitHub Releases
-2. 如果有新版本，下载新的 Chromium 二进制
-3. 验证 GPG 签名 + SHA-256 校验
-4. 替换旧二进制
-5. 下次启动使用新版本
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+start
+:启动时检查 GitHub Releases;
+if (有新版本？) then (是)
+  :下载新的 Chromium 二进制;
+  :验证 GPG 签名 + SHA-256 校验;
+  :替换旧二进制;
+  :下次启动使用新版本;
+else (否)
+  :继续使用当前版本;
+endif
+stop
+@enduml
 ```
 
 ### 安全发布

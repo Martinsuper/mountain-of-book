@@ -17,7 +17,7 @@ ai-engineering-from-scratch 试图解决这个问题。它是一套**完整的 A
 
 ## 项目概览
 
-| 项目 | 值 |
+| 属性 | 详情 |
 |------|-----|
 | 仓库 | [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) |
 | Stars | 32.2k（截至 2026-06-14） |

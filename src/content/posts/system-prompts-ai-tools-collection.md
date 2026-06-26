@@ -7,7 +7,7 @@ tags: ["system-prompts", "claude-code", "cursor", "ai-tools", "prompt-engineerin
 draft: false
 ---
 
-## 一个仓库，装下了几乎所有主流 AI 工具的"底牌"
+## 简介
 
 x1xhlol/system-prompts-and-models-of-ai-tools 这个 GitHub 仓库目前积累了 140k+ Star，它做的事情很简单：收集主流 AI 工具对外暴露（或被逆向出来）的系统提示词和内部模型配置，按工具分目录整理。截至 2026 年 6 月，收录范围覆盖 26 款产品，横跨编码助手、搜索引擎、全栈生成器和通用 Agent。
 
@@ -182,8 +182,10 @@ Cursor 维护了 4 个 Agent Prompt 版本（v1.0 → v2.0）加上独立的 Cha
 
 仓库内容来自公开渠道，存在时效性（AI 工具提示词更新频繁）、完整性（部分工具只收录了部分提示词）和真实性验证的问题。把它当作"参考资料"而非"标准文档"来使用更为合理。
 
-## 结语
+## 小结
 
 系统提示词是 AI Agent 产品的"宪法"。这个仓库的价值在于让你能站在整个行业的视角，看到不同产品团队如何用自然语言定义 Agent 的行为边界。对做 Agent 产品的人来说，这些提示词是最好的参考教材——不是照搬措辞，而是理解不同场景下的设计权衡：什么时候该简洁，什么时候该详细；什么时候该主动，什么时候该请示；什么时候用规则约束，什么时候用示例引导。
 
-仓库地址：`https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools`
+## 参考资料
+
+- [GitHub 仓库](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools)

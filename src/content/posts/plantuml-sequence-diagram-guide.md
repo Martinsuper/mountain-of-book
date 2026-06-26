@@ -7,7 +7,7 @@ tags: ["plantuml", "uml", "sequence-diagram", "architecture", "documentation"]
 draft: false
 ---
 
-## PlantUML 时序图绘制完全指南
+## 简介
 
 时序图（Sequence Diagram）是 UML 中用于描述对象之间交互行为的图形化工具。它**按时间顺序**展示对象之间的消息传递，是系统设计、接口文档和团队协作中非常实用的可视化工具。
 
@@ -1323,3 +1323,8 @@ end
 ---
 
 **提示：** 可以使用 [PlantUML 在线编辑器](https://www.plantuml.com/plantuml/uml/) 实时预览和导出时序图。
+
+## 参考资料
+
+- [PlantUML 官方文档 — 时序图](https://plantuml.com/zh/sequence-diagram)
+- [PlantUML 在线编辑器](https://www.plantuml.com/plantuml/uml/)
