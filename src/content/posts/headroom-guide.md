@@ -1,305 +1,204 @@
 ---
-title: "Headroom：AI Agent 的上下文压缩层"
-description: "headroom 是一个开源的 AI 智能体上下文压缩工具，27k stars。它在工具输出、日志、文件、RAG 检索结果到达 LLM 之前进行压缩，实现 60-95% 的 token 节省，同时保持回答质量不变。支持 Python/TS 库、代理服务器、MCP 工具三种接入方式。"
-date: 2026-06-14
-category: "工具教程"
-tags: ["headroom", "llm", "token-optimization", "context-compression", "mcp", "rag"]
+title: "Headroom：在内容进入 LLM 之前压缩它的上下文层"
+description: "Headroom 是一个本地运行的上下文压缩层，在工具输出、日志、RAG 片段、文件和对话历史送达 LLM 之前先压缩它们，宣称减少 60-95% token 且不改变答案。本文拆解它的四种接入形态、按内容类型分发的压缩架构、可逆压缩（CCR）和输出 token 压缩机制。"
+date: 2026-06-26
+category: "AI 工程"
+tags: ["llm", "ai-agent", "token-optimization", "mcp", "context-engineering"]
 draft: false
 ---
 
 ## 简介
 
-AI Agent 有一个容易被忽视的成本来源：上下文。当 agent 处理工具输出、日志、文件、RAG 检索结果时，动辄数万 tokens 的内容被塞进 LLM 的 context window。这不仅贵，还慢。
-
-Headroom 在内容到达 LLM **之前**进行压缩。它不是简单的截断或摘要，而是 6 种针对不同内容类型的压缩算法，配合可逆压缩（CCR）和 KV 缓存对齐技术，实现 60-95% 的 token 节省，同时保持回答质量不变。
-
-27k stars，2026 年 1 月创建，5 个月就成为 GitHub 上增长最快的 LLM 优化工具之一。它不是一个单一的库，而是提供了多种使用模式：Python/TypeScript 库、代理服务器、Agent 包装器、MCP 服务器。
+Headroom 是一个上下文压缩层（context compression layer），它在 AI agent 读取的所有内容——工具输出、命令行日志、RAG 检索片段、源文件、对话历史——送达 LLM 之前先做压缩。官方给出的数字是在真实 agent 工作负载上减少 60-95% 的 token，同时保持答案不变；压缩全程在本地完成，原文可按需取回。它提供库、代理、MCP server 和 agent 包装四种接入方式，核心文本压缩用的是自训练并发布在 HuggingFace 上的 Kompress-base 模型。
 
 ## 项目概览
 
 | 属性 | 详情 |
 |------|-----|
-| 仓库 | [chopratejas/headroom](https://github.com/chopratejas/headroom) |
-| Stars | 27k（截至 2026-06-14） |
+| 仓库 | [headroomlabs-ai/headroom](https://github.com/headroomlabs-ai/headroom) |
+| Stars | 约 51.3k（截至 2026-06-26） |
 | 许可证 | Apache 2.0 |
-| 语言 | Python（78%）、Rust（17.3%）、TypeScript（2.5%） |
-| 核心作者 | chopratejas（964 commits） |
-| 最新版本 | v0.25.0（2026-06-12） |
-| 文档 | [headroom-docs.vercel.app](https://headroom-docs.vercel.app/docs) |
+| 语言 | Python 为主 + Rust 核心 + TypeScript SDK |
+| 最新版本 | v0.27.0（2026-06-22） |
 | 创建时间 | 2026-01-07 |
+| 包名 | PyPI: `headroom-ai`；npm: `headroom-ai` |
+| 运行环境 | 本地运行，Python 3.10+ |
+| 压缩模型 | [Kompress-v2-base](https://huggingface.co/chopratejas/kompress-v2-base)（HuggingFace） |
 
-## 核心功能
+## 背景与动机
 
-### 6 种压缩算法
+AI agent 在运行时会把大量原始文本塞进上下文：工具调用返回的 JSON、`grep`/构建/测试的命令行输出、RAG 检索回来的文档片段、被读取的整个源文件。这些内容大多高度冗余——一次代码搜索 100 条结果可能就是几万 token。它们带来两个直接代价：token 直接对应 API 账单（输出 token 在 Opus 级模型上还要贵 5 倍），以及过长的上下文会稀释模型注意力。
 
-| 算法 | 适用内容 | 原理 |
-|------|---------|------|
-| **SmartCrusher** | JSON、结构化数据 | 通用 JSON 压缩，处理数组、嵌套对象、混合类型 |
-| **CodeCompressor** | 代码 | AST 感知，支持 Python/JS/Go/Rust/Java/C++ |
-| **Kompress-base** | 自然语言文本 | 基于 HuggingFace 文本压缩模型（ONNX Runtime） |
-| **CacheAligner** | 所有输入 | 稳定前缀以提高 KV 缓存命中率 |
-| **CCR（可逆压缩）** | 所有输入 | 原始内容本地缓存，LLM 需要时可检索 |
-| **图像压缩** | 图像 | 通过 ML 路由器实现 40-90% 压缩 |
+Headroom 的思路是在这些内容进入 LLM 之前先压缩，并且做了三个关键取舍：
 
-### 多种使用模式
-
-| 模式 | 命令 | 说明 |
-|------|------|------|
-| **Agent 包装器** | `headroom wrap claude` | 一行命令包装主流 AI 编码工具 |
-| **代理服务器** | `headroom proxy --port 8787` | 零代码修改，任何语言都能用 |
-| **MCP 服务器** | `headroom mcp install` | 提供 `headroom_compress`、`headroom_retrieve`、`headroom_stats` 工具 |
-| **Python/TS 库** | `compress(messages)` | 直接在代码中调用 |
-
-### 跨 Agent 共享记忆
-
-Claude、Codex、Gemini 之间共享上下文存储，自动去重。
-
-### `headroom learn`
-
-挖掘失败的会话记录，自动将修正写入 `CLAUDE.md` / `AGENTS.md`。
+- **本地运行**：压缩在你自己的机器上完成，数据不经过第三方 API，区别于把文本发到托管服务再压缩的方案。
+- **可逆**：原文在本地缓存，模型若发现压缩丢了关键信息，可以主动调工具取回原文（即下文的 CCR）。
+- **覆盖全部内容类型**：不只是对话历史，工具输出、日志、RAG 片段、文件都在压缩范围内。
 
 ## 快速上手
 
-### 安装
-
 ```bash
-# Python（全量安装）
-pip install "headroom-ai[all]"
+# 1 — 安装
+pip install "headroom-ai[all]"          # Python，全功能
+npm install headroom-ai                 # Node / TypeScript
+docker pull ghcr.io/chopratejas/headroom:latest   # Docker
 
-# Node/TypeScript
-npm install headroom-ai
+# 2 — 选择接入形态
+headroom wrap claude                    # 包装一个编码 agent
+headroom proxy --port 8787              # 直接做代理，零代码改动
 
-# Docker
-docker pull ghcr.io/chopratejas/headroom:latest
+# 3 — 查看节省
+headroom perf
+headroom dashboard                      # 实时节省看板（需代理在运行）
 ```
 
-要求 Python 3.10+。支持细粒度的可选依赖：`[proxy]`、`[mcp]`、`[ml]`、`[code]`、`[memory]`、`[relevance]`、`[image]`、`[agno]`、`[langchain]`、`[evals]`、`[pytorch-mps]`（Apple GPU 加速）等。
+安装需要 Python 3.10+。可选 extras 按需安装：`[proxy]`、`[mcp]`、`[ml]`（Kompress 模型）、`[code]`、`[memory]`、`[relevance]`、`[image]`、`[agno]`、`[langchain]`、`[evals]`、`[pytorch-mps]`（Apple GPU 加速）等。
 
-### 方式一：Agent 包装器（最简单）
+四种接入形态对应不同侵入程度：
 
-```bash
-# 包装 Claude Code
-headroom wrap claude
+- **agent 包装**：`headroom wrap claude|codex|aider|copilot|opencode` 一条命令拉起，之后正常用 agent 即可；Cursor 需手动把代理设置粘贴进 App。
+- **代理**：`headroom proxy --port 8787`，任何 OpenAI 兼容客户端把 base URL 指过来即可，零代码改动、不限语言。
+- **MCP server**：`headroom mcp install` 后暴露 `headroom_compress`、`headroom_retrieve`、`headroom_stats` 三个工具给任意 MCP 客户端。
+- **库**：在 Python 或 TypeScript 代码里内联调用 `compress(messages)`。
 
-# 包装 Cursor
-headroom wrap cursor
-
-# 包装 Codex
-headroom wrap codex
-
-# 包装 Aider
-headroom wrap aider
-
-# 包装 Copilot
-headroom wrap copilot
-```
-
-包装后，正常使用 agent，headroom 会自动压缩所有输入。
-
-### 方式二：代理服务器（零代码修改）
-
-```bash
-# 启动代理服务器
-headroom proxy --port 8787
-
-# 把你的应用指向 http://localhost:8787
-# headroom 会透明地压缩所有请求
-```
-
-### 方式三：Python API
+库模式的最小调用：
 
 ```python
 from headroom import compress
 
-messages = [
-    {"role": "user", "content": very_long_text}
-]
-
-compressed = compress(messages)
-# compressed 的 token 数减少 60-95%
+messages = [{"role": "user", "content": very_long_text}]
+compressed = compress(messages)   # token 数减少 60-95%
 ```
 
-### 方式四：集成到现有框架
-
-#### Anthropic/OpenAI SDK
+也能挂进现有框架，不改业务逻辑：
 
 ```python
+# Anthropic / OpenAI SDK：包装 client
 from headroom.integrations.anthropic import withHeadroom
 import anthropic
-
 client = withHeadroom(anthropic.Anthropic())
+
+# LiteLLM：注册 callback
+import litellm
+from headroom.integrations.litellm import HeadroomCallback
+litellm.callbacks = [HeadroomCallback()]
+
+# LangChain：包装 chat model
+from headroom.integrations.langchain import HeadroomChatModel
+llm = HeadroomChatModel(your_llm)
 ```
 
-#### Vercel AI SDK
-
 ```typescript
+// Vercel AI SDK：作为 middleware
 import { wrapLanguageModel } from 'headroom-ai/vercel';
 import { headroomMiddleware } from 'headroom-ai/vercel';
 
 const model = wrapLanguageModel({
   model: yourModel,
-  middleware: headroomMiddleware()
+  middleware: headroomMiddleware(),
 });
 ```
 
-#### LiteLLM
-
-```python
-import litellm
-from headroom.integrations.litellm import HeadroomCallback
-
-litellm.callbacks = [HeadroomCallback()]
-```
-
-#### LangChain
-
-```python
-from headroom.integrations.langchain import HeadroomChatModel
-
-llm = HeadroomChatModel(your_llm)
-```
-
-### 查看节省效果
-
-```bash
-headroom perf
-```
-
-输出示例：
-
-```text
-Total tokens saved: 1,234,567
-Cost saved: $45.67
-Compression ratio: 78%
-```
+此外还支持 Agno（`HeadroomAgnoModel`）、Strands、ASGI 中间件（`CompressionMiddleware`）等接入点。
 
 ## 架构与原理
 
-### 压缩管线
-
-```plantuml
-@startuml
-skinparam backgroundColor white
-
-|输入|
-start
-:接收原始输入\n（工具输出、日志、文件、RAG 结果）;
-
-|ContentRouter|
-:检测内容类型;
-note right
-  JSON / 代码 / 自然语言
-  / 图像 / 混合
-end note
-
-|压缩器选择|
-if (JSON/结构化?) then (是)
-  :SmartCrusher;
-elseif (代码?) then (是)
-  :CodeCompressor;
-elseif (自然语言?) then (是)
-  :Kompress-base 模型;
-elseif (图像?) then (是)
-  :ML 路由器;
-else (混合)
-  :分段压缩;
-endif
-
-|CCR 处理|
-:原始内容存入本地缓存;
-:压缩版本发给 LLM;
-
-|CacheAligner|
-:稳定前缀;
-:提高 KV 缓存命中率;
-
-|发送给 LLM|
-:压缩后的输入;
-
-|LLM 响应|
-:LLM 返回结果;
-
-if (LLM 需要原始内容?) then (是)
-  :调用 headroom_retrieve;
-  :从本地缓存检索原始内容;
-else (否)
-  :直接使用压缩结果;
-endif
-
-stop
-
-@enduml
-```
-
-### 核心组件
-
-#### ContentRouter（内容路由器）
-
-检测输入内容的类型，自动选择对应的压缩器。它使用轻量级的启发式规则：
-
-- 包含 `{` 和 `}` 且格式合法 → JSON → SmartCrusher
-- 包含函数定义、import 语句 → 代码 → CodeCompressor
-- 包含自然语言句子 → 文本 → Kompress-base
-- 是图像数据 → 图像 → ML 路由器
-
-#### SmartCrusher（JSON 压缩）
-
-针对 JSON 和结构化数据的压缩算法：
-
-- 移除空数组和空对象
-- 压缩长数组（保留前 N 个元素 + 摘要）
-- 移除冗余字段
-- 合并相似对象
-
-#### CodeCompressor（代码压缩）
-
-AST 感知的代码压缩，支持 Python、JavaScript、Go、Rust、Java、C++：
-
-- 移除注释（可选保留）
-- 压缩长函数体（保留签名 + 关键逻辑）
-- 移除未使用的 import
-- 压缩重复代码块
-
-#### Kompress-base（文本压缩模型）
-
-基于 HuggingFace 的文本压缩模型（`chopratejas/kompress-v2-base`），在 agentic 场景的轨迹数据上训练，使用 ONNX Runtime 推理。
-
-它不是简单的摘要，而是**语义保留压缩**——移除冗余信息，保留关键语义。
-
-#### CacheAligner（KV 缓存对齐）
-
-Anthropic 和 OpenAI 的 API 支持 KV 缓存（prompt caching），但要求前缀完全匹配。CacheAligner 通过稳定化前缀（固定 system prompt、固定顺序的工具定义），让缓存能实际命中。
-
-#### CCR（可逆压缩）
-
-可逆压缩的核心思路：压缩版本发给 LLM 省 token，原始内容存本地，仅在 LLM 需要细节时按需检索回来。
+整体数据流是：agent 的内容先经 CacheAligner 稳定前缀，再由 ContentRouter 按类型分发给不同压缩器，原文存入 CCR 本地缓存后，压缩结果发往 LLM 提供方。
 
 ```plantuml
 @startuml
 skinparam backgroundColor transparent
-skinparam defaultFontSize 11
+skinparam componentStyle rectangle
 
-participant "Headroom" as h
-database "本地缓存\n(SQLite)" as db
-participant "LLM" as llm
+package "你的 agent / 应用" {
+  [Claude Code / Cursor / Codex] as agent
+  [LangChain / Agno / 自有代码] as app
+}
 
-h -> db: 原始内容存入缓存
-h -> llm: 发送压缩版本（省 token）
-llm --> h: 返回结果
-alt LLM 需要更多细节
-  llm -> h: 请求原始内容
-  h -> db: headroom_retrieve 检索
-  db --> h: 原始内容
-  h -> llm: 补充原始内容
-end
+package "Headroom（本地运行）" {
+  [CacheAligner\n稳定前缀] as cache
+  [ContentRouter\n内容类型识别] as router
+  [SmartCrusher\nJSON] as json
+  [CodeCompressor\nAST] as code
+  [Kompress-base\n文本模型] as text
+  [CCR\n原文本地缓存] as ccr
+}
+
+cloud "LLM 提供方" {
+  [Anthropic / OpenAI / Bedrock] as llm
+}
+
+agent --> cache
+app --> cache
+cache --> router
+router --> json
+router --> code
+router --> text
+json --> ccr
+code --> ccr
+text --> ccr
+ccr --> llm
+llm ..> ccr : headroom_retrieve 取回原文
 @enduml
 ```
 
-大部分情况下 LLM 只需要压缩版本，少数需要原始内容时才检索。
+### 六类压缩能力
 
-### 管线生命周期
+Headroom 不用单一算法压所有东西，而是按内容类型选择处理方式。官方将其归纳为六种能力：
 
-输入到响应要经过一条固定的处理流水线，每个阶段有对应的 Transform：
+| 能力 | 适用内容 | 做法 |
+|------|---------|------|
+| SmartCrusher | JSON、结构化数据 | 通用 JSON 压缩，处理数组、嵌套对象、混合类型 |
+| CodeCompressor | 代码 | AST 感知，支持 Python/JS/Go/Rust/Java/C++ |
+| Kompress-base | 自然语言文本 | HuggingFace 文本压缩模型，ONNX Runtime 推理 |
+| 图像压缩 | 图像 | 经训练的 ML 路由器，宣称 40-90% 缩减 |
+| CacheAligner | 所有输入 | 稳定前缀以提高 KV 缓存命中率 |
+| CCR | 所有输入 | 原文本地缓存，LLM 需要时按句柄取回 |
+
+其中 SmartCrusher、CodeCompressor、Kompress-base 是三个主力压缩器，由 ContentRouter 根据内容类型分发：
+
+- **SmartCrusher** 处理工具输出最常见的 JSON 形态——字典数组、嵌套对象、混合类型。
+- **CodeCompressor** 基于 AST 而非字符做删减，按语法结构压缩代码。
+- **Kompress-base** 处理散文/自然语言，是项目在 agentic 轨迹上自训练的模型，做的是语义保留压缩而非简单摘要。
+
+后两者（CacheAligner、CCR）严格说不是「压缩算法」，而是让压缩可用、可逆的配套机制，下面单独说。
+
+### CacheAligner：让 KV 缓存真正命中
+
+这是容易被忽略的一环。Anthropic、OpenAI 等提供方对稳定的 prompt 前缀有 KV 缓存，命中能省下重复计算的费用，但要求前缀完全匹配。问题在于：压缩若改动了前缀，缓存就失效了。CacheAligner 的作用是稳定化前缀（固定 system prompt、固定顺序的工具定义），让压缩与提供方的 KV 缓存机制不互相打架。
+
+### CCR：可逆压缩
+
+CCR（可逆压缩）是 Headroom 区别于一次性压缩方案的关键。压缩时原文不会丢弃，而是存入本地缓存并生成引用句柄；如果 LLM 在推理中发现需要被压掉的细节，可以调用 `headroom_retrieve` 按句柄取回原文。
+
+```plantuml
+@startuml
+skinparam backgroundColor transparent
+actor "Agent" as agent
+participant "Headroom 代理" as proxy
+database "本地缓存(CCR)" as cache
+participant "LLM" as llm
+
+agent -> proxy : 原始 prompt + 工具输出
+proxy -> proxy : ContentRouter 选择压缩器
+proxy -> cache : 存储原文，生成引用句柄
+proxy -> llm : 发送压缩后的 prompt
+llm --> proxy : 返回响应
+alt 模型需要被压掉的细节
+  llm -> proxy : headroom_retrieve(句柄)
+  proxy -> cache : 按句柄查原文
+  cache --> proxy : 返回原文
+  proxy --> llm : 补充原文内容
+end
+proxy --> agent : 最终响应
+@enduml
+```
+
+原文按配置的 TTL 缓存，超时后失效。大部分情况下 LLM 只需要压缩版本，少数需要原始内容时才检索——这套机制让「激进压缩」变得相对安全：压错了还能补救，而不是信息永久丢失。
+
+### 统一的管线生命周期
+
+无论从 `compress()`、SDK 还是代理进入，输入到响应都经过同一条固定流水线，每个阶段有对应的 Transform：
 
 ```plantuml
 @startuml
@@ -321,69 +220,74 @@ stop
 @enduml
 ```
 
-核心编排（`wrap.py`、`client.py`、`cli/proxy.py`）只负责生命周期和策略，提供商特定的逻辑隔离在 `headroom/providers/` 下。
+核心编排文件（`wrap.py`、`client.py`、`cli/proxy.py`、`proxy/server.py`）只负责生命周期、排序和策略，提供商特定的逻辑隔离在 `headroom/providers/` 下（Claude、Gemini、Copilot、Codex 等各一个 slice）。这种「编排与提供商解耦」的分层是它能同时支持多种 agent 和接入形态的原因。
 
-### 精度基准测试
+### 输出 token 压缩
 
-| Benchmark | 类别 | 基线 | Headroom | 差异 |
-|-----------|------|------|----------|------|
-| GSM8K | 数学 | 0.870 | 0.870 | ±0.000 |
-| TruthfulQA | 事实性 | 0.530 | 0.560 | +0.030 |
-| SQuAD v2 | 问答 | — | 97% 准确率 | 19% 压缩率 |
-| BFCL | 工具调用 | — | 97% 准确率 | 32% 压缩率 |
+上面压的都是「发出去」的 prompt，Headroom 还能压「模型写回来」的内容，从代理侧开启、无需改代码：
 
-实际工作负载节省效果：
+- **冗长度引导（verbosity steering）**：在系统提示末尾追加一段「简洁作答、不要复述上下文」的提示（放末尾是为了不破坏 prompt 缓存）。
+- **思考力度路由（effort routing）**：当某一轮只是模型在工具结果（如读完文件、测试通过）后继续时，调低思考力度；遇到新问题和报错则保持全力度。
 
-| 场景 | 原始 tokens | 压缩后 tokens | 节省 |
-|------|------------|--------------|------|
-| 代码搜索 100 条结果 | 17,765 | 1,408 | **92%** |
-| SRE 事故调试 | 65,694 | 5,118 | **92%** |
-| GitHub Issue 分类 | — | — | **73%** |
-| 代码库探索 | — | — | **47%** |
+通过 `export HEADROOM_OUTPUT_SHAPER=1` 开启（默认关闭）。由于无法得知模型「本来会写多少」，输出节省是反事实估算，Headroom 报告的是带置信区间的估计值而非编造的确定数字；若要测量值，可用 `HEADROOM_OUTPUT_HOLDOUT=0.1` 留 10% 对话作为对照组。
 
-## 关键设计决策
+### 设计考量
 
-**1. 为什么有 6 种压缩算法？**
+几个设计取舍背后的理由：
 
-不同内容类型有不同的压缩策略。JSON 需要保留结构，代码需要保留语义，自然语言需要保留关键信息。一种通用的压缩算法无法在所有场景都表现良好。
+- **为什么按内容类型分多个压缩器**：JSON 要保结构、代码要保语义、自然语言要保关键信息，单一通用算法无法在所有场景都好用。
+- **为什么要可逆（CCR）**：压缩必然有丢信息的风险，CCR 用「先压、需要再取回」把这个风险兜住，让压缩可以更激进。
+- **为什么有 Rust 核心**：Python 的 GIL 限制并行，性能关键路径（如压缩、ONNX 推理调度）放在 Rust 里可以无 GIL 并行且内存安全。
+- **为什么支持这么多接入形态**：代理适合零代码改动、库适合深度集成、MCP 适合 agent 调用、wrap 适合命令行工具，覆盖不同技术栈。
 
-**2. 为什么用可逆压缩（CCR）？**
+### 其他能力
 
-压缩可能会丢失细节。CCR 的思路是：先压缩，如果 LLM 需要更多细节再检索原始内容。这样大部分情况下省 token，少数情况下保证精度。
+- **跨 agent 记忆**：Claude、Codex、Gemini 之间共享的记忆存储，带 agent 来源标记和自动去重。
+- **`headroom learn`**：挖掘失败的会话，把纠正写进 `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`。
+- **SharedContext**：在多 agent 工作流之间传递压缩后的上下文。
 
-**3. 为什么需要 CacheAligner？**
+## 实测数据
 
-KV 缓存是 LLM API 的重要优化，但要求前缀完全匹配。CacheAligner 通过稳定化前缀，让缓存能实际命中，间接减少 token 消耗。
+项目给出的真实 agent 工作负载压缩数据：
 
-**4. 为什么用 Rust 写性能关键部分？**
+| 工作负载 | 压缩前 | 压缩后 | 节省 |
+|----------|-------:|-------:|-----:|
+| 代码搜索（100 条结果） | 17,765 | 1,408 | 92% |
+| SRE 事故排查 | 65,694 | 5,118 | 92% |
+| GitHub issue 分类 | 54,174 | 14,761 | 73% |
+| 代码库探索 | 78,502 | 41,254 | 47% |
 
-Python 的 GIL 限制了多线程性能。Rust 可以无 GIL 地并行处理多个压缩任务，且内存安全。
+在标准基准上的准确率（验证压缩未损失答案质量）：
 
-**5. 为什么支持这么多集成方式？**
+| 基准 | 类别 | N | 基线 | Headroom | 差值 |
+|------|------|--:|-----:|---------:|------|
+| GSM8K | 数学 | 100 | 0.870 | 0.870 | ±0.000 |
+| TruthfulQA | 事实 | 100 | 0.530 | 0.560 | +0.030 |
+| SQuAD v2 | 问答 | 100 | — | 97% | 压缩 19% |
+| BFCL | 工具调用 | 100 | — | 97% | 压缩 32% |
 
-不同用户有不同的技术栈和使用场景。代理服务器适合零代码修改，Python API 适合深度集成，MCP 工具适合 AI agent。
+数据可用 `python -m headroom.evals suite --tier 1` 复现。需要注意的是，节省比例高度依赖工作负载类型：冗余的结构化输出（代码搜索、日志）压缩率最高，而本就信息密集的内容（代码库探索）压缩空间有限。
 
 ## 适用场景与局限
 
-### 适用场景
+能力边界（中性陈述）：
 
-- **RAG 系统**：压缩检索结果，减少 context window 占用
-- **AI Agent**：压缩工具输出，降低 token 成本
-- **日志分析**：压缩大量日志，保留关键信息
-- **代码库探索**：压缩代码搜索结果
-- **跨 Agent 共享记忆**：多个 agent 共享压缩后的上下文
+- **支持的接入**：库（Python/TS）、OpenAI 兼容代理、MCP server、对 Claude Code / Codex / Aider / Copilot CLI / OpenCode 的一键包装；Cursor 需手动配置代理。
+- **支持的内容类型**：JSON 工具输出、代码（Python/JS/Go/Rust/Java/C++）、自然语言文本、图像、对话历史。
+- **框架集成**：Anthropic/OpenAI SDK、Vercel AI SDK、LiteLLM、LangChain、Agno、Strands、ASGI 中间件。
 
-### 局限
+可能不适合或需要注意的情况：
 
-- **压缩可能丢失细节**：虽然 CCR 提供回退，但大部分情况下 LLM 只能看到压缩版本
-- **Kompress-base 模型需要下载**：首次使用需要下载 HuggingFace 模型
-- **性能开销**：压缩本身需要计算时间，可能增加延迟
-- **不支持所有语言**：CodeCompressor 目前支持 6 种语言
-- **图像压缩仍在实验阶段**：效果可能不稳定
+- 只用单一提供方的原生压缩（如 OpenAI Compaction）、又不需要跨 agent 记忆时，额外引入一层的收益有限。
+- 在沙箱环境里无法运行本地进程时无法使用——Headroom 的本地运行特性此时反而是约束。
+- 压缩本身有计算开销，会引入一定延迟；Kompress-base 模型首次使用需下载。
+- 企业 SSL 拦截环境下安装可能遇到证书问题（`maturin` 下载 Rust、ONNX Runtime 与 HuggingFace 模型走 TLS），README 给出了 `HEADROOM_TLS_STRICT=0`、预装 Rust、离线提供模型等绕过方案。
+
+从工程角度看，Headroom 最值得借鉴的设计是「按内容类型路由到不同压缩器 + 原文本地可逆缓存 + 编排与提供商解耦」这套组合：它既避免了用单一算法压所有东西的粗暴，又用 CCR 把激进压缩的风险兜住，还靠分层把多 agent、多接入形态的复杂度收敛在 `providers/` 里。如果你在为 agent 系统设计上下文管理层，这套分而治之 + 可回溯 + 分层的思路比具体的压缩率数字更有参考价值。
 
 ## 参考资料
 
-- 官方仓库：[chopratejas/headroom](https://github.com/chopratejas/headroom)
-- 文档：[headroom-docs.vercel.app](https://headroom-docs.vercel.app/docs)
-- Kompress-base 模型：[chopratejas/kompress-v2-base](https://huggingface.co/chopratejas/kompress-v2-base)
-- Discord 社区：[headroom-ai discord](https://discord.gg/headroom-ai)
+- [GitHub 仓库](https://github.com/headroomlabs-ai/headroom)
+- [官方文档](https://headroom-docs.vercel.app/docs)
+- [Kompress-v2-base 模型卡](https://huggingface.co/chopratejas/kompress-v2-base)
+- [CCR 可逆压缩文档](https://headroom-docs.vercel.app/docs/ccr)
