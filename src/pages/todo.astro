@@ -792,7 +792,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   /* 四象限网格 */
   .quadrant-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: 1fr 1fr;
     gap: 1.5rem;
     margin-bottom: 0;
@@ -813,6 +813,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-radius: 16px;
     padding: 1rem;
     min-height: 300px;
+    min-width: 0;
     transition: all 0.3s ease;
     border: 2px solid transparent;
   }
@@ -1202,6 +1203,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
+    overflow-wrap: anywhere;
   }
 
   .dark .task-desc {
@@ -1707,6 +1709,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   .cal-cell {
     min-height: 96px;
+    min-width: 0;
     background: #fff;
     padding: 0.35rem;
     display: flex;
@@ -1827,6 +1830,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .cal-chip-title {
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .cal-more {
