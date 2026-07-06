@@ -1,10 +1,8 @@
 ---
-// 开发预览页面 - 动态路由，每篇文章独立页面
+// 开发预览页面 - IDE 风格布局
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-// 生成静态路径
-// 仅开发模式生成；生产构建返回空数组，避免开发预览页泄漏到线上站点
 export async function getStaticPaths() {
   if (!import.meta.env.DEV) return [];
   const posts = await getCollection('posts');
@@ -23,160 +21,733 @@ interface Props {
 const { post, allPosts } = Astro.props;
 const { Content } = await post.render();
 
-// 当前文章的 slug（不含 .md）
 const currentSlug = post.id.replace('.md', '');
 ---
 
-<BaseLayout title={`预览: ${post.data.title}`}>
-  <div class="flex gap-6" style="min-height: calc(100vh - 120px);">
-    <!-- 左侧：文章列表 -->
-    <aside class="w-64 shrink-0 border-r border-gray-200 overflow-y-auto">
-      <div class="sticky top-0 bg-white pb-2 pt-2 z-10">
-        <!-- 新建文章 -->
-        <div class="mb-4 px-2">
-          <form id="new-post-form" class="flex gap-2">
+<BaseLayout title={`预览: ${post.data.title}`} fullWidth hideHeader>
+  <div class="dev-ide" style="height: 100vh; display: flex; flex-direction: column;">
+    <!-- 顶部标签栏 -->
+    <div class="dev-tabbar">
+      <div class="dev-tabbar-left">
+        <span class="dev-tabbar-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h13l.5.5v13l-.5.5h-13l-.5-.5v-13l.5-.5zM2 2v12h12V2H2z"/><path d="M3 3h4v4H3V3zm0 6h4v4H3V9zm6-6h4v4H9V3zm0 6h4v4H9V9z" opacity=".6"/></svg>
+        </span>
+        <span class="dev-tabbar-title">DEV WORKSPACE</span>
+      </div>
+      <div class="dev-tabbar-actions">
+        {post.data.draft ? (
+          <button id="publish-btn" class="dev-btn dev-btn-publish">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l7 14H1L8 1zm0 3.236L3.236 13h9.528L8 4.236z"/><path d="M7 6h2v4H7V6zm0 5h2v2H7v-2z"/></svg>
+            发布
+          </button>
+        ) : (
+          <button id="unpublish-btn" class="dev-btn dev-btn-unpublish">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 1.2a5.8 5.8 0 110 11.6A5.8 5.8 0 018 2.2z"/><path d="M5 7.4h6v1.2H5z"/></svg>
+            取消发布
+          </button>
+        )}
+        <a href={`/posts/${post.id}/`} class="dev-btn dev-btn-view" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1H6v1H2v12h12v-4h1v4.5l-.5.5h-13l-.5-.5v-13l.5-.5z"/><path d="M15 1.5V8h-1V2.707L7.854 8.854l-.708-.708L13.293 2H8V1h6.5l.5.5z"/></svg>
+          预览
+        </a>
+        <button id="edit-toggle-btn" class="dev-btn dev-btn-edit" title="编辑模式">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.23 1h-1.46L3.52 9.25l-.16.22L1 13.59 2.41 15l4.12-2.36.22-.16L15 4.23V2.77L13.23 1zM2.41 13.59l1.51-3 1.45 1.45-2.96 1.55zm3.83-2.06L4.47 9.76l8-8 1.77 1.77-8 8z"/></svg>
+          编辑
+        </button>
+        <button id="dev-theme-toggle" class="dev-btn dev-btn-theme" title="切换主题">
+          <svg id="dev-theme-icon-dark" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12.7a5.7 5.7 0 01-1.5-11.2 6.5 6.5 0 005.2 9.7A5.7 5.7 0 018 13.7z"/></svg>
+          <svg id="dev-theme-icon-light" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M8 4a4 4 0 100 8 4 4 0 000-8zm0 6.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5zM8 0h1v2H8V0zm0 14h1v2H8v-2zM2.3 2.3l.7.7L1.6 4.4l-.7-.7L2.3 2.3zm11.4 9.3l.7.7-1.4 1.4-.7-.7 1.4-1.4zM0 8h2v1H0V8zm14 0h2v1h-2V8zM2.3 13.7l1.4-1.4.7.7-1.4 1.4-.7-.7zm9.3-11.4l1.4-1.4.7.7-1.4 1.4-.7-.7z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 主体区域 -->
+    <div class="dev-body">
+      <!-- 左侧文件树 -->
+      <aside class="dev-sidebar" id="dev-sidebar">
+        <div class="dev-sidebar-header">
+          <span class="dev-sidebar-section-title">EXPLORER</span>
+          <button id="new-post-toggle" class="dev-sidebar-action" title="新建文章">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.5 1H8.5V7.5H15V8.5H8.5V15H7.5V8.5H1V7.5H7.5V1Z"/></svg>
+          </button>
+        </div>
+
+        <!-- 新建文章（默认隐藏） -->
+        <div id="new-post-panel" class="dev-new-post hidden">
+          <form id="new-post-form" class="dev-new-post-form">
             <input
               type="text"
               name="title"
-              placeholder="输入文章标题..."
-              class="flex-1 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400"
+              placeholder="文章标题..."
+              class="dev-new-post-input"
               required
             />
-            <button
-              type="submit"
-              class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 whitespace-nowrap"
-            >
-              新建
-            </button>
+            <div class="dev-new-post-actions">
+              <button type="submit" class="dev-btn-sm dev-btn-confirm">创建</button>
+              <button type="button" id="new-post-cancel" class="dev-btn-sm dev-btn-cancel">取消</button>
+            </div>
           </form>
         </div>
-        <h2 class="text-sm font-semibold text-gray-500 mb-2 px-2">文章列表 ({allPosts.length})</h2>
-      </div>
-      <ul class="space-y-1">
-        {allPosts.map((p) => {
-          const pSlug = p.id.replace('.md', '');
-          return (
-          <li>
-            <a
-              href={`/dev/${pSlug}/`}
-              class={`block px-3 py-2 rounded text-sm transition-colors ${
-                currentSlug === pSlug
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'hover:bg-gray-100 text-gray-700'
-              }`}
-            >
-              <span class="flex items-center gap-2">
-                {p.data.draft && (
-                  <span class="text-xs bg-yellow-100 text-yellow-700 px-1 rounded">草稿</span>
-                )}
-                <span class="truncate">{p.data.title}</span>
-              </span>
-              <span class="text-xs text-gray-400 mt-1 block">
-                {p.data.date.toLocaleDateString('zh-CN')}
-              </span>
-            </a>
-          </li>
-          );
-        })}
-      </ul>
-    </aside>
 
-    <!-- 右侧：预览区域 -->
-    <main class="flex-1 min-w-0">
-      <div>
-        <!-- 文件信息栏 -->
-        <div class="bg-gray-50 border border-gray-200 rounded p-3 mb-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="flex items-center gap-2">
-                <p class="text-sm font-medium text-gray-700">{post.data.title}</p>
-                {post.data.draft ? (
-                  <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">草稿</span>
-                ) : (
-                  <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">已发布</span>
-                )}
-              </div>
-              <p class="text-xs text-gray-500 mt-1">
-                文件路径：<code class="bg-gray-200 px-1 rounded">src/content/posts/{post.id}</code>
-              </p>
-            </div>
-            <div class="flex gap-2 items-center">
-              <!-- 发布/取消发布按钮 -->
-              {post.data.draft ? (
-                <button
-                  id="publish-btn"
-                  class="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                >
-                  发布
-                </button>
-              ) : (
-                <button
-                  id="unpublish-btn"
-                  class="text-xs bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
-                >
-                  取消发布
-                </button>
-              )}
-              <a
-                href={`/posts/${post.id}/`}
-                class="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                target="_blank"
-              >
-                查看正式页面
-              </a>
-              <span class="text-xs text-gray-400">
-                {post.data.date.toLocaleDateString('zh-CN')}
-              </span>
-            </div>
+        <!-- 文件树 -->
+        <div class="dev-tree-section">
+          <div class="dev-tree-folder">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 3l.5-.5h4l.5.5v1h3l.5.5v9l-.5.5h-12l-.5-.5V4l.5-.5h3v-1zm1 0v1h3V3h-3zM2 5v8h12V5H2z"/></svg>
+            <span>src/content/posts</span>
+            <span class="dev-tree-count">{allPosts.length}</span>
           </div>
-          {post.data.tags && post.data.tags.length > 0 && (
-            <div class="flex gap-1 mt-2">
-              {post.data.tags.map((tag: string) => (
-                <span class="text-xs bg-gray-200 px-2 py-1 rounded">#{tag}</span>
-              ))}
-            </div>
-          )}
+          <ul class="dev-file-list">
+            {allPosts.map((p) => {
+              const pSlug = p.id.replace('.md', '');
+              const isActive = currentSlug === pSlug;
+              return (
+                <li>
+                  <a
+                    href={`/dev/${pSlug}/`}
+                    class={`dev-file-item ${isActive ? 'active' : ''}`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" class="dev-file-icon">
+                      <path d="M10.57 1.14L13.85 4.43L14 5V14L13 15H3L2 14V2L3 1H10L10.57 1.14ZM10 5H13L10 2V5ZM3 2V14H13V6H9.5L9 5.5V2H3Z"/>
+                    </svg>
+                    <span class="dev-file-name">{p.id}</span>
+                    {p.data.draft && <span class="dev-badge-draft">D</span>}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </aside>
+
+      <!-- 分割线 -->
+      <div class="dev-divider"></div>
+
+      <!-- 右侧编辑区 -->
+      <main class="dev-editor">
+        <!-- 面包屑 -->
+        <div class="dev-breadcrumb">
+          <span class="dev-breadcrumb-segment">src</span>
+          <span class="dev-breadcrumb-sep">/</span>
+          <span class="dev-breadcrumb-segment">content</span>
+          <span class="dev-breadcrumb-sep">/</span>
+          <span class="dev-breadcrumb-segment">posts</span>
+          <span class="dev-breadcrumb-sep">/</span>
+          <span class="dev-breadcrumb-file">{post.id}</span>
+          <div class="dev-breadcrumb-meta">
+            {post.data.draft ? (
+              <span class="dev-status-badge draft">DRAFT</span>
+            ) : (
+              <span class="dev-status-badge published">PUBLISHED</span>
+            )}
+            <span class="dev-meta-date">{post.data.date.toLocaleDateString('zh-CN')}</span>
+          </div>
         </div>
 
-        <!-- 文章预览 -->
-        <article class="prose prose-gray max-w-none">
-          <h1>{post.data.title}</h1>
-          {post.data.description && (
-            <p class="text-gray-600 italic">{post.data.description}</p>
-          )}
-          <div class="mt-6">
-            <Content />
+        <!-- 预览模式 -->
+        <div id="preview-mode">
+          <div class="dev-frontmatter">
+            <div class="dev-fm-row">
+              <span class="dev-fm-key">title:</span>
+              <span class="dev-fm-value">"{post.data.title}"</span>
+            </div>
+            {post.data.description && (
+              <div class="dev-fm-row">
+                <span class="dev-fm-key">description:</span>
+                <span class="dev-fm-value truncate">"{post.data.description}"</span>
+              </div>
+            )}
+            {post.data.category && (
+              <div class="dev-fm-row">
+                <span class="dev-fm-key">category:</span>
+                <span class="dev-fm-value">"{post.data.category}"</span>
+              </div>
+            )}
+            {post.data.tags && post.data.tags.length > 0 && (
+              <div class="dev-fm-row">
+                <span class="dev-fm-key">tags:</span>
+                <span class="dev-fm-value">[{post.data.tags.map((t: string) => `"${t}"`).join(', ')}]</span>
+              </div>
+            )}
           </div>
-        </article>
-      </div>
-    </main>
-  </div>
+          <article class="dev-content prose max-w-none">
+            <Content />
+          </article>
+        </div>
 
-  <!-- 底部快捷操作栏 -->
-  <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4">
-    <div class="max-w-4xl mx-auto flex items-center justify-between text-sm">
-      <div class="text-gray-500">
-        <span class="mr-4">💡 提示：编辑 Markdown 文件后自动刷新预览</span>
-        <span class="text-xs">开发模式</span>
+        <!-- 编辑模式 -->
+        <div id="edit-mode" style="display:none; flex:1; overflow:hidden;">
+          <div class="dev-split-pane">
+            <div class="dev-pane dev-pane-editor" id="editor-pane">
+              <div class="dev-pane-header">
+                <span>EDITOR</span>
+                <button id="save-btn" class="dev-btn dev-btn-save">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M13.35 1H3.5L2 2.5v11l.5.5h11l.5-.5v-11L13.35 1zM4 2h6v3H4V2zm8 12H4V9h8v5zm1-6H3V2.5l.5-.5H3v4h8V2h1.35l.65.65V8z"/></svg>
+                  保存 <kbd>⌘S</kbd>
+                </button>
+              </div>
+              <div id="codemirror-container" class="dev-cm-container"></div>
+            </div>
+            <div class="dev-split-divider" id="split-divider"></div>
+            <div class="dev-pane dev-pane-preview" id="preview-pane">
+              <div class="dev-pane-header"><span>PREVIEW</span></div>
+              <article id="live-preview" class="dev-content prose max-w-none"></article>
+            </div>
+          </div>
+        </div>
+      </main>
+      </main>
+    </div>
+
+    <!-- 底部状态栏 -->
+    <div class="dev-statusbar">
+      <div class="dev-statusbar-left">
+        <span class="dev-statusbar-item">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 1.2a5.8 5.8 0 110 11.6A5.8 5.8 0 018 2.2z"/><path d="M7.5 4h1v4.3l2.8 1.7-.5.9L7.5 9V4z"/></svg>
+          DEV MODE
+        </span>
+        <span class="dev-statusbar-item">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M11.93 8.5a4.002 4.002 0 01-7.86 0H.5v-1h3.57a4.002 4.002 0 017.86 0h3.57v1h-3.57zM8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>
+          main
+        </span>
+        <span class="dev-statusbar-item">{allPosts.length} posts</span>
       </div>
-      <div class="flex gap-4">
-        <a href="/" class="text-blue-500 hover:underline">返回首页</a>
-        <a href="/tags/" class="text-gray-500 hover:underline">所有标签</a>
+      <div class="dev-statusbar-right">
+        <a href="/" class="dev-statusbar-link">首页</a>
+        <a href="/tags/" class="dev-statusbar-link">标签</a>
+        <a href="/archive/" class="dev-statusbar-link">归档</a>
+        <span class="dev-statusbar-item">Astro + Tailwind</span>
       </div>
     </div>
   </div>
 
-  <!-- 新建文章脚本 -->
+  <style>
+    /* === Theme Variables === */
+    .dev-ide {
+      /* Dark theme (default) */
+      --ide-bg: #1e1e1e;
+      --ide-fg: #cccccc;
+      --ide-sidebar-bg: #252526;
+      --ide-tabbar-bg: #252526;
+      --ide-border: #333333;
+      --ide-border-subtle: #1e1e1e;
+      --ide-hover: #2a2d2e;
+      --ide-active: #37373d;
+      --ide-active-bar: #569cd6;
+      --ide-accent: #569cd6;
+      --ide-input-bg: #3c3c3c;
+      --ide-input-border: #555555;
+      --ide-muted: #888888;
+      --ide-muted-subtle: #555555;
+      --ide-file-icon: #6997d5;
+      --ide-folder-icon: #dcb67a;
+      --ide-badge-draft-bg: #3d3520;
+      --ide-badge-draft-fg: #e8ab53;
+      --ide-badge-pub-bg: #1c3a2a;
+      --ide-badge-pub-fg: #3fb950;
+      --ide-fm-bg: #1a1a2e;
+      --ide-fm-key: #9cdcfe;
+      --ide-fm-value: #ce9178;
+      --ide-content-h1: #e6e6e6;
+      --ide-content-h2: #dcdcaa;
+      --ide-content-h3: #4ec9b0;
+      --ide-content-text: #d4d4d4;
+      --ide-content-link: #569cd6;
+      --ide-content-code-fg: #ce9178;
+      --ide-content-code-bg: #2d2d2d;
+      --ide-content-pre-bg: #1a1a1a;
+      --ide-content-strong: #e6e6e6;
+      --ide-content-quote: #999999;
+      --ide-content-th-bg: #252526;
+      --ide-scrollbar: #424242;
+      --ide-scrollbar-hover: #555555;
+      --ide-statusbar-bg: #007acc;
+    }
+
+    :global(html:not(.dark)) .dev-ide {
+      --ide-bg: #ffffff;
+      --ide-fg: #1a1a1a;
+      --ide-sidebar-bg: #f9fafb;
+      --ide-tabbar-bg: #f9fafb;
+      --ide-border: #e5e7eb;
+      --ide-border-subtle: #f3f4f6;
+      --ide-hover: #f3f4f6;
+      --ide-active: #eff6ff;
+      --ide-active-bar: #3b82f6;
+      --ide-accent: #3b82f6;
+      --ide-input-bg: #ffffff;
+      --ide-input-border: #d1d5db;
+      --ide-muted: #6b7280;
+      --ide-muted-subtle: #9ca3af;
+      --ide-file-icon: #3b82f6;
+      --ide-folder-icon: #d97706;
+      --ide-badge-draft-bg: #fef3c7;
+      --ide-badge-draft-fg: #92400e;
+      --ide-badge-pub-bg: #d1fae5;
+      --ide-badge-pub-fg: #065f46;
+      --ide-fm-bg: #f8fafc;
+      --ide-fm-key: #1d4ed8;
+      --ide-fm-value: #b45309;
+      --ide-scrollbar: #d1d5db;
+      --ide-scrollbar-hover: #9ca3af;
+      --ide-statusbar-bg: #2563eb;
+    }
+
+    /* === Base === */
+    .dev-ide {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      background: var(--ide-bg);
+      color: var(--ide-fg);
+      overflow: hidden;
+    }
+
+    /* 顶部标签栏 */
+    .dev-tabbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 36px;
+      padding: 0 12px;
+      background: var(--ide-tabbar-bg);
+      border-bottom: 1px solid var(--ide-border-subtle);
+      flex-shrink: 0;
+    }
+    .dev-tabbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dev-tabbar-icon { color: var(--ide-accent); display: flex; }
+    .dev-tabbar-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--ide-fg);
+    }
+    .dev-tabbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 按钮通用 */
+    .dev-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      text-decoration: none;
+    }
+    .dev-btn:hover { opacity: 0.85; }
+    .dev-btn-publish { background: #2ea043; color: #fff; }
+    .dev-btn-unpublish { background: #6e7681; color: #fff; }
+    .dev-btn-view { background: #1f6feb; color: #fff; }
+    .dev-btn-theme {
+      background: var(--ide-input-bg);
+      color: var(--ide-fg);
+      border: 1px solid var(--ide-input-border);
+    }
+
+    /* 主体 */
+    .dev-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* 侧边栏 */
+    .dev-sidebar {
+      width: 260px;
+      background: var(--ide-sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .dev-sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--ide-border-subtle);
+    }
+    .dev-sidebar-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--ide-muted);
+    }
+    .dev-sidebar-action {
+      background: none;
+      border: none;
+      color: var(--ide-fg);
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 3px;
+      display: flex;
+    }
+    .dev-sidebar-action:hover { background: var(--ide-hover); }
+
+    /* 新建文章面板 */
+    .dev-new-post {
+      padding: 8px 12px;
+      background: var(--ide-bg);
+      border-bottom: 1px solid var(--ide-border);
+    }
+    .dev-new-post.hidden { display: none; }
+    .dev-new-post-form { display: flex; flex-direction: column; gap: 6px; }
+    .dev-new-post-input {
+      width: 100%;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: var(--ide-input-bg);
+      border: 1px solid var(--ide-input-border);
+      border-radius: 3px;
+      color: var(--ide-fg);
+      outline: none;
+    }
+    .dev-new-post-input:focus { border-color: var(--ide-accent); }
+    .dev-new-post-actions { display: flex; gap: 4px; }
+    .dev-btn-sm {
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 3px;
+      border: none;
+      cursor: pointer;
+    }
+    .dev-btn-confirm { background: #2ea043; color: #fff; }
+    .dev-btn-cancel { background: var(--ide-input-bg); color: var(--ide-fg); }
+    .dev-btn-sm:hover { opacity: 0.85; }
+
+    /* 文件树 */
+    .dev-tree-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    .dev-tree-folder {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--ide-fg);
+      font-weight: 500;
+    }
+    .dev-tree-folder svg { color: var(--ide-folder-icon); }
+    .dev-tree-count {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--ide-muted);
+      background: var(--ide-hover);
+      padding: 0 5px;
+      border-radius: 8px;
+    }
+
+    .dev-file-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .dev-file-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 12px 3px 28px;
+      font-size: 12px;
+      color: var(--ide-fg);
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.1s;
+      position: relative;
+    }
+    .dev-file-item:hover { background: var(--ide-hover); }
+    .dev-file-item.active {
+      background: var(--ide-active);
+      color: var(--ide-content-h1);
+    }
+    .dev-file-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--ide-active-bar);
+    }
+    .dev-file-icon { color: var(--ide-file-icon); flex-shrink: 0; }
+    .dev-file-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dev-badge-draft {
+      margin-left: auto;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--ide-badge-draft-fg);
+      background: var(--ide-badge-draft-bg);
+      padding: 0 4px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* 分割线 */
+    .dev-divider {
+      width: 1px;
+      background: var(--ide-border-subtle);
+      flex-shrink: 0;
+    }
+
+    /* 编辑区 */
+    .dev-editor {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--ide-bg);
+    }
+
+    /* 面包屑 */
+    .dev-breadcrumb {
+      display: flex;
+      align-items: center;
+      padding: 6px 16px;
+      background: var(--ide-sidebar-bg);
+      border-bottom: 1px solid var(--ide-border);
+      font-size: 12px;
+      flex-shrink: 0;
+      gap: 2px;
+    }
+    .dev-breadcrumb-segment { color: var(--ide-muted); }
+    .dev-breadcrumb-sep { color: var(--ide-muted-subtle); margin: 0 2px; }
+    .dev-breadcrumb-file { color: var(--ide-fg); font-weight: 500; }
+    .dev-breadcrumb-meta {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dev-status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      padding: 1px 6px;
+      border-radius: 2px;
+    }
+    .dev-status-badge.draft { background: var(--ide-badge-draft-bg); color: var(--ide-badge-draft-fg); }
+    .dev-status-badge.published { background: var(--ide-badge-pub-bg); color: var(--ide-badge-pub-fg); }
+    .dev-meta-date { color: var(--ide-muted); font-size: 11px; }
+
+    /* Frontmatter 面板 */
+    .dev-frontmatter {
+      padding: 8px 16px;
+      background: var(--ide-fm-bg);
+      border-bottom: 1px solid var(--ide-border);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .dev-fm-row {
+      padding: 2px 0;
+      display: flex;
+      gap: 8px;
+    }
+    .dev-fm-key { color: var(--ide-fm-key); }
+    .dev-fm-value { color: var(--ide-fm-value); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* 文章内容 */
+    .dev-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px 80px;
+    }
+
+    /* 暗色模式：自定义 IDE 内容色 */
+    :global(html.dark) .dev-ide .dev-content :global(h1) { color: var(--ide-content-h1); border-bottom: 1px solid var(--ide-border); padding-bottom: 8px; }
+    :global(html.dark) .dev-ide .dev-content :global(h2) { color: var(--ide-content-h2); }
+    :global(html.dark) .dev-ide .dev-content :global(h3) { color: var(--ide-content-h3); }
+    :global(html.dark) .dev-ide .dev-content :global(p) { color: var(--ide-content-text); }
+    :global(html.dark) .dev-ide .dev-content :global(a) { color: var(--ide-content-link); }
+    :global(html.dark) .dev-ide .dev-content :global(code) { color: var(--ide-content-code-fg); background: var(--ide-content-code-bg); }
+    :global(html.dark) .dev-ide .dev-content :global(pre) { background: var(--ide-content-pre-bg) !important; border: 1px solid var(--ide-border); }
+    :global(html.dark) .dev-ide .dev-content :global(blockquote) { border-left-color: var(--ide-accent); color: var(--ide-content-quote); }
+    :global(html.dark) .dev-ide .dev-content :global(li) { color: var(--ide-content-text); }
+    :global(html.dark) .dev-ide .dev-content :global(strong) { color: var(--ide-content-strong); }
+    :global(html.dark) .dev-ide .dev-content :global(table) { border-color: var(--ide-border); }
+    :global(html.dark) .dev-ide .dev-content :global(th) { background: var(--ide-content-th-bg); color: var(--ide-content-h1); border-color: var(--ide-border); }
+    :global(html.dark) .dev-ide .dev-content :global(td) { border-color: var(--ide-border); color: var(--ide-content-text); }
+    :global(html.dark) .dev-ide .dev-content :global(hr) { border-color: var(--ide-border); }
+    :global(html.dark) .dev-ide .dev-content :global(img) { border-radius: 4px; border: 1px solid var(--ide-border); }
+
+    /* 亮色模式：不覆盖 prose 默认样式，与博客正文一致 */
+    :global(html:not(.dark)) .dev-ide .dev-content :global(img) { border-radius: 4px; }
+
+    /* 底部状态栏 */
+    .dev-statusbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 24px;
+      padding: 0 10px;
+      background: var(--ide-statusbar-bg);
+      font-size: 11px;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+    .dev-statusbar-left,
+    .dev-statusbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .dev-statusbar-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dev-statusbar-link {
+      color: #ffffff;
+      text-decoration: none;
+      opacity: 0.85;
+    }
+    .dev-statusbar-link:hover { opacity: 1; }
+
+    /* 滚动条 */
+    .dev-tree-section::-webkit-scrollbar,
+    .dev-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    .dev-tree-section::-webkit-scrollbar-track,
+    .dev-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .dev-tree-section::-webkit-scrollbar-thumb,
+    .dev-content::-webkit-scrollbar-thumb {
+      background: var(--ide-scrollbar);
+      border-radius: 4px;
+    }
+    .dev-tree-section::-webkit-scrollbar-thumb:hover,
+    .dev-content::-webkit-scrollbar-thumb:hover {
+      background: var(--ide-scrollbar-hover);
+    }
+
+    /* Split pane editor */
+    .dev-split-pane {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      height: 100%;
+    }
+    .dev-pane {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .dev-pane-editor { flex: 1; min-width: 200px; }
+    .dev-pane-preview { flex: 1; min-width: 200px; overflow-y: auto; }
+    .dev-pane-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 12px;
+      background: var(--ide-sidebar-bg);
+      border-bottom: 1px solid var(--ide-border);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--ide-muted);
+      flex-shrink: 0;
+    }
+    .dev-split-divider {
+      width: 4px;
+      background: var(--ide-border-subtle);
+      cursor: col-resize;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .dev-split-divider:hover,
+    .dev-split-divider.dragging { background: var(--ide-accent); }
+    .dev-cm-container { flex: 1; overflow: hidden; }
+    .dev-cm-container :global(.cm-editor) { height: 100%; }
+    .dev-cm-container :global(.cm-scroller) { overflow: auto; }
+    .dev-btn-save { background: #2ea043; color: #fff; }
+    .dev-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .dev-btn-save kbd {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-left: 2px;
+    }
+    .dev-btn-edit { background: var(--ide-input-bg); color: var(--ide-fg); border: 1px solid var(--ide-input-border); }
+
+    /* Preview mode grows to fill */
+    #preview-mode {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    #preview-mode .dev-content { flex: 1; overflow-y: auto; }
+  </style>
+
   <script>
+    // 主题切换
+    const themeToggle = document.getElementById('dev-theme-toggle');
+    const iconDark = document.getElementById('dev-theme-icon-dark');
+    const iconLight = document.getElementById('dev-theme-icon-light');
+
+    function getDevTheme(): string {
+      return localStorage.getItem('dev-theme') || 'dark';
+    }
+
+    function applyDevTheme(theme: string) {
+      if (theme === 'light') {
+        document.documentElement.classList.remove('dark');
+        iconDark!.style.display = 'block';
+        iconLight!.style.display = 'none';
+      } else {
+        document.documentElement.classList.add('dark');
+        iconDark!.style.display = 'none';
+        iconLight!.style.display = 'block';
+      }
+      localStorage.setItem('dev-theme', theme);
+    }
+
+    applyDevTheme(getDevTheme());
+
+    themeToggle?.addEventListener('click', () => {
+      const next = getDevTheme() === 'dark' ? 'light' : 'dark';
+      applyDevTheme(next);
+    });
+
+    // 新建文章面板切换
+    const toggleBtn = document.getElementById('new-post-toggle');
+    const panel = document.getElementById('new-post-panel');
+    const cancelBtn = document.getElementById('new-post-cancel');
+
+    toggleBtn?.addEventListener('click', () => {
+      panel?.classList.toggle('hidden');
+      if (!panel?.classList.contains('hidden')) {
+        (panel?.querySelector('input') as HTMLInputElement)?.focus();
+      }
+    });
+    cancelBtn?.addEventListener('click', () => {
+      panel?.classList.add('hidden');
+    });
+
     // 新建文章
     document.getElementById('new-post-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
       const title = (form.querySelector('input[name="title"]') as HTMLInputElement).value.trim();
-
       if (!title) return;
 
-      const button = form.querySelector('button') as HTMLButtonElement;
+      const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
       button.textContent = '创建中...';
       button.disabled = true;
 
@@ -186,19 +757,17 @@ const currentSlug = post.id.replace('.md', '');
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title })
         });
-
         const data = await res.json();
-
         if (data.success) {
           window.location.href = `/dev/?created=${encodeURIComponent(title)}`;
         } else {
           alert('创建失败: ' + data.error);
-          button.textContent = '新建';
+          button.textContent = '创建';
           button.disabled = false;
         }
-      } catch (err) {
+      } catch {
         alert('请求失败，请确保开发服务器正在运行');
-        button.textContent = '新建';
+        button.textContent = '创建';
         button.disabled = false;
       }
     });
@@ -206,9 +775,7 @@ const currentSlug = post.id.replace('.md', '');
     // 发布文章
     document.getElementById('publish-btn')?.addEventListener('click', async (e) => {
       const button = e.target as HTMLButtonElement;
-      // 从URL路径获取slug: /dev/slug/ -> slug，并解码中文
       const slug = decodeURIComponent(window.location.pathname.split('/').filter(s => s)[1]);
-
       if (!slug) return;
 
       button.textContent = '发布中...';
@@ -220,9 +787,7 @@ const currentSlug = post.id.replace('.md', '');
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slug })
         });
-
         const data = await res.json();
-
         if (data.success) {
           window.location.reload();
         } else {
@@ -230,8 +795,8 @@ const currentSlug = post.id.replace('.md', '');
           button.textContent = '发布';
           button.disabled = false;
         }
-      } catch (err) {
-        alert('请求失败，请确保开发服务器正在运行');
+      } catch {
+        alert('请求失败');
         button.textContent = '发布';
         button.disabled = false;
       }
@@ -240,9 +805,7 @@ const currentSlug = post.id.replace('.md', '');
     // 取消发布
     document.getElementById('unpublish-btn')?.addEventListener('click', async (e) => {
       const button = e.target as HTMLButtonElement;
-      // 从URL路径获取slug，并解码中文
       const slug = decodeURIComponent(window.location.pathname.split('/').filter(s => s)[1]);
-
       if (!slug) return;
 
       button.textContent = '处理中...';
@@ -254,9 +817,7 @@ const currentSlug = post.id.replace('.md', '');
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slug })
         });
-
         const data = await res.json();
-
         if (data.success) {
           window.location.reload();
         } else {
@@ -264,11 +825,323 @@ const currentSlug = post.id.replace('.md', '');
           button.textContent = '取消发布';
           button.disabled = false;
         }
-      } catch (err) {
-        alert('请求失败，请确保开发服务器正在运行');
+      } catch {
+        alert('请求失败');
         button.textContent = '取消发布';
         button.disabled = false;
       }
+    });
+
+    // === 编辑模式 ===
+    import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
+    import { EditorState } from '@codemirror/state';
+    import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+    import { languages } from '@codemirror/language-data';
+    import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+    import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
+    import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+    import { marked } from 'marked';
+    import plantumlEncoder from 'plantuml-encoder';
+
+    let editorView: EditorView | null = null;
+    let isEditMode = false;
+    let isDirty = false;
+
+    const slug = decodeURIComponent(window.location.pathname.split('/').filter(s => s)[1]);
+    const editToggleBtn = document.getElementById('edit-toggle-btn');
+    const previewMode = document.getElementById('preview-mode');
+    const editMode = document.getElementById('edit-mode');
+    const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
+    const livePreview = document.getElementById('live-preview');
+
+    const ideTheme = EditorView.theme({
+      '&': {
+        backgroundColor: 'var(--ide-bg)',
+        color: 'var(--ide-fg)',
+        fontSize: '13px',
+        fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+      },
+      '.cm-content': { caretColor: 'var(--ide-accent)', padding: '8px 0' },
+      '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--ide-accent)' },
+      '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
+        backgroundColor: 'var(--ide-active) !important',
+      },
+      '.cm-gutters': {
+        backgroundColor: 'var(--ide-sidebar-bg)',
+        color: 'var(--ide-muted)',
+        borderRight: '1px solid var(--ide-border)',
+      },
+      '.cm-activeLineGutter': { backgroundColor: 'var(--ide-active)' },
+      '.cm-activeLine': { backgroundColor: 'var(--ide-hover)' },
+      '.cm-line': { padding: '0 12px' },
+    });
+
+    function enterEditMode() {
+      editToggleBtn!.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v1H1zm0 4h14v1H1zm0 4h14v1H1z"/></svg> 阅读`;
+      fetch(`/api/read-post?slug=${encodeURIComponent(slug)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) { alert('加载失败: ' + data.error); return; }
+          initEditor(data.content);
+          previewMode!.style.display = 'none';
+          editMode!.style.display = 'flex';
+          isEditMode = true;
+        });
+    }
+
+    function exitEditMode() {
+      if (isDirty && !confirm('有未保存的更改，确定退出编辑模式？')) return;
+      editMode!.style.display = 'none';
+      previewMode!.style.display = '';
+      isEditMode = false;
+      isDirty = false;
+      editToggleBtn!.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.23 1h-1.46L3.52 9.25l-.16.22L1 13.59 2.41 15l4.12-2.36.22-.16L15 4.23V2.77L13.23 1zM2.41 13.59l1.51-3 1.45 1.45-2.96 1.55zm3.83-2.06L4.47 9.76l8-8 1.77 1.77-8 8z"/></svg> 编辑`;
+      editorView?.destroy();
+      editorView = null;
+    }
+
+    editToggleBtn?.addEventListener('click', () => {
+      if (isEditMode) exitEditMode();
+      else enterEditMode();
+    });
+
+    function initEditor(content: string) {
+      const container = document.getElementById('codemirror-container')!;
+      container.innerHTML = '';
+
+      editorView = new EditorView({
+        state: EditorState.create({
+          doc: content,
+          extensions: [
+            lineNumbers(),
+            highlightActiveLine(),
+            drawSelection(),
+            highlightSelectionMatches(),
+            history(),
+            markdown({ base: markdownLanguage, codeLanguages: languages }),
+            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+            keymap.of([
+              ...defaultKeymap,
+              ...historyKeymap,
+              ...searchKeymap,
+              { key: 'Mod-s', run: () => { saveContent(); return true; } }
+            ]),
+            ideTheme,
+            EditorView.updateListener.of((update) => {
+              if (update.docChanged) {
+                isDirty = true;
+                debouncePreview();
+              }
+            }),
+          ],
+        }),
+        parent: container,
+      });
+
+      renderPreview();
+      setupScrollSync();
+    }
+
+    let previewTimer: number;
+    function debouncePreview() {
+      clearTimeout(previewTimer);
+      previewTimer = window.setTimeout(renderPreview, 300);
+    }
+
+    function renderPreview() {
+      if (!editorView || !livePreview) return;
+      const raw = editorView.state.doc.toString();
+      let body = raw.replace(/^---[\s\S]*?---\n*/, '');
+
+      // 计算 frontmatter 消耗的行数偏移
+      const fmMatch = raw.match(/^---[\s\S]*?---\n*/);
+      const lineOffset = fmMatch ? fmMatch[0].split('\n').length - 1 : 0;
+
+      // PlantUML/Mermaid 替换时保持行数不变（用 \n 填充）
+      body = body.replace(/```plantuml\n([\s\S]*?)```/g, (match, code: string) => {
+        const newlines = (match.match(/\n/g) || []).length;
+        const encoded = plantumlEncoder.encode(code.trim());
+        const pad = '\n'.repeat(newlines);
+        return `<div class="plantuml-img not-prose"><img src="https://www.plantuml.com/plantuml/svg/${encoded}" alt="PlantUML Diagram" style="max-width:100%;height:auto" loading="lazy" /></div>${pad}`;
+      });
+
+      body = body.replace(/```mermaid\n([\s\S]*?)```/g, (match, code: string) => {
+        const newlines = (match.match(/\n/g) || []).length;
+        const pad = '\n'.repeat(newlines);
+        return `<pre class="mermaid" data-mermaid-code="${code.trim().replace(/"/g, '&quot;')}">${code.trim()}</pre>${pad}`;
+      });
+
+      // 使用 marked.lexer 获取 tokens 并注入行号
+      const tokens = marked.lexer(body);
+      let currentLine = 1;
+      for (const token of tokens) {
+        (token as any)._line = currentLine + lineOffset;
+        if (token.raw) {
+          currentLine += token.raw.split('\n').length - 1;
+        }
+      }
+
+      // 用 parser 逐 token 渲染并注入 data-line
+      let html = '';
+      for (const token of tokens) {
+        const line = (token as any)._line;
+        const singleList = Object.assign([token], { links: (tokens as any).links || {} });
+        const fragment = marked.parser(singleList as any);
+        if (line && fragment.trim()) {
+          html += fragment.replace(/^(<[a-z][a-z0-9]*)/i, `$1 data-line="${line}"`);
+        } else {
+          html += fragment;
+        }
+      }
+
+      livePreview.innerHTML = html;
+      renderMermaidInPreview();
+    }
+
+    let mermaidMod: any = null;
+    async function renderMermaidInPreview() {
+      const nodes = livePreview!.querySelectorAll<HTMLElement>('.mermaid');
+      if (nodes.length === 0) return;
+
+      if (!mermaidMod) {
+        const mod = await import('mermaid');
+        mermaidMod = mod.default;
+      }
+
+      const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'default';
+      mermaidMod.initialize({ startOnLoad: false, theme, securityLevel: 'strict' });
+
+      const runId = `${Date.now()}`;
+      for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i];
+        const code = el.getAttribute('data-mermaid-code') || el.textContent || '';
+        try {
+          const { svg } = await mermaidMod.render(`mermaid-live-${runId}-${i}`, code);
+          el.innerHTML = svg;
+        } catch (err) {
+          el.innerHTML = `<span style="color:#e53e3e;font-size:12px">Mermaid 渲染失败: ${(err as Error).message}</span>`;
+        }
+      }
+    }
+
+    async function saveContent() {
+      if (!editorView || !isDirty) return;
+      const content = editorView.state.doc.toString();
+      saveBtn.textContent = '保存中...';
+      saveBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/save-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, content })
+        });
+        const data = await res.json();
+        if (data.success) {
+          isDirty = false;
+        } else {
+          alert('保存失败: ' + data.error);
+        }
+      } catch {
+        alert('保存请求失败');
+      } finally {
+        saveBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M13.35 1H3.5L2 2.5v11l.5.5h11l.5-.5v-11L13.35 1zM4 2h6v3H4V2zm8 12H4V9h8v5zm1-6H3V2.5l.5-.5H3v4h8V2h1.35l.65.65V8z"/></svg> 保存 <kbd>⌘S</kbd>`;
+        saveBtn.disabled = false;
+      }
+    }
+
+    saveBtn?.addEventListener('click', saveContent);
+
+    // 分割线拖拽
+    const divider = document.getElementById('split-divider');
+    const editorPane = document.getElementById('editor-pane');
+    const previewPane = document.getElementById('preview-pane');
+
+    divider?.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startWidth = editorPane!.offsetWidth;
+      divider.classList.add('dragging');
+
+      function onDrag(ev: MouseEvent) {
+        const containerWidth = divider!.parentElement!.offsetWidth - 4;
+        const newWidth = Math.max(200, Math.min(containerWidth - 200, startWidth + ev.clientX - startX));
+        editorPane!.style.flex = `0 0 ${newWidth}px`;
+        previewPane!.style.flex = '1';
+      }
+      function stopDrag() {
+        divider!.classList.remove('dragging');
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', stopDrag);
+      }
+      document.addEventListener('mousemove', onDrag);
+      document.addEventListener('mouseup', stopDrag);
+    });
+
+    // 同步滚动（基于行号映射）
+    let syncSource: 'editor' | 'preview' | null = null;
+
+    function setupScrollSync() {
+      if (!editorView) return;
+      const editorScroller = editorView.scrollDOM;
+      const previewEl = document.getElementById('live-preview') as HTMLElement;
+      if (!editorScroller || !previewEl) return;
+
+      // 编辑器 → 预览：根据编辑器顶部可见行号，定位预览中对应元素
+      editorScroller.addEventListener('scroll', () => {
+        if (syncSource === 'preview') return;
+        syncSource = 'editor';
+
+        const topBlock = editorView!.lineBlockAtHeight(editorScroller.scrollTop);
+        const topLine = editorView!.state.doc.lineAt(topBlock.from).number;
+
+        // 找到预览中 data-line <= topLine 的最近元素
+        const markers = previewEl.querySelectorAll<HTMLElement>('[data-line]');
+        let target: HTMLElement | null = null;
+        for (const el of markers) {
+          const line = parseInt(el.getAttribute('data-line')!);
+          if (line <= topLine) target = el;
+          else break;
+        }
+
+        if (target) {
+          const targetTop = target.offsetTop - previewEl.offsetTop;
+          previewEl.scrollTop = targetTop;
+        }
+
+        setTimeout(() => { syncSource = null; }, 50);
+      });
+
+      // 预览 → 编辑器：找到预览中当前可见的第一个 data-line 元素
+      previewEl.addEventListener('scroll', () => {
+        if (syncSource === 'editor') return;
+        syncSource = 'preview';
+
+        const markers = previewEl.querySelectorAll<HTMLElement>('[data-line]');
+        let visibleLine = 1;
+        for (const el of markers) {
+          const elTop = el.offsetTop - previewEl.offsetTop;
+          if (elTop >= previewEl.scrollTop) {
+            visibleLine = parseInt(el.getAttribute('data-line')!) || 1;
+            break;
+          }
+        }
+
+        // 滚动编辑器到对应行
+        const doc = editorView!.state.doc;
+        const lineCount = doc.lines;
+        const targetLine = Math.min(visibleLine, lineCount);
+        const lineInfo = doc.line(targetLine);
+        const block = editorView!.lineBlockAt(lineInfo.from);
+        editorScroller.scrollTop = block.top;
+
+        setTimeout(() => { syncSource = null; }, 50);
+      });
+    }
+
+    // 未保存提示
+    window.addEventListener('beforeunload', (e) => {
+      if (isDirty) { e.preventDefault(); e.returnValue = ''; }
     });
   </script>
 </BaseLayout>

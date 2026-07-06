@@ -14,6 +14,8 @@ interface Props {
   keywords?: string;
   image?: string;
   type?: 'website' | 'article';
+  fullWidth?: boolean;
+  hideHeader?: boolean;
 }
 
 const {
@@ -21,7 +23,9 @@ const {
   description = '书山有路勤为径，学海无涯苦作舟',
   keywords = '博客,技术,编程,学习',
   image = '/og-image.png',
-  type = 'website'
+  type = 'website',
+  fullWidth = false,
+  hideHeader = false
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -93,16 +97,25 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
     )} />
 
     <title>{fullTitle}</title>
-    <script is:inline>
-      const savedTheme = localStorage.getItem('theme');
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
-        document.documentElement.classList.add('dark');
-      }
-    </script>
+    {hideHeader ? (
+      <script is:inline>
+        (function() {
+          var t = localStorage.getItem('dev-theme') || 'dark';
+          if (t !== 'light') document.documentElement.classList.add('dark');
+        })();
+      </script>
+    ) : (
+      <script is:inline>
+        const savedTheme = localStorage.getItem('theme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      </script>
+    )}
   </head>
   <body class="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-    <header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    {!hideHeader && <header class="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
       <nav class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3 min-w-0">
           <a href="/" class="text-lg font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 no-underline truncate shrink-0">
             书山有路
@@ -178,8 +191,8 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
         <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
         <a href="/collection/" class={`mobile-nav-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
       </div>
-    </header>
-    <main class="max-w-4xl mx-auto px-4 py-8">
+    </header>}
+    <main class={fullWidth ? '' : 'max-w-4xl mx-auto px-4 py-8'}>
       <slot />
     </main>
     <Mermaid />

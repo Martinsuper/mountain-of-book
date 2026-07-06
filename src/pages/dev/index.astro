@@ -4,7 +4,6 @@ import { getCollection } from 'astro:content';
 import { sortPostsByDate } from '../../lib/post-utils';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-// 生产构建时该开发工具不应出现在线上站点，直接重定向到首页
 if (!import.meta.env.DEV) {
   return Astro.redirect('/');
 }
@@ -16,25 +15,29 @@ const firstPost = allPosts[0];
 const firstPostSlug = firstPost?.id.replace('.md', '');
 ---
 
-<BaseLayout title="开发预览">
+<BaseLayout title="开发预览" fullWidth hideHeader>
   {!firstPost && (
-    <div class="max-w-md mx-auto py-20">
-      <p class="text-center text-gray-500 mb-6">还没有文章，创建第一篇吧！</p>
-      <form id="new-post-form" class="flex gap-2">
-        <input
-          type="text"
-          name="title"
-          placeholder="输入文章标题..."
-          class="flex-1 px-4 py-2 border border-gray-200 rounded focus:outline-none focus:border-blue-400"
-          required
-        />
-        <button
-          type="submit"
-          class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          新建
-        </button>
-      </form>
+    <div class="dev-empty">
+      <div class="dev-empty-card">
+        <div class="dev-empty-icon">
+          <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor"><path d="M10.57 1.14L13.85 4.43L14 5V14L13 15H3L2 14V2L3 1H10L10.57 1.14ZM10 5H13L10 2V5ZM3 2V14H13V6H9.5L9 5.5V2H3Z"/></svg>
+        </div>
+        <p class="dev-empty-text">还没有文章</p>
+        <p class="dev-empty-hint">创建第一篇文章开始写作</p>
+        <form id="new-post-form" class="dev-empty-form">
+          <input
+            type="text"
+            name="title"
+            placeholder="输入文章标题..."
+            class="dev-empty-input"
+            required
+          />
+          <button type="submit" class="dev-empty-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.5 1H8.5V7.5H15V8.5H8.5V15H7.5V8.5H1V7.5H7.5V1Z"/></svg>
+            新建文章
+          </button>
+        </form>
+      </div>
     </div>
   )}
 
@@ -44,12 +47,75 @@ const firstPostSlug = firstPost?.id.replace('.md', '');
     </script>
   )}
 
+  <style>
+    .dev-empty {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1e1e1e;
+    }
+    .dev-empty-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 48px;
+      background: #252526;
+      border: 1px solid #333;
+      border-radius: 8px;
+    }
+    .dev-empty-icon { color: #569cd6; opacity: 0.6; }
+    .dev-empty-text {
+      font-size: 16px;
+      color: #cccccc;
+      font-weight: 500;
+      margin: 0;
+    }
+    .dev-empty-hint {
+      font-size: 13px;
+      color: #888;
+      margin: 0;
+    }
+    .dev-empty-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      width: 100%;
+    }
+    .dev-empty-input {
+      flex: 1;
+      padding: 8px 12px;
+      background: #3c3c3c;
+      border: 1px solid #555;
+      border-radius: 4px;
+      color: #cccccc;
+      font-size: 13px;
+      outline: none;
+    }
+    .dev-empty-input:focus { border-color: #569cd6; }
+    .dev-empty-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #2ea043;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .dev-empty-btn:hover { opacity: 0.9; }
+  </style>
+
   <script>
     document.getElementById('new-post-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
       const title = (form.querySelector('input[name="title"]') as HTMLInputElement).value.trim();
-
       if (!title) return;
 
       const button = form.querySelector('button') as HTMLButtonElement;
@@ -62,19 +128,17 @@ const firstPostSlug = firstPost?.id.replace('.md', '');
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title })
         });
-
         const data = await res.json();
-
         if (data.success) {
           window.location.reload();
         } else {
           alert('创建失败: ' + data.error);
-          button.textContent = '新建';
+          button.textContent = '新建文章';
           button.disabled = false;
         }
-      } catch (err) {
+      } catch {
         alert('请求失败，请确保开发服务器正在运行');
-        button.textContent = '新建';
+        button.textContent = '新建文章';
         button.disabled = false;
       }
     });

@@ -151,6 +151,67 @@ draft: true
           }
         });
       }
+      // 读取文章原文
+      else if (req.url?.startsWith('/api/read-post') && req.method === 'GET') {
+        try {
+          const url = new URL(req.url, 'http://localhost');
+          const slug = url.searchParams.get('slug');
+          if (!slug) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: '缺少 slug 参数' }));
+            return;
+          }
+          const filePath = resolveSafePostPath(slug);
+          if (!filePath) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: '非法的文章标识' }));
+            return;
+          }
+          if (!existsSync(filePath)) {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: '文章不存在' }));
+            return;
+          }
+          const content = readFileSync(filePath, 'utf-8');
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: true, content }));
+        } catch (e) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      }
+      // 保存文章内容
+      else if (req.url === '/api/save-post' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const { slug, content } = JSON.parse(body);
+            if (!slug || typeof content !== 'string') {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: '缺少 slug 或 content' }));
+              return;
+            }
+            const filePath = resolveSafePostPath(slug);
+            if (!filePath) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: '非法的文章标识' }));
+              return;
+            }
+            if (!existsSync(filePath)) {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: '文章不存在' }));
+              return;
+            }
+            writeFileSync(filePath, content, 'utf-8');
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true }));
+          } catch (e) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: e.message }));
+          }
+        });
+      }
       else {
         next();
       }
