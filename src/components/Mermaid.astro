@@ -65,7 +65,7 @@
     // 主题切换时重新渲染（保持与首次一致的 securityLevel）
     const observer = new MutationObserver((mutations) => {
       for (const m of mutations) {
-        if (m.attributeName === 'class') {
+        if (m.attributeName === 'class' || m.attributeName === 'data-theme') {
           renderAll();
           break;
         }

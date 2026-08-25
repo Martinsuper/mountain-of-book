@@ -2,45 +2,161 @@
 // src/components/ThemeToggle.astro
 ---
 
-<button
-  id="theme-toggle"
-  type="button"
-  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-  aria-label="切换主题"
->
-  <!-- 太阳图标 (深色模式显示，点击切换到浅色) -->
-  <svg
-    class="w-5 h-5 hidden dark:block text-yellow-400"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
+<div class="theme-switcher">
+  <button
+    id="theme-toggle"
+    type="button"
+    class="theme-toggle-button"
+    aria-label="选择主题"
+    aria-expanded="false"
+    aria-haspopup="menu"
   >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-    />
-  </svg>
-  <!-- 月亮图标 (浅色模式显示，点击切换到深色) -->
-  <svg
-    class="w-5 h-5 block dark:hidden"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-    />
-  </svg>
-</button>
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+    <span class="theme-toggle-label">主题</span>
+  </button>
+  <div id="theme-menu" class="theme-menu" role="menu" aria-label="主题选择">
+    <button type="button" class="theme-option" data-theme="light" role="menuitemradio" aria-checked="false">浅色</button>
+    <button type="button" class="theme-option" data-theme="dark" role="menuitemradio" aria-checked="false">深色</button>
+    <button type="button" class="theme-option" data-theme="purple" role="menuitemradio" aria-checked="false">紫蓝阅读</button>
+  </div>
+</div>
 
 <script>
-  document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  type Theme = 'light' | 'dark' | 'purple';
+
+  const root = document.documentElement;
+  const toggle = document.getElementById('theme-toggle');
+  const menu = document.getElementById('theme-menu');
+  const options = document.querySelectorAll<HTMLButtonElement>('.theme-option');
+
+  function currentTheme(): Theme {
+    if (root.dataset.theme === 'purple') return 'purple';
+    return root.classList.contains('dark') ? 'dark' : 'light';
+  }
+
+  function updateOptions(theme: Theme) {
+    options.forEach((option) => {
+      const selected = option.dataset.theme === theme;
+      option.setAttribute('aria-checked', String(selected));
+      option.classList.toggle('is-active', selected);
+    });
+  }
+
+  function applyTheme(theme: Theme) {
+    root.classList.toggle('dark', theme === 'dark');
+    if (theme === 'purple') root.dataset.theme = 'purple';
+    else delete root.dataset.theme;
+    localStorage.setItem('theme', theme);
+    updateOptions(theme);
+  }
+
+  function closeMenu() {
+    menu?.classList.remove('is-open');
+    toggle?.setAttribute('aria-expanded', 'false');
+  }
+
+  updateOptions(currentTheme());
+
+  toggle?.addEventListener('click', () => {
+    const open = menu?.classList.toggle('is-open') ?? false;
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+
+  options.forEach((option) => {
+    option.addEventListener('click', () => {
+      applyTheme(option.dataset.theme as Theme);
+      closeMenu();
+      toggle?.focus();
+    });
+  });
+
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Node && !menu?.parentElement?.contains(event.target)) closeMenu();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMenu();
   });
 </script>
+
+<style>
+  .theme-switcher {
+    position: relative;
+  }
+
+  .theme-toggle-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .theme-toggle-button:hover {
+    background: rgb(243 244 246);
+  }
+
+  :global(.dark) .theme-toggle-button:hover {
+    background: rgb(31 41 55);
+  }
+
+  .theme-toggle-label {
+    font-size: 0.875rem;
+  }
+
+  .theme-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    display: none;
+    min-width: 8.5rem;
+    padding: 0.375rem;
+    border: 1px solid rgb(229 231 235);
+    border-radius: 0.75rem;
+    background: white;
+    box-shadow: 0 10px 30px rgb(15 23 42 / 0.14);
+  }
+
+  .theme-menu.is-open {
+    display: grid;
+    gap: 0.125rem;
+  }
+
+  .theme-option {
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.5rem;
+    text-align: left;
+    font-size: 0.875rem;
+    color: rgb(55 65 81);
+  }
+
+  .theme-option:hover,
+  .theme-option.is-active {
+    background: rgb(239 246 255);
+    color: rgb(37 99 235);
+  }
+
+  :global(.dark) .theme-menu {
+    border-color: rgb(55 65 81);
+    background: rgb(17 24 39);
+  }
+
+  :global(.dark) .theme-option {
+    color: rgb(229 231 235);
+  }
+
+  :global(.dark) .theme-option:hover,
+  :global(.dark) .theme-option.is-active {
+    background: rgb(30 58 138 / 0.5);
+    color: rgb(191 219 254);
+  }
+
+  @media (max-width: 639px) {
+    .theme-toggle-label {
+      display: none;
+    }
+  }
+</style>
