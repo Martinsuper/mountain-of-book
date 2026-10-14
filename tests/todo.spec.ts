@@ -106,6 +106,7 @@ test.describe('Todo Page - 专注清单', () => {
   test('日历新建、详情和改期后清单同步', async ({ page }) => {
     const date = await page.locator('.cal-cell-today').getAttribute('data-date');
     await page.locator('.cal-cell-today').click();
+    await page.locator('#calendarDayAdd').click();
     await page.locator('#taskTitle').fill('日历任务');
     await page.locator('#btnSubmit').click();
     await expect(page.locator('#addModal')).not.toBeVisible();

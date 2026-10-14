@@ -1,0 +1,8 @@
+name = "mountain-of-book-calendar-proxy"
+main = "worker.mjs"
+compatibility_date = "2026-01-01"
+account_id = "aca40f02c77ec86bd4e9855887b9ee15"
+routes = [{ pattern = "calendar.younote.top", custom_domain = true }]
+
+[vars]
+ALLOWED_ORIGINS = "https://fblog.younote.top,http://localhost:4321,http://localhost:4322"
