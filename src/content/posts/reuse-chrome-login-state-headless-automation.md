@@ -2,7 +2,8 @@
 title: "复用 Chrome 登录态：让无头浏览器零扫码访问内网文档"
 description: "用自动化浏览器抓取需要 SSO 登录的内网文档，通常要重复扫码登录。本文介绍一种零扫码方案：利用 macOS 上 Chrome cookie 加密密钥同机共享的特性，把日常 Chrome 的登录态以文件拷贝的方式平移给一个专供调试的无头 Chrome，不解密、不碰 Keychain API，随 Chrome 升级自动兼容。"
 date: 2026-06-25
-category: "工具教程"
+category: "开发工具"
+subcategory: "浏览器自动化"
 tags: ["chrome", "cookie", "browser-automation", "sso", "puppeteer"]
 draft: false
 ---

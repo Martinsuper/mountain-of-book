@@ -3,6 +3,7 @@ title: "MLX：Apple Silicon 机器学习数组框架深度解析"
 description: "从架构设计到工程实现，解析 Apple 机器学习研究团队开源的数组框架 MLX 的技术细节、设计权衡与适用场景。涵盖 lazy evaluation、unified memory、Metal 后端以及与其他框架的对比。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "LLM 与模型推理"
 tags: ["mlx", "apple-silicon", "machine-learning", "cpp", "metal"]
 draft: false
 ---

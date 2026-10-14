@@ -2,7 +2,8 @@
 title: "JDK 版本特性详解（三）：JDK 18-21 并发与新特性"
 description: "JDK 18 到 21 的核心特性详解：UTF-8 默认编码、Simple Web Server、Virtual Threads、Sequenced Collections，到 JDK 21 LTS 正式落地虚拟线程。含完整版本选择建议。这是 JDK 8-21 特性系列的第三篇。"
 date: 2026-04-21
-category: "后端开发"
+category: "应用开发"
+subcategory: "Java 与数据"
 tags: ["java", "jdk", "jdk-features", "java-version"]
 draft: false
 ---
@@ -144,7 +145,7 @@ public class SnippetJavadocDemo {
 
 | 特性名称 | 状态 | 功能描述 | 重要程度 |
 |----------|------|----------|----------|
-| **Virtual Threads** | 预览 | 轻量级线程，高并发革命性特性 | 高 |
+| **Virtual Threads** | 预览 | 轻量级线程，高并发新特性 | 高 |
 | **Structured Concurrency** | 预览 | 结构化并发，简化多任务协调 | 高 |
 | **Record Patterns** | 预览 | Record 的解构模式匹配 | 高 |
 
@@ -379,7 +380,7 @@ public class ScopedValuesDemo {
 
 ### 14.1 Virtual Threads 正式版
 
-虚拟线程成为正式特性，彻底改变了 Java 并发编程。
+虚拟线程成为正式特性，改变了 Java 并发编程。
 
 ```java
 import java.util.concurrent.*;
@@ -641,12 +642,12 @@ public class StringTemplateDemo {
 
 ### LTS 版本
 
-| 版本 | 发布时间 | 支持期限 | 推荐场景 |
+| 版本 | 发布时间 | 支持期限 | 使用情况 |
 |------|----------|----------|----------|
 | JDK 8 | 2014-03 | 至 2030年 | 传统系统维护 |
 | JDK 11 | 2018-09 | 至 2026年 | 企业级应用 |
-| JDK 17 | 2021-09 | 至 2029年 | 新项目推荐 |
-| JDK 21 | 2023-09 | 至 2031年 | 最新 LTS |
+| JDK 17 | 2021-09 | 至 2029年 | 新项目可用的 LTS 版本 |
+| JDK 21 | 2023-09 | 至 2031年 | 较新的 LTS 版本 |
 
 ### 特性演进路线
 
@@ -689,24 +690,6 @@ graph LR
 - 使用完整的 Pattern Matching for Switch
 
 ---
-
-## 十六、总结
-
-JDK 从 8 到 21 的演进历程展示了 Java 的持续创新：
-
-1. **JDK 8** - 函数式编程革命
-2. **JDK 9-10** - 模块化与类型推断
-3. **JDK 11** - HTTP Client 与字符串增强
-4. **JDK 12-14** - Switch 表达式与 Records 预览
-5. **JDK 15-16** - 文本块与 Records 正式
-6. **JDK 17** - Sealed Classes 正式，第二个 LTS
-7. **JDK 18-19** - UTF-8 默认与 Virtual Threads 预览
-8. **JDK 21** - Virtual Threads 正式，第三个 LTS
-
-对于新项目，推荐使用 **JDK 21** LTS 版本，享受最新的语言特性和性能优化。对于遗留系统，可逐步迁移到 **JDK 17** LTS 作为过渡版本。
-
----
-
 
 ## 参考资料
 

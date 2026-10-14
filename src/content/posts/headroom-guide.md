@@ -3,6 +3,7 @@ title: "Headroom：在内容进入 LLM 之前压缩它的上下文层"
 description: "Headroom 是一个本地运行的上下文压缩层，在工具输出、日志、RAG 片段、文件和对话历史送达 LLM 之前先压缩它们，宣称减少 60-95% token 且不改变答案。本文拆解它的四种接入形态、按内容类型分发的压缩架构、可逆压缩（CCR）和输出 token 压缩机制。"
 date: 2026-06-26
 category: "AI 工程"
+subcategory: "LLM 与模型推理"
 tags: ["llm", "ai-agent", "token-optimization", "mcp", "context-engineering"]
 draft: false
 ---

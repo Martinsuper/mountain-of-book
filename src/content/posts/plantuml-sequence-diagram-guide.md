@@ -2,7 +2,8 @@
 title: "PlantUML 时序图绘制指南"
 description: "从 UML 时序图核心概念到 PlantUML 语法实战，全面掌握时序图的绘制技巧"
 date: 2026-04-24
-category: "工具教程"
+category: "开发工具"
+subcategory: "文档与图表"
 tags: ["plantuml", "uml", "sequence-diagram", "architecture", "documentation"]
 draft: false
 ---

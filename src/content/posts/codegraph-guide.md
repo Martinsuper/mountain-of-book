@@ -2,16 +2,15 @@
 title: "CodeGraph：为 AI 编程代理提供预构建的代码知识图谱"
 description: "codegraph 是一个开源的代码知识图谱工具，48.9k stars。它用 tree-sitter + SQLite 预先索引代码结构，通过 MCP 协议为 Claude Code、Cursor、Codex 等 AI 编程代理提供语义代码智能，减少 token 消耗和工具调用。"
 date: 2026-06-14
-category: "工具教程"
+category: "开发工具"
+subcategory: "CLI 与开发环境"
 tags: ["codegraph", "knowledge-graph", "mcp", "tree-sitter", "sqlite", "claude-code"]
 draft: false
 ---
 
 ## 简介
 
-AI 编程代理（Claude Code、Cursor、Codex）在理解代码时，通常靠 `grep` 搜索 + `read` 读文件的方式。这有两个问题：一是 token 消耗大（反复搜索、读错文件、重读文件），二是缺乏全局视图（不知道函数之间的调用关系）。
-
-CodeGraph 的做法是**预先构建代码的知识图谱**。它用 tree-sitter 解析代码，提取所有符号（函数、类、变量）和关系（调用、导入、继承），存入 SQLite 数据库。然后 AI 代理通过 MCP（Model Context Protocol）协议直接查询图谱，一次调用就能获得完整的上下文。
+CodeGraph 是一个开源的代码知识图谱工具，48.9k stars。它用 tree-sitter 解析代码，提取所有符号（函数、类、变量）和关系（调用、导入、继承），存入 SQLite 数据库。AI 代理（Claude Code、Cursor、Codex 等）通过 MCP 协议直接查询图谱，一次调用就能获得完整的上下文，替代传统 `grep` 搜索 + `read` 读文件的往返模式。
 
 48.9k stars，在 7 个真实代码库上的基准测试显示：减少约 16% 的成本、47% 的 token 用量、58% 的工具调用次数，提升约 22% 的响应速度。
 
@@ -205,18 +204,23 @@ stop
 
 ### 源码结构
 
-| 模块 | 路径 | 职责 |
-|------|------|------|
-| 代码解析 | `extraction/` | AST 提取 |
-| 关系建模 | `graph/` | 符号、边 |
-| 查询引擎 | `search/` | FTS5 全文搜索 |
-| 持久化 | `db/` | SQLite schema |
-| 文件同步 | `sync/` | 文件监听、增量更新 |
-| 引用解析 | `resolution/` | 符号引用解析 |
-| MCP 服务 | `mcp/` | MCP 服务器实现 |
-| 上下文构建 | `context/` | Smart Context Building |
-| 安装 | `installer/` | 安装逻辑 |
-| 遥测 | `telemetry/` | 可通过环境变量关闭 |
+从仓库的模块划分能看出 CodeGraph 的职责切分——索引、查询、同步三条主线各自独立，通过 SQLite 图谱解耦：
+
+```text
+codegraph/
+├── extraction/    # AST 提取（tree-sitter 解析 → 符号/边）
+├── graph/         # 关系建模（符号、边的数据结构）
+├── search/        # 查询引擎（FTS5 全文搜索）
+├── db/            # 持久化（SQLite schema、读写）
+├── sync/          # 文件同步（原生 OS 监听、增量更新）
+├── resolution/    # 引用解析（符号引用 → 定义）
+├── mcp/           # MCP 服务器实现（6 个工具的入口）
+├── context/       # Smart Context Building（一次调用组装上下文）
+├── installer/     # 安装逻辑（一键脚本、MCP 配置）
+└── telemetry/     # 遥测（可通过环境变量关闭）
+```
+
+`extraction/` → `graph/` → `db/` 是写入路径（解析→建模→存储），`mcp/` → `search/` + `resolution/` + `context/` 是读取路径（查询→解析→组装上下文），`sync/` 监听文件变化触发写入路径的增量更新。这种读写分离的结构让索引和查询互不阻塞。
 
 ### SQLite Schema（简化）
 
@@ -291,27 +295,20 @@ end
 
 "一次调用、完整上下文"的模式，大幅减少了 token 消耗和工具调用次数。
 
-## 关键设计决策
+## 设计上的权衡
 
-**1. 为什么用 SQLite 而非 Neo4j / Postgres？**
+CodeGraph 的架构选择反映了几组实际的工程取舍：
 
-SQLite 足够强大（支持 FTS5、JSON），100% 本地，零部署成本。代码知识图谱的规模通常不会超过 SQLite 的能力上限（数十万节点、数百万边）。
+| 决策 | 得到的 | 失去的 |
+|------|--------|--------|
+| SQLite 而非 Neo4j/Postgres | 100% 本地、零部署、支持 FTS5 和 JSON，数十万节点规模内性能足够 | 不是图数据库，复杂图遍历（多跳路径查询）要手写 SQL 递归，表达力不如 Cypher |
+| tree-sitter 而非 LSP/正则 | 精确 AST 解析、支持 20+ 语言、增量解析快 | 不做类型推断（LSP 能解析重载/泛型），跨文件类型关系靠引用解析模块近似 |
+| 原生 OS 文件监听（FSEvents/inotify） | 性能最优、能感知其他进程的写入 | 三套平台 API 各自维护，macOS 的 tree-sitter 支持比 Linux/Windows 略少 |
+| 防抖 2000ms 合并写入 | 编辑器自动保存触发的多次写入合并为一次索引更新，避免资源浪费 | 文件改动后最多 2 秒延迟才同步到图谱，依赖最新状态的场景需手动触发 |
+| 17 框架路由检测 | 识别 Django `urls.py`、Express `app.get()` 等 API 入口，理解代码流 | 框架语法各异需逐个写解析规则，新框架支持要等官方更新 |
+| 每仓库独立建图 | 实现简单、隔离清晰 | 跨仓库的调用关系无法直接查询，需额外配置 |
 
-**2. 为什么用 tree-sitter 而非 LSP / 正则？**
-
-tree-sitter 提供精确的 AST 解析，支持 20+ 种语言，且性能极好（增量解析）。LSP 需要启动语言服务器，开销大；正则无法处理嵌套结构和多行定义。
-
-**3. 为什么文件监听用原生 API？**
-
-FSEvents（macOS）、inotify（Linux）、ReadDirectoryChangesW（Windows）是 OS 原生的文件监听机制，性能最优，且能感知文件系统级别的变更（包括其他进程的写入）。
-
-**4. 为什么要防抖？**
-
-编辑器保存文件时，可能触发多次快速写入（如自动保存）。防抖（默认 2000ms）把这些写入合并为一次索引更新，避免资源浪费。
-
-**5. 为什么支持 17 个框架的路由检测？**
-
-路由文件（如 Django 的 `urls.py`、Express 的 `app.get()`）是 API 入口，对理解代码流至关重要。但它们的语法各不相同，需要专门的解析规则。
+最核心的判断是第一条：**用 SQLite 而非图数据库**。代码知识图谱的查询模式以「符号 + 邻居」为主（一个函数调用了谁、被谁调用），多跳路径查询很少——这种模式 SQLite 完全能胜任，换来零部署成本。代价是当你要做「找出所有间接依赖模块 X 的代码」这类深度图遍历时，SQL 递归 CTE 的表达力不如 Cypher 优雅，但这是低频场景。
 
 ## 适用场景与局限
 

@@ -2,12 +2,13 @@
 title: "ai-website-cloner-template：用 AI 编程 agent 把网站逆向成 Next.js 代码"
 description: "ai-website-cloner-template 是一个 GitHub 模板仓库，用一条 /clone-website 命令让 AI 编程 agent 通过浏览器自动化把任意网站逆向成干净的 Next.js 代码，而不是抓 HTML 或截图复刻。"
 date: 2026-06-26
-category: "前端开发"
+category: "应用开发"
+subcategory: "Web 与客户端"
 tags: ["ai-agent", "claude-code", "nextjs", "web-scraping", "typescript"]
 draft: false
 ---
 
-## ai-website-cloner-template：用 AI 编程 agent 把网站逆向成 Next.js 代码
+## 简介
 
 ai-website-cloner-template 是一个 GitHub 模板仓库，让 AI 编程 agent 用一条命令把任意网站"克隆"成一个干净、现代的 Next.js 代码库。注意：它**不是抓 HTML，也不是截图转图片复刻**，而是通过浏览器自动化提取真实的计算样式和资产，把页面逆向重建成结构化、强类型的 React 组件代码。
 

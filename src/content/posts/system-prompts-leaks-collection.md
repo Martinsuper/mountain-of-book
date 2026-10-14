@@ -3,6 +3,7 @@ title: "system_prompts_leaks：42k Star 项目如何揭开 AI 系统提示词的
 description: "分析 GitHub 上 42.7k star 的 system_prompts_leaks 项目，解读 Claude Fable 5、GPT-5.5、Gemini 3.5 Flash、Grok 等主流 AI 产品的 system prompt 设计思路、架构模式与工程权衡。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "LLM 与模型推理"
 tags: ["system-prompts", "claude", "chatgpt", "gemini", "prompt-engineering"]
 draft: false
 ---

@@ -3,6 +3,7 @@ title: "扒开主流 AI 工具的系统提示词：从 140k Star 仓库里能学
 description: "GitHub 上 140k Star 的 system-prompts-and-models-of-ai-tools 仓库收录了 Claude Code、Cursor、Devin、Windsurf、Perplexity 等 26 款主流 AI 工具的系统提示词和内部模型信息。本文从工程视角分析这些提示词的结构差异、设计思路和可借鉴之处。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "Agent 与 AI 编程"
 tags: ["system-prompts", "claude-code", "cursor", "ai-tools", "prompt-engineering"]
 draft: false
 ---
@@ -181,10 +182,6 @@ Cursor 维护了 4 个 Agent Prompt 版本（v1.0 → v2.0）加上独立的 Cha
 ## 局限性
 
 仓库内容来自公开渠道，存在时效性（AI 工具提示词更新频繁）、完整性（部分工具只收录了部分提示词）和真实性验证的问题。把它当作"参考资料"而非"标准文档"来使用更为合理。
-
-## 小结
-
-系统提示词是 AI Agent 产品的"宪法"。这个仓库的价值在于让你能站在整个行业的视角，看到不同产品团队如何用自然语言定义 Agent 的行为边界。对做 Agent 产品的人来说，这些提示词是最好的参考教材——不是照搬措辞，而是理解不同场景下的设计权衡：什么时候该简洁，什么时候该详细；什么时候该主动，什么时候该请示；什么时候用规则约束，什么时候用示例引导。
 
 ## 参考资料
 

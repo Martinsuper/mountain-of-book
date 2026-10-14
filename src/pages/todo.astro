@@ -5,130 +5,56 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout title="待办清单" description="基于四象限理论的任务管理">
   <div class="todo-page">
-    <!-- 页面标题 -->
     <header class="todo-header">
-      <h1>📋 待办清单</h1>
-      <p class="todo-subtitle">基于艾森豪威尔矩阵，高效管理你的任务</p>
+      <div><h1>待办清单</h1><p class="todo-subtitle">按轻重缓急管理任务。</p></div>
       <div class="todo-actions">
-        <div class="search-wrapper">
-          <input type="text" id="searchInput" placeholder="搜索任务..." class="search-input" />
-          <button class="search-clear-btn" id="searchClearBtn" title="清除搜索">×</button>
-        </div>
-        <button id="addTaskBtn" class="add-task-btn">+ 新任务</button>
-        <button id="batchModeBtn" class="batch-mode-btn">批量操作</button>
-        <button id="clearCompletedBtn" class="clear-completed-btn">清除已完成</button>
-        <button class="export-btn" id="exportJsonBtn" title="导出 JSON">导出 JSON</button>
-        <button class="export-btn" id="exportCsvBtn" title="导出 CSV">导出 CSV</button>
+        <button id="addTaskBtn" class="add-task-btn">＋ 新任务</button>
+        <details class="todo-more"><summary aria-label="更多操作">更多 ···</summary><div class="todo-more-menu">
+          <button id="batchModeBtn">批量操作</button><button id="clearCompletedBtn">清除已完成</button>
+          <button id="exportJsonBtn">导出 JSON</button><button id="exportCsvBtn">导出 CSV</button>
+        </div></details>
       </div>
     </header>
-
-    <!-- 左右分栏：左四象限+统计，右日历 -->
+    <div class="stats-panel" aria-label="任务统计" aria-live="polite">
+      <span><b id="stat-pending">0</b> 待办</span><span><b id="stat-today">0</b> 今天到期</span><span><b id="stat-completed">0</b> 已完成</span>
+    </div>
+    <div class="todo-toolbar">
+      <div class="todo-filters" aria-label="按象限筛选">
+        <button class="todo-filter active" data-filter="0" aria-pressed="true">全部任务</button>
+        <button class="todo-filter quadrant-card" data-filter="1" data-quadrant="1" aria-pressed="false">立即处理 <span id="count-q1">0</span></button>
+        <button class="todo-filter quadrant-card" data-filter="2" data-quadrant="2" aria-pressed="false">计划安排 <span id="count-q2">0</span></button>
+        <button class="todo-filter quadrant-card" data-filter="3" data-quadrant="3" aria-pressed="false">委托简化 <span id="count-q3">0</span></button>
+        <button class="todo-filter quadrant-card" data-filter="4" data-quadrant="4" aria-pressed="false">暂缓处理 <span id="count-q4">0</span></button>
+      </div>
+      <div class="search-wrapper"><input type="search" id="searchInput" placeholder="搜索任务…" aria-label="搜索任务" class="search-input" /><button id="searchClearBtn" class="search-clear-btn" aria-label="清除搜索">×</button></div>
+    </div>
     <div class="todo-split">
       <div class="todo-col-left">
-        <!-- 四象限网格 -->
-        <div class="quadrant-grid">
-      <!-- Q1: 重要且紧急 -->
-      <div class="quadrant-card quadrant-q1" data-quadrant="1">
-        <div class="quadrant-header">
-          <div class="quadrant-icon">🔥</div>
-          <div class="quadrant-info">
-            <h2 class="quadrant-title">重要且紧急</h2>
-            <p class="quadrant-desc">立即处理</p>
-          </div>
-          <span class="quadrant-count" id="count-q1">0</span>
+        <div class="focus-list">
+          <section id="group-overdue"><h2 class="task-group-title">已逾期 <span id="count-overdue"></span></h2><div class="task-list" id="list-overdue"></div></section>
+          <section id="group-today"><h2 class="task-group-title">今天 <span id="count-today"></span></h2><div class="task-list" id="list-today"></div></section>
+          <section id="group-upcoming"><h2 class="task-group-title">接下来 <span id="count-upcoming"></span></h2><div class="task-list" id="list-upcoming"></div></section>
+          <section id="group-unscheduled"><h2 class="task-group-title">未安排日期 <span id="count-unscheduled"></span></h2><div class="task-list" id="list-unscheduled"></div></section>
+          <div id="taskEmpty" class="task-empty" hidden>暂无待办，添加一件想完成的事。</div>
+          <button class="list-add-btn" id="listAddBtn">＋ 添加任务</button>
         </div>
-        <div class="task-list" id="list-q1">
-          <!-- 任务项将通过 JS 渲染 -->
-        </div>
-        <button class="quadrant-add-btn" data-quadrant="1">
-          <span>+ 添加任务</span>
-        </button>
+        <p class="todo-hint">拖动任务到上方象限筛选，可调整任务分类。</p>
       </div>
-
-      <!-- Q2: 重要但不紧急 -->
-      <div class="quadrant-card quadrant-q2" data-quadrant="2">
-        <div class="quadrant-header">
-          <div class="quadrant-icon">📅</div>
-          <div class="quadrant-info">
-            <h2 class="quadrant-title">重要不紧急</h2>
-            <p class="quadrant-desc">规划安排</p>
-          </div>
-          <span class="quadrant-count" id="count-q2">0</span>
+      <aside class="todo-col-right">
+        <div class="calendar-view" id="calendarView">
+          <div class="cal-toolbar"><button class="cal-nav-btn" id="prevMonthBtn" aria-label="上个月">‹</button><span class="cal-title" id="calTitle"></span><button class="cal-nav-btn" id="nextMonthBtn" aria-label="下个月">›</button><button class="cal-today-btn" id="todayBtn">今天</button></div>
+          <div class="cal-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+          <div class="cal-grid" id="calGrid"></div><div class="cal-unscheduled" id="calUnscheduled"></div>
+          <p class="todo-hint">点击日期新建任务，点击圆点查看详情。拖动日历任务可调整日期。</p>
         </div>
-        <div class="task-list" id="list-q2">
-          <!-- 任务项将通过 JS 渲染 -->
-        </div>
-        <button class="quadrant-add-btn" data-quadrant="2">
-          <span>+ 添加任务</span>
-        </button>
-      </div>
-
-      <!-- Q3: 不重要但紧急 -->
-      <div class="quadrant-card quadrant-q3" data-quadrant="3">
-        <div class="quadrant-header">
-          <div class="quadrant-icon">📞</div>
-          <div class="quadrant-info">
-            <h2 class="quadrant-title">不重要紧急</h2>
-            <p class="quadrant-desc">委托简化</p>
-          </div>
-          <span class="quadrant-count" id="count-q3">0</span>
-        </div>
-        <div class="task-list" id="list-q3">
-          <!-- 任务项将通过 JS 渲染 -->
-        </div>
-        <button class="quadrant-add-btn" data-quadrant="3">
-          <span>+ 添加任务</span>
-        </button>
-      </div>
-
-      <!-- Q4: 不重要且不紧急 -->
-      <div class="quadrant-card quadrant-q4" data-quadrant="4">
-        <div class="quadrant-header">
-          <div class="quadrant-icon">🗑️</div>
-          <div class="quadrant-info">
-            <h2 class="quadrant-title">不重要不紧急</h2>
-            <p class="quadrant-desc">删除延后</p>
-          </div>
-          <span class="quadrant-count" id="count-q4">0</span>
-        </div>
-        <div class="task-list" id="list-q4">
-          <!-- 任务项将通过 JS 渲染 -->
-        </div>
-        <button class="quadrant-add-btn" data-quadrant="4">
-          <span>+ 添加任务</span>
-        </button>
-      </div>
+        <div class="todo-progress"><h2>完成进度</h2><div class="progress-track"><div id="taskProgress"></div></div><p><span id="stat-rate">0%</span> · 共 <span id="stat-total">0</span> 项任务</p></div>
+      </aside>
     </div>
-      </div><!-- /.todo-col-left -->
-
-      <div class="todo-col-right">
-      <!-- 日历视图 -->
-      <div class="calendar-view" id="calendarView">
-      <div class="cal-toolbar">
-        <button class="cal-nav-btn" id="prevMonthBtn" title="上个月">‹</button>
-        <span class="cal-title" id="calTitle"></span>
-        <button class="cal-nav-btn" id="nextMonthBtn" title="下个月">›</button>
-        <button class="cal-today-btn" id="todayBtn">回今天</button>
-      </div>
-      <div class="cal-weekdays">
-        <span class="cal-weekday">一</span>
-        <span class="cal-weekday">二</span>
-        <span class="cal-weekday">三</span>
-        <span class="cal-weekday">四</span>
-        <span class="cal-weekday">五</span>
-        <span class="cal-weekday cal-weekend">六</span>
-        <span class="cal-weekday cal-weekend">日</span>
-      </div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div class="cal-unscheduled" id="calUnscheduled"></div>
-      </div><!-- /#calendarView -->
-      </div><!-- /.todo-col-right -->
-    </div><!-- /.todo-split -->
 
     <!-- 归档：已完成任务（可折叠，通栏） -->
     <div class="todo-archive collapsed" id="todoArchive">
       <button class="archive-header" id="archiveToggle" aria-expanded="false">
-        <span class="archive-title">✅ 已完成</span>
+        <span class="archive-title">已完成</span>
         <span class="archive-count" id="archiveCount">0</span>
         <span class="archive-arrow" aria-hidden="true">▾</span>
       </button>
@@ -161,10 +87,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="form-group">
           <label>选择象限</label>
           <div class="quadrant-selector">
-            <button class="quadrant-btn active" data-quadrant="1">🔴 Q1 重要紧急</button>
-            <button class="quadrant-btn" data-quadrant="2">🔵 Q2 重要规划</button>
-            <button class="quadrant-btn" data-quadrant="3">🟠 Q3 紧急次要</button>
-            <button class="quadrant-btn" data-quadrant="4">⚪ Q4 低优先</button>
+            <button class="quadrant-btn active" data-quadrant="1">Q1 重要紧急</button>
+            <button class="quadrant-btn" data-quadrant="2">Q2 重要规划</button>
+            <button class="quadrant-btn" data-quadrant="3">Q3 紧急次要</button>
+            <button class="quadrant-btn" data-quadrant="4">Q4 低优先</button>
           </div>
         </div>
         <div class="form-group">
@@ -207,10 +133,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="form-group">
           <label>选择象限</label>
           <div class="quadrant-selector" id="editQuadrantSelector">
-            <button class="quadrant-btn" data-quadrant="1">🔴 Q1 重要紧急</button>
-            <button class="quadrant-btn" data-quadrant="2">🔵 Q2 重要规划</button>
-            <button class="quadrant-btn" data-quadrant="3">🟠 Q3 紧急次要</button>
-            <button class="quadrant-btn" data-quadrant="4">⚪ Q4 低优先</button>
+            <button class="quadrant-btn" data-quadrant="1">Q1 重要紧急</button>
+            <button class="quadrant-btn" data-quadrant="2">Q2 重要规划</button>
+            <button class="quadrant-btn" data-quadrant="3">Q3 紧急次要</button>
+            <button class="quadrant-btn" data-quadrant="4">Q4 低优先</button>
           </div>
         </div>
         <div class="form-group">
@@ -309,1782 +235,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <style is:inline>
-  .todo-page {
-    padding: 1rem 0;
-    /* 突破 main 的 max-w-4xl，加宽到约 1400px 并居中 */
-    width: min(1400px, 100vw - 2rem);
-    margin-left: calc(50% - min(1400px, 100vw - 2rem) / 2);
-    margin-right: calc(50% - min(1400px, 100vw - 2rem) / 2);
-  }
 
-  /* 左右分栏：左四象限+统计，右日历 */
-  .todo-split {
-    display: flex;
-    gap: 1.5rem;
-    align-items: stretch;
-  }
-
-  .todo-col-left,
-  .todo-col-right {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  /* 窄屏：取消加宽，上下堆叠 */
-  @media (max-width: 1100px) {
-    .todo-page {
-      width: auto;
-      margin-left: 0;
-      margin-right: 0;
-    }
-    .todo-split {
-      flex-direction: column;
-    }
-  }
-
-  /* 页面头部 */
-  .todo-header {
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .todo-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .todo-subtitle {
-    color: #666;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-  }
-
-  .dark .todo-subtitle {
-    color: #aaa;
-  }
-
-  .todo-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .search-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
-  .search-input {
-    padding: 0.5rem 2rem 0.5rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 25px;
-    font-size: 0.9rem;
-    width: 200px;
-    transition: all 0.2s ease;
-  }
-
-  .search-clear-btn {
-    position: absolute;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 1.1rem;
-    color: #9ca3af;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-    transition: color 0.2s ease;
-  }
-
-  .search-clear-btn:hover {
-    color: #ef4444;
-  }
-
-  .dark .search-clear-btn {
-    color: #6b7280;
-  }
-
-  .dark .search-clear-btn:hover {
-    color: #f87171;
-  }
-
-  .dark .search-input {
-    background: #1f2937;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
-
-  .search-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .add-task-btn {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: #fff;
-    border: none;
-    padding: 0.5rem 1.5rem;
-    border-radius: 25px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .add-task-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-  }
-
-  .batch-mode-btn,
-  .clear-completed-btn {
-    background: #f3f4f6;
-    color: #4b5563;
-    border: 1px solid #e5e7eb;
-    padding: 0.5rem 1rem;
-    border-radius: 25px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .dark .batch-mode-btn,
-  .dark .clear-completed-btn {
-    background: #374151;
-    color: #d1d5db;
-    border-color: #4b5563;
-  }
-
-  .batch-mode-btn:hover,
-  .clear-completed-btn:hover {
-    background: #e5e7eb;
-    transform: translateY(-1px);
-  }
-
-  .dark .batch-mode-btn:hover,
-  .dark .clear-completed-btn:hover {
-    background: #4b5563;
-  }
-
-  .batch-mode-btn.active {
-    background: #3b82f6;
-    color: #fff;
-    border-color: #3b82f6;
-  }
-
-  .clear-completed-btn:hover {
-    color: #ef4444;
-    border-color: #fecaca;
-  }
-
-  .dark .clear-completed-btn:hover {
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.3);
-  }
-
-  /* 批量操作面板 */
-  .batch-actions-panel {
-    display: none;
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #fff;
-    border-radius: 12px;
-    padding: 1rem 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    z-index: 100;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .dark .batch-actions-panel {
-    background: #1f2937;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .batch-actions-panel.show {
-    display: flex;
-  }
-
-  .batch-actions-panel .selected-count {
-    font-weight: 600;
-    color: #3b82f6;
-  }
-
-  .batch-actions-panel .btn-batch-complete,
-  .batch-actions-panel .btn-batch-delete {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s ease;
-  }
-
-  .batch-actions-panel .btn-batch-complete {
-    background: #10b981;
-    color: #fff;
-  }
-
-  .batch-actions-panel .btn-batch-delete {
-    background: #ef4444;
-    color: #fff;
-  }
-
-  .batch-actions-panel .btn-batch-complete:hover {
-    background: #059669;
-  }
-
-  .batch-actions-panel .btn-batch-delete:hover {
-    background: #dc2626;
-  }
-
-  /* 批量选择复选框 */
-  .task-batch-checkbox {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    border: 2px solid #d1d5db;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    background: #fff;
-    margin-right: 0.5rem;
-  }
-
-  .dark .task-batch-checkbox {
-    border-color: #4b5563;
-    background: #111827;
-  }
-
-  .batch-mode .task-batch-checkbox {
-    display: flex;
-  }
-
-  .task-batch-checkbox.checked {
-    background: #3b82f6;
-    border-color: #3b82f6;
-  }
-
-  .task-batch-checkbox.checked::after {
-    content: '✓';
-    color: #fff;
-    font-size: 0.7rem;
-    font-weight: bold;
-  }
-
-  /* 移动端响应式 */
-  @media (max-width: 640px) {
-    .todo-actions {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.75rem;
-    }
-
-    .search-wrapper {
-      width: 100%;
-    }
-
-    .search-input {
-      width: 100%;
-    }
-
-    .add-task-btn,
-    .batch-mode-btn,
-    .clear-completed-btn,
-    .export-btn {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .modal {
-      width: 95%;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .modal-body {
-      padding: 1rem;
-    }
-
-    .quadrant-selector,
-    .priority-selector {
-      flex-direction: column;
-    }
-
-    .quadrant-btn,
-    .priority-btn {
-      width: 100%;
-    }
-  }
-
-  /* 任务详情弹窗 */
-  .detail-section {
-    margin-bottom: 1rem;
-  }
-
-  .detail-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #888;
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .dark .detail-label {
-    color: #9ca3af;
-  }
-
-  .detail-value {
-    font-size: 1rem;
-    color: #333;
-    margin: 0;
-  }
-
-  .dark .detail-value {
-    color: #f3f4f6;
-  }
-
-  .detail-desc-full {
-    white-space: pre-wrap;
-    line-height: 1.6;
-  }
-
-  .detail-meta-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  @media (max-width: 640px) {
-    .detail-meta-row {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  .detail-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 500;
-  }
-
-  .detail-badge.q1 { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-  .detail-badge.q2 { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-  .detail-badge.q3 { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-  .detail-badge.q4 { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
-
-  .detail-badge.high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-  .detail-badge.medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-  .detail-badge.low { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
-
-  .detail-badge.completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-  .detail-badge.pending { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-
-  .btn-edit {
-    background: #3b82f6;
-    color: #fff;
-    padding: 0.5rem 1.25rem;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-
-  .btn-edit:hover {
-    background: #2563eb;
-  }
-
-  /* Undo Toast */
-  .undo-toast {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1f2937;
-    color: #fff;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    display: none;
-    align-items: center;
-    gap: 1rem;
-    animation: slideUp 0.3s ease;
-  }
-
-  .undo-toast.show {
-    display: flex;
-  }
-
-  @keyframes slideUp {
-    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-    to { transform: translateX(-50%) translateY(0); opacity: 1; }
-  }
-
-  .undo-message {
-    font-size: 0.9rem;
-  }
-
-  .undo-btn {
-    background: #3b82f6;
-    color: #fff;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .undo-btn:hover {
-    background: #2563eb;
-  }
-
-  /* 导出按钮（已并入顶部操作区） */
-  .export-btn {
-    background: #f3f4f6;
-    color: #4b5563;
-    border: 1px solid #e5e7eb;
-    padding: 0.5rem 1rem;
-    border-radius: 25px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .dark .export-btn {
-    background: #374151;
-    color: #d1d5db;
-    border-color: #4b5563;
-  }
-
-  .export-btn:hover {
-    background: #e5e7eb;
-    color: #3b82f6;
-  }
-
-  .dark .export-btn:hover {
-    background: #4b5563;
-    color: #60a5fa;
-  }
-
-  /* 任务项可点击查看详情 */
-  .task-title {
-    cursor: pointer;
-  }
-
-  .task-title:hover {
-    color: #3b82f6;
-  }
-
-  .dark .task-title:hover {
-    color: #60a5fa;
-  }
-
-  /* 四象限网格 */
-  .quadrant-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 0;
-    height: 100%;
-  }
-
-  @media (max-width: 768px) {
-    .quadrant-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: none;
-      gap: 1rem;
-      height: auto;
-    }
-  }
-
-  /* 象限卡片 */
-  .quadrant-card {
-    border-radius: 16px;
-    padding: 1rem;
-    min-height: 300px;
-    min-width: 0;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-  }
-
-  .quadrant-q1 {
-    background: rgba(239, 68, 68, 0.05);
-    border-color: rgba(239, 68, 68, 0.3);
-  }
-
-  .dark .quadrant-q1 {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.5);
-  }
-
-  .quadrant-q2 {
-    background: rgba(59, 130, 246, 0.05);
-    border-color: rgba(59, 130, 246, 0.3);
-  }
-
-  .dark .quadrant-q2 {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.5);
-  }
-
-  .quadrant-q3 {
-    background: rgba(245, 158, 11, 0.05);
-    border-color: rgba(245, 158, 11, 0.3);
-  }
-
-  .dark .quadrant-q3 {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.5);
-  }
-
-  .quadrant-q4 {
-    background: rgba(107, 114, 128, 0.05);
-    border-color: rgba(107, 114, 128, 0.3);
-  }
-
-  .dark .quadrant-q4 {
-    background: rgba(107, 114, 128, 0.15);
-    border-color: rgba(107, 114, 128, 0.5);
-  }
-
-  .quadrant-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  }
-
-  .dark .quadrant-card:hover {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  }
-
-  .quadrant-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .dark .quadrant-header {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-  }
-
-  :not(.dark) .quadrant-header {
-    border-bottom-color: rgba(0, 0, 0, 0.1);
-  }
-
-  .quadrant-icon {
-    font-size: 1.5rem;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .dark .quadrant-icon {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  :not(.dark) .quadrant-icon {
-    background: rgba(0, 0, 0, 0.05);
-  }
-
-  .quadrant-info {
-    flex: 1;
-  }
-
-  .quadrant-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-  }
-
-  .quadrant-q1 .quadrant-title { color: #ef4444; }
-  .quadrant-q2 .quadrant-title { color: #3b82f6; }
-  .quadrant-q3 .quadrant-title { color: #f59e0b; }
-  .quadrant-q4 .quadrant-title { color: #6b7280; }
-
-  .quadrant-desc {
-    font-size: 0.75rem;
-    color: #888;
-    margin: 0;
-  }
-
-  .quadrant-count {
-    background: rgba(0, 0, 0, 0.1);
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .dark .quadrant-count {
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .quadrant-q1 .quadrant-count { color: #ef4444; }
-  .quadrant-q2 .quadrant-count { color: #3b82f6; }
-  .quadrant-q3 .quadrant-count { color: #f59e0b; }
-  .quadrant-q4 .quadrant-count { color: #6b7280; }
-
-  /* 任务列表 */
-  .task-list {
-    flex: 1;
-    min-height: 150px;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    padding: 0.25rem;
-  }
-
-  .task-list:empty::after {
-    content: '暂无任务';
-    color: #9ca3af;
-    font-size: 0.85rem;
-    text-align: center;
-    padding: 2rem 1rem;
-    display: block;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 12px;
-    border: 1px dashed #d1d5db;
-  }
-
-  .dark .task-list:empty::after {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: #374151;
-  }
-
-  /* 任务项卡片样式 */
-  .task-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    animation: fadeInUp 0.3s ease;
-    position: relative;
-    cursor: grab;
-    max-height: 120px;
-    overflow: hidden;
-  }
-
-  .dark .task-item {
-    background: #1f2937;
-    border-color: #374151;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .task-item:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-    border-color: #d1d5db;
-  }
-
-  .dark .task-item:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border-color: #4b5563;
-  }
-
-  /* Q1 任务卡片特殊样式 */
-  .quadrant-q1 .task-item:hover {
-    border-color: rgba(239, 68, 68, 0.4);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
-  }
-
-  /* Q2 任务卡片特殊样式 */
-  .quadrant-q2 .task-item:hover {
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  }
-
-  /* Q3 任务卡片特殊样式 */
-  .quadrant-q3 .task-item:hover {
-    border-color: rgba(245, 158, 11, 0.4);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
-  }
-
-  /* Q4 任务卡片特殊样式 */
-  .quadrant-q4 .task-item:hover {
-    border-color: rgba(107, 114, 128, 0.4);
-    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.15);
-  }
-
-  .task-item.completed {
-    opacity: 0.7;
-    background: #f9fafb;
-    border-color: #e5e7eb;
-  }
-
-  .dark .task-item.completed {
-    background: #111827;
-    border-color: #1f2937;
-  }
-
-  .task-item.completed .task-title {
-    text-decoration: line-through;
-    color: #9ca3af;
-  }
-
-  .task-item.dragging {
-    opacity: 0.5;
-    transform: scale(1.02);
-    cursor: grabbing;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    border: 2px dashed #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
-  }
-
-  .dark .task-item.dragging {
-    border-color: #60a5fa;
-    background: rgba(59, 130, 246, 0.2);
-  }
-
-  /* 拖拽占位符 */
-  .drag-placeholder {
-    height: 60px;
-    border: 2px dashed #3b82f6;
-    border-radius: 12px;
-    background: rgba(59, 130, 246, 0.05);
-    margin: 0.5rem 0;
-    transition: all 0.2s ease;
-  }
-
-  .dark .drag-placeholder {
-    border-color: #60a5fa;
-    background: rgba(59, 130, 246, 0.1);
-  }
-
-  /* 象限卡片拖拽悬停效果 */
-  .quadrant-card.drag-over {
-    transform: scale(1.02);
-    transition: transform 0.2s ease;
-  }
-
-  .quadrant-q1.drag-over {
-    border-color: rgba(239, 68, 68, 0.6);
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
-  }
-
-  .quadrant-q2.drag-over {
-    border-color: rgba(59, 130, 246, 0.6);
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
-  }
-
-  .quadrant-q3.drag-over {
-    border-color: rgba(245, 158, 11, 0.6);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
-  }
-
-  .quadrant-q4.drag-over {
-    border-color: rgba(107, 114, 128, 0.6);
-    box-shadow: 0 0 20px rgba(107, 114, 128, 0.2);
-  }
-
-  /* 拖拽提示文字 */
-  .quadrant-card.drag-over::after {
-    content: '拖放到此处';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.85rem;
-    font-weight: 600;
-    opacity: 0.7;
-    pointer-events: none;
-  }
-
-  .quadrant-q1.drag-over::after { color: #ef4444; }
-  .quadrant-q2.drag-over::after { color: #3b82f6; }
-  .quadrant-q3.drag-over::after { color: #f59e0b; }
-  .quadrant-q4.drag-over::after { color: #6b7280; }
-
-  .task-item.due-warning {
-    border-color: #ef4444;
-    animation: duePulse 1s ease infinite;
-  }
-
-  @keyframes duePulse {
-    0%, 100% { box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
-    50% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25); }
-  }
-
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* 复选框样式 */
-  .task-checkbox {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    border: 2px solid #d1d5db;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    background: #fff;
-  }
-
-  .dark .task-checkbox {
-    border-color: #4b5563;
-    background: #111827;
-  }
-
-  .task-checkbox:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-  }
-
-  .dark .task-checkbox:hover {
-    background: #1e3a5f;
-  }
-
-  .task-checkbox.checked {
-    background: #10b981;
-    border-color: #10b981;
-  }
-
-  .task-checkbox.checked::after {
-    content: '✓';
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: bold;
-  }
-
-  .task-content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    overflow: hidden;
-  }
-
-  .task-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-    line-height: 1.4;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-
-  .task-desc {
-    font-size: 0.85rem;
-    color: #6b7280;
-    margin: 0;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    overflow-wrap: anywhere;
-  }
-
-  .dark .task-desc {
-    color: #9ca3af;
-  }
-
-  .task-meta {
-    display: flex;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: #9ca3af;
-    margin-top: 0.25rem;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  .dark .task-meta {
-    color: #6b7280;
-  }
-
-  .task-due {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    white-space: nowrap;
-  }
-
-  .task-due.overdue {
-    color: #ef4444;
-  }
-
-  .task-priority {
-    padding: 0.1rem 0.4rem;
-    border-radius: 10px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .task-priority.high {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-  }
-
-  .task-priority.medium {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-  }
-
-  .task-priority.low {
-    background: rgba(107, 114, 128, 0.15);
-    color: #6b7280;
-  }
-
-  /* 操作按钮 */
-  .task-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    flex-shrink: 0;
-  }
-
-  .task-item:hover .task-actions {
-    opacity: 1;
-  }
-
-  .task-action-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-  }
-
-  .dark .task-action-btn {
-    border-color: #374151;
-    background: #1f2937;
-  }
-
-  .task-action-btn:hover {
-    background: #f3f4f6;
-    transform: scale(1.05);
-  }
-
-  .dark .task-action-btn:hover {
-    background: #374151;
-  }
-
-  .task-action-btn.delete:hover {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #ef4444;
-  }
-
-  .dark .task-action-btn.delete:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
-  }
-
-  .task-action-btn.edit:hover {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #3b82f6;
-  }
-
-  .dark .task-action-btn.edit:hover {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
-  }
-
-  /* 象限添加按钮 */
-  .quadrant-add-btn {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px dashed rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    color: #888;
-    font-size: 0.85rem;
-    transition: all 0.2s ease;
-  }
-
-  .dark .quadrant-add-btn {
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .quadrant-add-btn:hover {
-    border-style: solid;
-    background: rgba(255, 255, 255, 0.05);
-    color: #3b82f6;
-  }
-
-  .dark .quadrant-add-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  /* 弹窗样式 */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .modal-overlay.show {
-    display: flex;
-    opacity: 1;
-  }
-
-  .modal {
-    background: #fff;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 480px;
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
-    overflow: hidden;
-  }
-
-  .dark .modal {
-    background: #1f2937;
-  }
-
-  .modal-overlay.show .modal {
-    transform: scale(1);
-  }
-
-  .modal-small {
-    max-width: 320px;
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .dark .modal-header {
-    border-bottom-color: #374151;
-  }
-
-  .modal-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-  }
-
-  .modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #888;
-    line-height: 1;
-    padding: 0;
-  }
-
-  .modal-close:hover {
-    color: #333;
-  }
-
-  .dark .modal-close:hover {
-    color: #fff;
-  }
-
-  .modal-body {
-    padding: 1.5rem;
-  }
-
-  .modal-body p {
-    margin: 0;
-    color: #666;
-  }
-
-  .dark .modal-body p {
-    color: #aaa;
-  }
-
-  .form-group {
-    margin-bottom: 1rem;
-  }
-
-  .form-group:last-child {
-    margin-bottom: 0;
-  }
-
-  .form-group label {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-  }
-
-  .form-group input,
-  .form-group textarea {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-  }
-
-  .dark .form-group input,
-  .dark .form-group textarea {
-    background: #111827;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
-
-  .form-group input:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  /* 象限选择器 */
-  .quadrant-selector,
-  .priority-selector {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .quadrant-btn,
-  .priority-btn {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s ease;
-  }
-
-  .dark .quadrant-btn,
-  .dark .priority-btn {
-    border-color: #4b5563;
-  }
-
-  .quadrant-btn:hover,
-  .priority-btn:hover {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
-  }
-
-  .quadrant-btn.active,
-  .priority-btn.active {
-    background: #3b82f6;
-    color: #fff;
-    border-color: #3b82f6;
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #e5e7eb;
-  }
-
-  .dark .modal-footer {
-    border-top-color: #374151;
-  }
-
-  .btn-cancel,
-  .btn-submit,
-  .btn-delete,
-  .btn-delete-confirm {
-    padding: 0.5rem 1.25rem;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-  }
-
-  .btn-cancel {
-    background: #e5e7eb;
-    color: #333;
-  }
-
-  .dark .btn-cancel {
-    background: #374151;
-    color: #f3f4f6;
-  }
-
-  .btn-cancel:hover {
-    background: #d1d5db;
-  }
-
-  .dark .btn-cancel:hover {
-    background: #4b5563;
-  }
-
-  .btn-submit {
-    background: #3b82f6;
-    color: #fff;
-  }
-
-  .btn-submit:hover {
-    background: #2563eb;
-  }
-
-  .btn-delete,
-  .btn-delete-confirm {
-    background: #ef4444;
-    color: #fff;
-  }
-
-  .btn-delete:hover,
-  .btn-delete-confirm:hover {
-    background: #dc2626;
-  }
-
-  /* 完成动画粒子 */
-  .completion-particles {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  .particle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-
-  @keyframes particleBurst {
-    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0); opacity: 0; }
-  }
-
-  /* ============ 日历视图 ============ */
-  .cal-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-
-  .cal-nav-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    color: #4b5563;
-    font-size: 1.25rem;
-    line-height: 1;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .dark .cal-nav-btn {
-    background: #1f2937;
-    border-color: #4b5563;
-    color: #d1d5db;
-  }
-
-  .cal-nav-btn:hover {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    color: #3b82f6;
-  }
-
-  .dark .cal-nav-btn:hover {
-    background: rgba(59, 130, 246, 0.15);
-  }
-
-  .cal-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    min-width: 7rem;
-    text-align: center;
-  }
-
-  .cal-today-btn {
-    background: #f3f4f6;
-    color: #4b5563;
-    border: 1px solid #e5e7eb;
-    padding: 0.4rem 1rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .dark .cal-today-btn {
-    background: #374151;
-    color: #d1d5db;
-    border-color: #4b5563;
-  }
-
-  .cal-today-btn:hover {
-    background: #3b82f6;
-    color: #fff;
-    border-color: #3b82f6;
-  }
-
-  .cal-weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    margin-bottom: 0.5rem;
-  }
-
-  .cal-weekday {
-    text-align: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #6b7280;
-    padding: 0.25rem 0;
-  }
-
-  .dark .cal-weekday {
-    color: #9ca3af;
-  }
-
-  .cal-weekday.cal-weekend {
-    color: #ef4444;
-  }
-
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: #e5e7eb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .dark .cal-grid {
-    background: #374151;
-    border-color: #374151;
-  }
-
-  .cal-cell {
-    min-height: 96px;
-    min-width: 0;
-    background: #fff;
-    padding: 0.35rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  .dark .cal-cell {
-    background: #1f2937;
-  }
-
-  .cal-cell:hover {
-    background: #f9fafb;
-  }
-
-  .dark .cal-cell:hover {
-    background: #283548;
-  }
-
-  .cal-cell-other {
-    opacity: 0.4;
-  }
-
-  .cal-cell-today {
-    box-shadow: inset 0 0 0 2px #3b82f6;
-  }
-
-  .cal-cell.cal-drop-over {
-    background: rgba(59, 130, 246, 0.1);
-    box-shadow: inset 0 0 0 2px #3b82f6;
-  }
-
-  .dark .cal-cell.cal-drop-over {
-    background: rgba(59, 130, 246, 0.2);
-  }
-
-  .cal-date {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #6b7280;
-    align-self: flex-start;
-  }
-
-  .dark .cal-date {
-    color: #9ca3af;
-  }
-
-  .cal-cell-today .cal-date {
-    background: #3b82f6;
-    color: #fff;
-    border-radius: 50%;
-    width: 1.4rem;
-    height: 1.4rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .cal-chip {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-size: 0.72rem;
-    padding: 0.15rem 0.35rem;
-    border-radius: 5px;
-    background: rgba(59, 130, 246, 0.08);
-    cursor: grab;
-    white-space: nowrap;
-    overflow: hidden;
-    transition: background 0.15s ease;
-  }
-
-  .dark .cal-chip {
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .cal-chip:hover {
-    background: rgba(59, 130, 246, 0.18);
-  }
-
-  .cal-chip.dragging {
-    opacity: 0.4;
-    cursor: grabbing;
-  }
-
-  .cal-chip.completed .cal-chip-title {
-    text-decoration: line-through;
-    color: #9ca3af;
-  }
-
-  .cal-chip.overdue .cal-chip-time {
-    color: #ef4444;
-    font-weight: 600;
-  }
-
-  .cal-chip-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .cal-chip-dot.high { background: #ef4444; }
-  .cal-chip-dot.medium { background: #f59e0b; }
-  .cal-chip-dot.low { background: #6b7280; }
-
-  .cal-chip-time {
-    color: #6b7280;
-    flex-shrink: 0;
-  }
-
-  .dark .cal-chip-time {
-    color: #9ca3af;
-  }
-
-  .cal-chip-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-  }
-
-  .cal-more {
-    font-size: 0.7rem;
-    color: #3b82f6;
-    cursor: pointer;
-    padding: 0.1rem 0.35rem;
-    border-radius: 10px;
-    background: rgba(59, 130, 246, 0.1);
-    align-self: flex-start;
-  }
-
-  .cal-more:hover {
-    background: rgba(59, 130, 246, 0.2);
-  }
-
-  /* 无截止日期任务区 */
-  .cal-unscheduled {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.02);
-    min-height: 2.5rem;
-  }
-
-  .dark .cal-unscheduled {
-    border-color: #374151;
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  .cal-unscheduled:empty {
-    display: none;
-  }
-
-  .cal-unscheduled-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #9ca3af;
-    margin-right: 0.25rem;
-  }
-
-  @media (max-width: 768px) {
-    .cal-cell {
-      min-height: 64px;
-      padding: 0.2rem;
-    }
-
-    .cal-chip-time {
-      display: none;
-    }
-
-    .cal-chip-title {
-      font-size: 0.65rem;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .cal-title {
-      font-size: 1rem;
-      min-width: 5.5rem;
-    }
-  }
-
-  /* ============ 归档（已完成）面板 ============ */
-  .todo-archive {
-    margin-top: 1.5rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: #fff;
-    overflow: hidden;
-  }
-
-  .dark .todo-archive {
-    background: #1f2937;
-    border-color: #374151;
-  }
-
-  .archive-header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.85rem 1.1rem;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #4b5563;
-    transition: background 0.2s ease;
-  }
-
-  .dark .archive-header {
-    color: #d1d5db;
-  }
-
-  .archive-header:hover {
-    background: rgba(0, 0, 0, 0.03);
-  }
-
-  .dark .archive-header:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .archive-count {
-    min-width: 1.5rem;
-    padding: 0.05rem 0.5rem;
-    border-radius: 999px;
-    background: #f3f4f6;
-    color: #6b7280;
-    font-size: 0.8rem;
-    text-align: center;
-  }
-
-  .dark .archive-count {
-    background: #374151;
-    color: #d1d5db;
-  }
-
-  .archive-arrow {
-    margin-left: auto;
-    font-size: 0.9rem;
-    color: #9ca3af;
-    transition: transform 0.25s ease;
-  }
-
-  .todo-archive.collapsed .archive-arrow {
-    transform: rotate(-90deg);
-  }
-
-  .archive-body {
-    max-height: 60vh;
-    overflow-y: auto;
-    transition: max-height 0.3s ease;
-  }
-
-  .todo-archive.collapsed .archive-body {
-    max-height: 0;
-    overflow: hidden;
-  }
-
-  .archive-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.5rem 1.1rem 1rem;
-  }
-
-  .archive-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0.85rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    background: #f9fafb;
-  }
-
-  .dark .archive-item {
-    border-color: #1f2937;
-    background: #111827;
-  }
-
-  .archive-item-title {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-size: 0.9rem;
-    color: #9ca3af;
-    text-decoration: line-through;
-    cursor: pointer;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .archive-item-title:hover {
-    color: #6b7280;
-  }
-
-  .dark .archive-item-title:hover {
-    color: #d1d5db;
-  }
-
-  .archive-item-time {
-    flex-shrink: 0;
-    font-size: 0.75rem;
-    color: #9ca3af;
-  }
-
-  .archive-item-actions {
-    flex-shrink: 0;
-    display: flex;
-    gap: 0.35rem;
-  }
-
-  .archive-action-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-  }
-
-  .dark .archive-action-btn {
-    border-color: #374151;
-    background: #1f2937;
-  }
-
-  .archive-action-btn.restore:hover {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #3b82f6;
-  }
-
-  .dark .archive-action-btn.restore:hover {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
-  }
-
-  .archive-action-btn.delete:hover {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #ef4444;
-  }
-
-  .dark .archive-action-btn.delete:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
-  }
-
-  .archive-empty {
-    text-align: center;
-    color: #9ca3af;
-    font-size: 0.85rem;
-    padding: 1.5rem 1rem;
-  }
-
-  @media (max-width: 640px) {
-    .archive-item-time {
-      display: none;
-    }
-  }
+.todo-page{--todo-bg:#fff;--todo-text:#111827;--todo-muted:#6b7280;--todo-line:#e5e7eb;--todo-soft:#f9fafb;--todo-accent:#2563eb;--todo-tint:#eff6ff;color:var(--todo-text)}
+.dark .todo-page{--todo-bg:#111827;--todo-text:#f3f4f6;--todo-muted:#9ca3af;--todo-line:#374151;--todo-soft:#1f2937;--todo-accent:#60a5fa;--todo-tint:#1e293b}
+:root[data-theme='purple'] .todo-page{--todo-bg:#fdfdff;--todo-text:#2d2d3a;--todo-muted:#79758d;--todo-line:#e0e5ff;--todo-soft:#eef1ff;--todo-accent:#8b6ff0;--todo-tint:#eef1ff}
+.todo-header{display:flex;align-items:center;justify-content:space-between;gap:16px}.todo-header h1{font-size:1.875rem;font-weight:700;margin:0}.todo-subtitle{font-size:.875rem;color:var(--todo-muted);margin:6px 0 0}.todo-actions{display:flex;gap:8px;align-items:center}.todo-page button{cursor:pointer}.todo-page button:focus-visible,.todo-page summary:focus-visible,.todo-page input:focus-visible{outline:2px solid var(--todo-accent);outline-offset:3px}.add-task-btn{background:var(--todo-accent);color:#fff;padding:9px 15px;border-radius:8px;font-size:.875rem}.dark .add-task-btn{background:#3b82f6}.todo-more{position:relative;font-size:.8rem}.todo-more summary{list-style:none;cursor:pointer;border:1px solid var(--todo-line);border-radius:8px;padding:9px 12px}.todo-more summary::-webkit-details-marker{display:none}.todo-more-menu{position:absolute;right:0;top:45px;width:156px;z-index:20;padding:5px;background:var(--todo-bg);border:1px solid var(--todo-line);border-radius:9px;box-shadow:0 8px 24px #0001}.todo-more-menu button{display:block;text-align:left;width:100%;padding:9px;border-radius:5px}.todo-more-menu button:hover{background:var(--todo-soft)}.stats-panel{display:flex;gap:22px;margin:24px 0;color:var(--todo-muted);font-size:.75rem}.stats-panel b{color:var(--todo-text);font-size:1.125rem;font-weight:600;margin-right:4px}.todo-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.todo-filters{display:flex;gap:3px;flex-wrap:wrap}.todo-filter{padding:7px 9px;border-radius:7px;font-size:.75rem;color:var(--todo-muted);white-space:nowrap}.todo-filter.active{background:var(--todo-tint);color:var(--todo-accent)}.todo-filter span{font-size:.65rem;opacity:.8;margin-left:3px}.todo-filter:hover{background:var(--todo-soft)}.todo-filter.drag-over{outline:2px dashed var(--todo-accent);background:var(--todo-tint)}.search-wrapper{position:relative;flex:0 1 190px}.search-input{width:100%;padding:8px 27px 8px 11px;border:1px solid var(--todo-line);border-radius:8px;background:var(--todo-bg);color:var(--todo-text);font-size:.8rem}.search-input::-webkit-search-cancel-button{display:none}.search-clear-btn{position:absolute;right:10px;top:7px;color:var(--todo-muted)}.todo-split{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:20px;align-items:start}.todo-col-left,.todo-col-right{min-width:0}.focus-list{border:1px solid var(--todo-line);border-radius:12px;overflow:hidden;background:var(--todo-bg)}.task-group-title{font-size:.75rem;color:var(--todo-muted);font-weight:500;display:flex;gap:8px;padding:11px 16px;margin:0;background:var(--todo-soft)}.task-group-title span{font-size:.65rem}.task-list{min-width:0}.task-item{display:flex;align-items:flex-start;gap:10px;padding:17px 16px;border-top:1px solid var(--todo-line);position:relative;cursor:grab}.task-item:hover,.task-item:focus-within{background:var(--todo-soft)}.task-content{flex:1;min-width:0}.task-title{font-size:.875rem;font-weight:500;text-align:left;line-height:1.6;background:transparent;padding:0;overflow-wrap:anywhere}.task-title:hover{color:var(--todo-accent)}.task-desc{font-size:.75rem;color:var(--todo-muted);margin:3px 0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow-wrap:anywhere}.task-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px;font-size:.65rem;color:var(--todo-muted)}.task-due.overdue{color:#b45353}.dark .task-due.overdue{color:#fca5a5}.task-priority{background:var(--todo-soft);padding:0 5px;border-radius:4px}.task-priority.high{color:#b45353}.dark .task-priority.high{color:#fca5a5}.task-quadrant.q2{color:var(--todo-accent)}.task-checkbox,.task-batch-checkbox{width:17px;height:17px;border:1.5px solid var(--todo-line);border-radius:5px;flex-shrink:0;margin-top:3px;background:var(--todo-bg)}.task-checkbox:hover,.task-batch-checkbox:hover{border-color:var(--todo-accent)}.task-checkbox.checked,.task-batch-checkbox.checked{background:var(--todo-accent);border-color:var(--todo-accent)}.task-checkbox.checked:after,.task-batch-checkbox.checked:after{content:'✓';color:white;display:block;font-size:11px;line-height:14px}.task-batch-checkbox{display:none}.batch-mode .task-batch-checkbox{display:block}.batch-mode .task-checkbox{display:none}.task-actions{display:flex;gap:6px;flex-shrink:0}.task-action-btn{font-size:.65rem;padding:3px 5px;color:var(--todo-muted);border-radius:4px}.task-action-btn:hover{color:var(--todo-accent);background:var(--todo-tint)}.task-action-btn.delete:hover{color:#b45353}.list-add-btn{padding:13px 16px;text-align:left;width:100%;font-size:.8rem;color:var(--todo-muted);border-top:1px solid var(--todo-line)}.list-add-btn:hover{background:var(--todo-soft);color:var(--todo-accent)}.task-empty{padding:40px 18px;text-align:center;color:var(--todo-muted);font-size:.8rem}.todo-hint{font-size:.65rem;color:var(--todo-muted);margin-top:10px}.calendar-view,.todo-progress{padding:14px;border:1px solid var(--todo-line);border-radius:12px;background:var(--todo-bg)}.cal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:12px}.cal-title{font-size:.75rem;font-weight:600}.cal-nav-btn{padding:1px 5px;color:var(--todo-muted)}.cal-today-btn{font-size:.65rem;border:1px solid var(--todo-line);padding:2px 5px;border-radius:5px}.cal-weekdays,.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.cal-weekdays{text-align:center;font-size:.6rem;color:var(--todo-muted);margin-bottom:8px}.cal-cell{min-height:36px;min-width:0;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:2px;padding:3px 0;border-radius:5px;cursor:pointer}.cal-cell:hover{background:var(--todo-soft)}.cal-cell-other{opacity:.4}.cal-cell-today{background:var(--todo-tint);color:var(--todo-accent)}.cal-date{font-size:.65rem;width:100%;text-align:center}.cal-chip{display:flex;cursor:grab;width:7px;height:7px;padding:1px}.cal-chip-dot{height:5px;width:5px;border-radius:50%;background:var(--todo-accent);flex-shrink:0}.cal-chip-dot.high{background:#c36969}.cal-chip-dot.medium{background:#ac894d}.cal-chip-dot.low{background:#9ca3af}.cal-chip.completed{opacity:.35}.cal-chip-time,.cal-chip-title{display:none}.cal-more{font-size:.5rem;color:var(--todo-accent);cursor:pointer}.cal-drop-over{outline:2px dashed var(--todo-accent)}.cal-unscheduled{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:10px}.cal-unscheduled-label{font-size:.6rem;color:var(--todo-muted)}.cal-unscheduled:empty{display:none}.todo-progress{margin-top:16px}.todo-progress h2{font-size:.8rem;font-weight:500;margin:0}.todo-progress p{font-size:.7rem;color:var(--todo-muted);margin:8px 0 0}.progress-track{height:4px;background:var(--todo-soft);border-radius:8px;overflow:hidden;margin-top:15px}#taskProgress{height:100%;background:var(--todo-accent);width:0}.todo-archive{margin-top:20px;border:1px solid var(--todo-line);border-radius:10px;overflow:hidden;background:var(--todo-bg)}.archive-header{display:flex;align-items:center;gap:8px;width:100%;padding:13px 16px;font-size:.8rem;color:var(--todo-muted)}.archive-arrow{margin-left:auto}.collapsed .archive-arrow{transform:rotate(-90deg)}.collapsed .archive-body{display:none}.archive-list{padding:0 16px}.archive-item{display:flex;align-items:center;gap:8px;padding:12px 0;border-top:1px solid var(--todo-line)}.archive-item-title{flex:1;min-width:0;font-size:.8rem;text-decoration:line-through;color:var(--todo-muted);cursor:pointer;overflow-wrap:anywhere}.archive-item-time{font-size:.6rem;color:var(--todo-muted)}.archive-item-actions{display:flex;gap:8px}.archive-action-btn{font-size:.7rem;color:var(--todo-muted)}.archive-empty{padding:20px;font-size:.75rem;color:var(--todo-muted)}.dragging{opacity:.5}.drag-placeholder{border:1px dashed var(--todo-accent);background:var(--todo-tint)}.completion-particles{display:none}
+.modal-overlay{position:fixed;inset:0;background:#0f172a66;display:none;align-items:center;justify-content:center;z-index:1000}.modal-overlay.show{display:flex}.modal{background:#fff;border-radius:12px;width:calc(100% - 32px);max-width:480px;max-height:90vh;overflow:auto}.dark .modal{background:#1f2937}.modal-small{max-width:340px}.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e5e7eb}.dark .modal-header{border-color:#374151}.modal-header h3{font-size:1.05rem;font-weight:600;margin:0}.modal-close{font-size:1.5rem;color:#9ca3af}.modal-body{padding:20px 22px}.form-group{margin-bottom:16px}.form-group label,.detail-label{display:block;font-size:.75rem;color:#6b7280;margin-bottom:6px}.dark .form-group label,.dark .detail-label{color:#9ca3af}.form-group input,.form-group textarea{width:100%;padding:9px 11px;border:1px solid #e5e7eb;border-radius:7px;background:transparent;font-size:.875rem}.dark .form-group input,.dark .form-group textarea{border-color:#4b5563}.quadrant-selector,.priority-selector{display:flex;gap:6px;flex-wrap:wrap}.quadrant-btn,.priority-btn{border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;font-size:.75rem}.dark .quadrant-btn,.dark .priority-btn{border-color:#4b5563}.quadrant-btn.active,.priority-btn.active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}.dark .quadrant-btn.active,.dark .priority-btn.active{background:#1e3a5f;color:#93c5fd}.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:15px 22px;border-top:1px solid #e5e7eb}.dark .modal-footer{border-color:#374151}.modal-footer button,.batch-actions-panel button{padding:8px 12px;border-radius:7px;font-size:.8rem;cursor:pointer}.btn-cancel{background:#f3f4f6;color:#374151}.dark .btn-cancel{background:#374151;color:#f3f4f6}.btn-submit,.btn-edit,.btn-batch-complete{background:#2563eb;color:#fff}.btn-delete,.btn-delete-confirm,.btn-batch-delete{background:#b45353;color:#fff}.detail-section{margin-bottom:16px}.detail-value{font-size:.875rem;margin:0;overflow-wrap:anywhere}.detail-desc-full{white-space:pre-wrap}.detail-meta-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-badge{font-size:.8rem}.batch-actions-panel{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;display:none;align-items:center;gap:10px;z-index:100;box-shadow:0 8px 30px #0001;font-size:.8rem}.batch-actions-panel.show{display:flex}.dark .batch-actions-panel{background:#1f2937;border-color:#374151}.undo-toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;border-radius:9px;padding:12px 20px;gap:16px;align-items:center;z-index:1100;font-size:.8rem}.undo-toast.show{display:flex}.undo-btn{color:#93c5fd}
+:root[data-theme='purple'] .modal{background:#fdfdff;color:#2d2d3a}:root[data-theme='purple'] .btn-submit,:root[data-theme='purple'] .btn-edit{background:#8b6ff0}:root[data-theme='purple'] .quadrant-btn.active,:root[data-theme='purple'] .priority-btn.active{background:#eef1ff;color:#6a5ac0;border-color:#b9a8f6}
+@media(max-width:760px){.todo-split{grid-template-columns:1fr}.todo-col-right{display:grid;grid-template-columns:1fr 1fr;gap:14px}.todo-progress{margin:0;align-self:start}.search-wrapper{flex-basis:100%}.search-input{width:100%}}@media(max-width:480px){.todo-header h1{font-size:1.5rem}.todo-subtitle{font-size:.75rem}.add-task-btn{padding:8px 10px;font-size:.75rem}.todo-more summary{font-size:.7rem;padding:8px}.todo-col-right{grid-template-columns:1fr}.task-item{padding:14px 12px;gap:8px;flex-wrap:wrap}.task-actions{margin-left:25px}.task-content{flex-basis:calc(100% - 35px)}.archive-item-time{display:none}.batch-actions-panel{width:calc(100% - 24px);flex-wrap:wrap;justify-content:center}.stats-panel{gap:16px}.task-meta{gap:5px}.todo-filter{padding:7px 6px}}
 </style>
 
 <script>
@@ -2268,6 +426,7 @@ let searchDebounceTimer: number | null = null;
 let lastDeletedTask: TodoItem | null = null;
 let undoTimer: number | null = null;
 let viewingTaskId: string | null = null;
+let activeQuadrant = 0;
 
 // 日历视图状态
 const CAL_MAX_PER_DAY = 3; // 单格最多显示的任务数（移动端会调小）
@@ -2293,18 +452,22 @@ function createTaskElement(task: TodoItem): HTMLElement {
   particlesDiv.id = `particles-${task.id}`;
 
   // 批量选择复选框
-  const batchCheckboxDiv = document.createElement('div');
+  const batchCheckboxDiv = document.createElement('button');
   batchCheckboxDiv.className = `task-batch-checkbox${selectedTaskIds.has(task.id) ? ' checked' : ''}`;
   batchCheckboxDiv.dataset.id = task.id;
+  batchCheckboxDiv.setAttribute('aria-label', `选择任务：${task.title}`);
+  batchCheckboxDiv.setAttribute('aria-pressed', String(selectedTaskIds.has(task.id)));
 
-  const checkboxDiv = document.createElement('div');
+  const checkboxDiv = document.createElement('button');
   checkboxDiv.className = `task-checkbox${task.completed ? ' checked' : ''}`;
   checkboxDiv.dataset.id = task.id;
+  checkboxDiv.setAttribute('aria-label', `完成任务：${task.title}`);
+  checkboxDiv.setAttribute('aria-pressed', String(task.completed));
 
   const contentDiv = document.createElement('div');
   contentDiv.className = 'task-content';
 
-  const titleP = document.createElement('p');
+  const titleP = document.createElement('button');
   titleP.className = 'task-title';
   titleP.textContent = task.title; // 使用 textContent 避免 XSS
 
@@ -2323,13 +486,17 @@ function createTaskElement(task: TodoItem): HTMLElement {
   if (dueText) {
     const dueSpan = document.createElement('span');
     dueSpan.className = `task-due ${overdueClass}`;
-    dueSpan.textContent = `📅 ${dueText}`;
+    dueSpan.textContent = `${isOverdue(task.dueDate) ? '已逾期 · ' : ''}${dueText}`;
     metaDiv.appendChild(dueSpan);
   }
 
   const prioritySpan = document.createElement('span');
   prioritySpan.className = `task-priority ${task.priority}`;
-  prioritySpan.textContent = task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低';
+  prioritySpan.textContent = task.priority === 'high' ? '高优先' : task.priority === 'medium' ? '中优先' : '低优先';
+  const quadrantSpan = document.createElement('span');
+  quadrantSpan.className = `task-quadrant q${task.quadrant}`;
+  quadrantSpan.textContent = { 1: '重要且紧急', 2: '重要不紧急', 3: '紧急不重要', 4: '暂缓处理' }[task.quadrant];
+  metaDiv.appendChild(quadrantSpan);
   metaDiv.appendChild(prioritySpan);
 
   contentDiv.appendChild(metaDiv);
@@ -2341,13 +508,13 @@ function createTaskElement(task: TodoItem): HTMLElement {
   editBtn.className = 'task-action-btn edit';
   editBtn.dataset.id = task.id;
   editBtn.title = '编辑';
-  editBtn.textContent = '✏️';
+  editBtn.textContent = '编辑';
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'task-action-btn delete';
   deleteBtn.dataset.id = task.id;
   deleteBtn.title = '删除';
-  deleteBtn.textContent = '🗑️';
+  deleteBtn.textContent = '删除';
 
   actionsDiv.appendChild(editBtn);
   actionsDiv.appendChild(deleteBtn);
@@ -2383,14 +550,14 @@ function createArchiveItem(task: TodoItem): HTMLElement {
   const restoreBtn = document.createElement('button');
   restoreBtn.className = 'archive-action-btn restore';
   restoreBtn.dataset.id = task.id;
-  restoreBtn.title = '恢复到四象限';
+  restoreBtn.title = '恢复到待办';
   restoreBtn.textContent = '↩';
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'archive-action-btn delete';
   deleteBtn.dataset.id = task.id;
   deleteBtn.title = '删除';
-  deleteBtn.textContent = '🗑️';
+  deleteBtn.textContent = '删除';
 
   actions.appendChild(restoreBtn);
   actions.appendChild(deleteBtn);
@@ -2432,61 +599,42 @@ function createCompletionParticles(taskId: string) {
   }
 }
 
-// 渲染所有任务
-function renderTasks(filter?: string) {
+// 渲染专注清单；保留原存储结构与象限分类。
+function renderTasks(filter: string = searchInput.value) {
   const storage = getStorage();
-  let items = storage.items;
-
-  // 搜索过滤
-  if (filter) {
-    const lowerFilter = filter.toLowerCase();
-    items = items.filter(item =>
-      item.title.toLowerCase().includes(lowerFilter) ||
-      (item.description && item.description.toLowerCase().includes(lowerFilter))
-    );
-  }
-
-  // 按象限分组（已完成任务不进四象限，改由归档面板展示）
-  const quadrants: Record<string, TodoItem[]> = { '1': [], '2': [], '3': [], '4': [] };
-  items.forEach(item => {
-    if (item.completed) return;
-    const key = String(item.quadrant);
-    if (quadrants[key]) {
-      quadrants[key].push(item);
-    }
+  const query = filter.trim().toLowerCase();
+  const pending = storage.items.filter(item => !item.completed);
+  const visible = pending.filter(item => (!activeQuadrant || item.quadrant === activeQuadrant) &&
+    (!query || item.title.toLowerCase().includes(query) || item.description?.toLowerCase().includes(query)));
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+  const groups: Record<string, TodoItem[]> = { overdue: [], today: [], upcoming: [], unscheduled: [] };
+  visible.forEach(item => {
+    const group = !item.dueDate ? 'unscheduled' : item.dueDate < todayStart ? 'overdue' : item.dueDate < tomorrowStart ? 'today' : 'upcoming';
+    groups[group].push(item);
   });
-
-  // 每个象限内按优先级和完成状态排序
-  ['1', '2', '3', '4'].forEach(q => {
-    const tasks = quadrants[q] || [];
-
-    tasks.sort((a, b) => {
-      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      // 按优先级排序，相同优先级按创建时间降序（最新在前）
-      const priorityDiff = getPriorityOrder(b.priority) - getPriorityOrder(a.priority);
-      if (priorityDiff !== 0) return priorityDiff;
-      return b.createdAt - a.createdAt;
-    });
-
-    const listEl = document.getElementById(`list-q${q}`);
-    if (listEl) {
-      listEl.innerHTML = '';
-      tasks.forEach(task => {
-        listEl.appendChild(createTaskElement(task));
-      });
-    }
-
-    // 更新计数
-    const countEl = document.getElementById(`count-q${q}`);
-    if (countEl) {
-      const pendingCount = tasks.filter(t => !t.completed).length;
-      countEl.textContent = String(pendingCount);
-    }
+  Object.entries(groups).forEach(([group, items]) => {
+    items.sort((a, b) => (a.dueDate || Infinity) - (b.dueDate || Infinity) || getPriorityOrder(b.priority) - getPriorityOrder(a.priority) || b.createdAt - a.createdAt);
+    const list = document.getElementById('list-' + group)!;
+    list.replaceChildren(...items.map(createTaskElement));
+    document.getElementById('group-' + group)!.hidden = items.length === 0;
+    document.getElementById('count-' + group)!.textContent = String(items.length);
   });
-
-  // 日历常驻，任何任务变更后同步刷新日历
+  const empty = document.getElementById('taskEmpty')!;
+  empty.hidden = visible.length > 0;
+  empty.textContent = query ? '没有匹配的任务，试试其他关键词。' : activeQuadrant ? '这个象限暂无待办。' : '暂无待办，添加一件想完成的事。';
+  [1, 2, 3, 4].forEach(q => { document.getElementById('count-q' + q)!.textContent = String(pending.filter(item => item.quadrant === q).length); });
+  const completed = storage.items.length - pending.length;
+  const rate = storage.items.length ? Math.round(completed / storage.items.length * 100) : 0;
+  document.getElementById('stat-pending')!.textContent = String(pending.length);
+  document.getElementById('stat-completed')!.textContent = String(completed);
+  document.getElementById('stat-total')!.textContent = String(storage.items.length);
+  document.getElementById('stat-today')!.textContent = String(pending.filter(item => item.dueDate && item.dueDate >= todayStart && item.dueDate < tomorrowStart).length);
+  document.getElementById('stat-rate')!.textContent = rate + '%';
+  document.getElementById('taskProgress')!.style.width = rate + '%';
+  searchClearBtn!.hidden = !searchInput.value;
   renderCalendar(filter);
-  // 归档面板同步刷新（已完成任务）
   renderArchive(filter);
 }
 
@@ -2531,6 +679,9 @@ function createCalChip(task: TodoItem): HTMLElement {
   chip.className = `cal-chip${task.completed ? ' completed' : ''}${isOverdue(task.dueDate) && !task.completed ? ' overdue' : ''}`;
   chip.draggable = true;
   chip.dataset.id = task.id;
+  chip.title = task.title;
+  chip.setAttribute('aria-label', task.title);
+  chip.tabIndex = 0;
 
   const dot = document.createElement('span');
   dot.className = `cal-chip-dot ${task.priority}`;
@@ -2612,6 +763,9 @@ function renderCalendar(filter?: string) {
     if (d.getMonth() !== calMonth) cell.classList.add('cal-cell-other');
     if (key === todayKey) cell.classList.add('cal-cell-today');
     cell.dataset.date = key;
+    cell.tabIndex = 0;
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', `在 ${key} 添加任务`);
 
     const dateLabel = document.createElement('span');
     dateLabel.className = 'cal-date';
@@ -2696,7 +850,7 @@ function addTask() {
   updatePriorityBtns(priorityBtns, currentPriority);
 
   hideModal(addModal!);
-  renderTasks();
+  renderTasks(searchInput.value);
 }
 
 // 编辑任务
@@ -3236,7 +1390,7 @@ function handleCalDrop(e: DragEvent) {
     task.dueDate = new Date(y, m - 1, dd, hh, mi, 0, 0).getTime();
     task.updatedAt = Date.now();
     saveStorage(storage);
-    renderCalendar(searchInput.value);
+    renderTasks(searchInput.value);
   }
   calDraggedId = null;
   document.querySelectorAll('.cal-cell.cal-drop-over').forEach(c => c.classList.remove('cal-drop-over'));
@@ -3262,6 +1416,19 @@ function openAddForDate(dateKey: string) {
 
 // 事件绑定
 function initEvents() {
+  document.querySelectorAll<HTMLButtonElement>('.todo-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeQuadrant = Number(btn.dataset.filter);
+      document.querySelectorAll('.todo-filter').forEach(el => {
+        const active = Number((el as HTMLElement).dataset.filter) === activeQuadrant;
+        el.classList.toggle('active', active);
+        el.setAttribute('aria-pressed', String(active));
+      });
+      renderTasks();
+    });
+  });
+  document.getElementById('listAddBtn')?.addEventListener('click', () => addTaskBtn?.click());
+  document.querySelector('.todo-more-menu')?.addEventListener('click', () => { (document.querySelector('.todo-more') as HTMLDetailsElement).open = false; });
   // 搜索（带防抖）
   searchInput.addEventListener('input', () => {
     debounceSearch(() => renderTasks(searchInput.value));
@@ -3289,7 +1456,7 @@ function initEvents() {
   clearCompletedBtn?.addEventListener('click', clearCompletedTasks);
 
   // 添加任务按钮
-  addTaskBtn?.addEventListener('click', () => showModal(addModal!));
+  addTaskBtn?.addEventListener('click', () => { clearAddForm(); currentQuadrant = (activeQuadrant || 2) as 1 | 2 | 3 | 4; updateQuadrantBtns(quadrantBtns, currentQuadrant); showModal(addModal!); taskTitle.focus(); });
   modalClose?.addEventListener('click', () => hideModal(addModal!, true));
   btnCancel?.addEventListener('click', () => hideModal(addModal!, true));
   btnSubmit?.addEventListener('click', addTask);
@@ -3369,8 +1536,8 @@ function initEvents() {
       }
 
       // 批量模式下点击任务项整行也触发选择
-      if (batchModeActive && target.classList.contains('task-item')) {
-        const taskId = target.dataset.id;
+      if (batchModeActive && target.closest('.task-item')) {
+        const taskId = (target.closest('.task-item') as HTMLElement).dataset.id;
         if (taskId) toggleBatchSelection(taskId);
         return;
       }
@@ -3442,6 +1609,7 @@ function initEvents() {
   // ESC 关闭弹窗
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
+      (document.querySelector('.todo-more') as HTMLDetailsElement).open = false;
       if (addModal?.classList.contains('show')) hideModal(addModal, true);
       if (editModal?.classList.contains('show')) hideModal(editModal);
       if (deleteModal?.classList.contains('show')) hideModal(deleteModal);
@@ -3481,6 +1649,12 @@ function initEvents() {
     }
   });
 
+  calGrid?.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('cal-chip')) { e.preventDefault(); openDetailModal(target.dataset.id!); }
+    else if (target.classList.contains('cal-cell')) { e.preventDefault(); openAddForDate(target.dataset.date!); }
+  });
   // 拖拽改期（calGrid 与无日期区共用 handler）
   const calUnscheduled = document.getElementById('calUnscheduled');
   [calGrid, calUnscheduled].forEach(el => {

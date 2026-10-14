@@ -3,6 +3,7 @@ title: "MinerU：把复杂文档喂给大模型前的那道工序"
 description: "MinerU 是 OpenDataLab 开源的文档解析引擎（71.6k stars），把 PDF、DOCX、PPTX、XLSX 和图片转成 LLM 可用的 Markdown/JSON。本文拆解它的四后端架构如何收敛到统一中间表示。"
 date: 2026-06-29
 category: "AI 工程"
+subcategory: "RAG 与知识库"
 tags: ["mineru", "document-parsing", "ocr", "vlm", "rag"]
 draft: true
 ---

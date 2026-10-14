@@ -3,6 +3,7 @@ title: "Open Notebook：31k Star 的 NotebookLM 开源替代架构解析"
 description: "分析 Open Notebook 的架构设计、多 AI 提供商抽象层、与 Google NotebookLM 的差异，以及自建知识笔记工具面临的核心工程取舍。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "RAG 与知识库"
 tags: ["notebooklm", "ai-notes", "open-source", "typescript"]
 draft: false
 ---

@@ -3,11 +3,12 @@ title: "harness：一个生成 agent 团队和 skill 的元技能"
 description: "revfactory/harness 是一个 Claude Code 元技能（meta-skill），输入一句领域描述，它就为你设计一支专家 agent 团队、生成每个 agent 定义和它们使用的 skill，并写好编排器。本文拆解它如何用一个 skill 生成其他 skill。"
 date: 2026-06-26
 category: "AI 工程"
+subcategory: "Skills 与工作流"
 tags: ["claude-code", "agent-skills", "meta-skill", "multi-agent", "ai-agent"]
 draft: false
 ---
 
-## harness：一个生成 agent 团队和 skill 的元技能
+## 简介
 
 harness 是一个 Claude Code 的"元技能"（meta-skill）：你给它一句领域描述（比如"给金融风控团队搭一个 harness"），它就为你设计一支专家 agent 团队、生成每个 agent 的定义文件、生成它们使用的 skill 文件，再写好一个协调全队的编排器 skill。一句话概括它的核心思想——**一个 skill，专门用来生成其他 skill 和 agent 团队**。
 

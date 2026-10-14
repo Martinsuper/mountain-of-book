@@ -2,7 +2,8 @@
 title: "MoneyPrinterTurbo：AI 短视频生成流水线"
 description: "MoneyPrinterTurbo 是一个开源的 AI 短视频自动生成工具，87.6k stars。输入一个主题，它会自动完成文案生成、语音合成、素材搜索、字幕生成、视频合成，输出一个完整的短视频。本文解析它的架构和实现原理。"
 date: 2026-06-14
-category: "工具教程"
+category: "AI 工程"
+subcategory: "AI 内容与研究"
 tags: ["ai-video", "llm", "tts", "moviepy", "python", "automation"]
 draft: false
 ---

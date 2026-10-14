@@ -3,17 +3,14 @@ title: "OpenHuman：本地优先的个人 AI 代理"
 description: "OpenHuman 是一个开源的本地优先个人 AI 智能代理，32k stars。它以 Rust + Tauri 构建，核心是 Memory Tree 记忆系统 + 118+ 服务集成 + TokenJuice 压缩技术，数据全部存储在本地 SQLite，兼容 Obsidian。本文解析它的架构和隐私模型。"
 date: 2026-06-14
 category: "AI 工程"
+subcategory: "Agent 与 AI 编程"
 tags: ["openhuman", "ai-agent", "local-first", "rust", "tauri", "privacy"]
 draft: false
 ---
 
 ## 简介
 
-个人 AI 助手有一个根本性的矛盾：它需要访问你的所有数据（邮件、日历、笔记、聊天记录）才能有用，但把数据交给云端服务又让人不放心。
-
-OpenHuman 的做法是**本地优先**。它的核心记忆系统（Memory Tree）把用户数据规范化为 Markdown 分块，存储在本地 SQLite 中，同时兼容 Obsidian vault 格式。云端服务只用于账户登录、模型路由、搜索代理和 OAuth 流程——用户也可以自带模型和搜索凭证实现完全本地化。
-
-32k stars，Rust + Tauri 构建，118+ 第三方集成（Gmail、Notion、GitHub、Slack、Stripe 等），还有桌面宠物和原生语音。这是一个野心勃勃的项目。
+OpenHuman 是一个开源的本地优先个人 AI 代理，32k stars，用 Rust + Tauri 构建。核心是 Memory Tree 记忆系统——把用户数据规范化为 Markdown 分块存入本地 SQLite，兼容 Obsidian vault 格式；云端只用于账户登录、模型路由和 OAuth。集成 118+ 第三方服务（Gmail、Notion、GitHub、Slack、Stripe 等），用户也可自带模型和搜索凭证实现完全本地化。
 
 ## 项目概览
 

@@ -2,7 +2,8 @@
 title: "用 Cloudflare Tunnel 把本地服务安全暴露到公网"
 description: "Cloudflare Tunnel 通过 cloudflared 守护进程建立仅出站的加密隧道，无需开放入站端口、无需公网 IP，即可把本地或内网服务绑定到自有域名对外访问。本文从安装到配置为系统服务，走完命名隧道的完整搭建流程。"
 date: 2026-06-29
-category: "工具教程"
+category: "应用开发"
+subcategory: "部署与运行环境"
 tags: ["cloudflare", "cloudflare-tunnel", "devops", "network", "reverse-proxy"]
 draft: false
 ---

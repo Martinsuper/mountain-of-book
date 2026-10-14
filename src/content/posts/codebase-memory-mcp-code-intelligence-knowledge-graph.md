@@ -3,6 +3,7 @@ title: "codebase-memory-mcp：用纯 C 把代码库变成知识图谱"
 description: "深入拆解一个 7.2k star 的 MCP 服务器——如何用 tree-sitter 把代码索引为知识图谱，Linux 内核 28M 行 3 分钟建图，查询延迟 < 1ms。本文从源码结构出发，分析其多 pass pipeline、Hybrid LSP 语义解析和 RAM-first 索引设计。"
 date: 2026-06-19
 category: "AI 工程"
+subcategory: "RAG 与知识库"
 tags: ["codebase-memory-mcp", "c", "mcp", "knowledge-graph", "tree-sitter", "code-intelligence"]
 draft: false
 ---

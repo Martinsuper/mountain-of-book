@@ -3,6 +3,7 @@ title: "last30days-skill：让 AI Agent 搜遍全网社交平台，用真人互�
 description: "last30days-skill 是一个 AI Agent 技能，43.3k stars。它并行搜索 Reddit、X、YouTube、TikTok、Hacker News、Polymarket 等 14+ 个平台，用真人投票、点赞、真金白银的下注来评分，而非编辑推荐。本文解析它的多平台桥接架构和评分机制。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "AI 内容与研究"
 tags: ["agent-skill", "search-engine", "reddit", "social-media", "ai-agent", "python"]
 draft: false
 ---
@@ -10,8 +11,6 @@ draft: false
 ## 简介
 
 last30days-skill 是一个让 AI Agent 跨社交平台搜索的技能。它解决的是 Agent 调研人物或话题时的数据来源问题：直接用 Google 搜往往只能得到过时的 LinkedIn 资料和 SEO 文章，而 Reddit 的讨论、X 的实时观点、YouTube 的深度评测、Polymarket 的预测赔率这些真实信号散落在各个平台，难以统一获取。
-
-每个平台都是一座围城——自己的 API、自己的认证、自己的反爬。ChatGPT 和 Reddit 有合作但搜不了 X，Gemini 有 YouTube 但没 Reddit，Claude 原生一个都没有。
 
 last30days-skill 的做法是：一个 Agent 技能，并行搜索 14+ 个平台，用真人投票、点赞、真金白银的下注来评分，然后让 AI 裁判综合成一份简报。
 
@@ -167,7 +166,7 @@ npx skills add mvanhorn/last30days-skill -g
 | GitHub 实时数据 | 支持 | 缓存 | 不支持 | 不支持 |
 | 价格 | 免费（Reddit/HN/GitHub）| 免费 | 付费 | 付费 |
 
-last30days 的核心差异在于：它不是又一个搜索引擎，而是**一座桥**。把十几个互不相通的社交平台桥接起来，让一个 AI Agent 能同时搜索、统一评分、综合输出。
+上表反映的是数据源和评分依据的差异：Google/ChatGPT/Perplexity 以网页为主、靠 PageRank 或编辑选择排序，last30days 以 14+ 社交平台为源、靠真人互动量评分。
 
 ## 设计上的权衡
 

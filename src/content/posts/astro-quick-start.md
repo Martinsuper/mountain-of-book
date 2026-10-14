@@ -2,7 +2,8 @@
 title: "Astro 快速上手指南"
 description: "从零开始搭建你的第一个 Astro 博客项目，介绍安装、项目结构、组件基础、路由系统、布局组件及部署方式"
 date: 2026-04-23
-category: "前端开发"
+category: "应用开发"
+subcategory: "Web 与客户端"
 tags: ["astro", "frontend", "static-site", "blog"]
 draft: false
 ---
@@ -11,12 +12,7 @@ draft: false
 
 Astro 是一款现代化的静态站点生成器，专为内容驱动的网站设计。它采用独特的 **Islands 架构**，让你可以在静态页面中按需添加交互组件。本文从安装开始，带你走完项目结构、组件、路由、布局到部署的完整上手流程。
 
-## 为什么选择 Astro？
-
-- **零 JavaScript 默认输出** — 生成的页面默认不包含 JavaScript，轻量
-- **Islands 架构** — 仅在需要交互的地方加载 JavaScript
-- **框架无关** — 可以混用 React、Vue、Svelte 等组件
-- **内容优先** — 完美支持 Markdown、MDX，适合博客、文档站
+## Islands 架构
 
 Islands 架构是 Astro 的核心理念：整个页面默认是零 JS 的静态 HTML，只有标记为交互的"岛屿"组件才单独加载各自的 JavaScript：
 

@@ -2,7 +2,8 @@
 title: "JDK 版本特性详解（二）：JDK 12-17 语言增强"
 description: "JDK 12 到 17 的核心特性详解：Switch 表达式、文本块、Records、Pattern Matching、Sealed Classes，到 JDK 17 LTS 集大成。配代码示例。这是 JDK 8-21 特性系列的第二篇。"
 date: 2026-04-21
-category: "后端开发"
+category: "应用开发"
+subcategory: "Java 与数据"
 tags: ["java", "jdk", "jdk-features", "java-version"]
 draft: false
 ---

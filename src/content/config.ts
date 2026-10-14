@@ -1,8 +1,5 @@
-// src/content/config.ts
 import { defineCollection, z } from 'astro:content';
-
-// 合法分类（与 CLAUDE.md 约定保持一致）
-export const CATEGORIES = ['AI 工程', '工具教程', '前端开发', '后端开发'] as const;
+import { CATEGORIES, isSubcategory } from '../lib/categories';
 
 const postsCollection = defineCollection({
   type: 'content',
@@ -11,8 +8,33 @@ const postsCollection = defineCollection({
     description: z.string().optional(),
     date: z.date(),
     category: z.enum(CATEGORIES).optional(),
+    subcategory: z.string().optional(),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false)
+  }).superRefine((data, ctx) => {
+    if (data.category && !data.subcategory) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['subcategory'],
+        message: '已设置 category 时必须设置 subcategory'
+      });
+    }
+
+    if (!data.category && data.subcategory) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['subcategory'],
+        message: '已设置 subcategory 时必须设置 category'
+      });
+    }
+
+    if (data.category && data.subcategory && !isSubcategory(data.category, data.subcategory)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['subcategory'],
+        message: 'subcategory 不属于当前 category'
+      });
+    }
   })
 });
 

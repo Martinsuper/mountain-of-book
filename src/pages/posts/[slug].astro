@@ -51,6 +51,14 @@ const readingTime = calculateReadingTime(post.body || '');
               {post.data.category}
             </a>
           )}
+          {post.data.category && post.data.subcategory && (
+            <a
+              href={`/categories/${post.data.category}/${post.data.subcategory}/`}
+              class="hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              / {post.data.subcategory}
+            </a>
+          )}
           {post.data.tags && (
             <div class="flex gap-2">
               {post.data.tags.map((tag) => (

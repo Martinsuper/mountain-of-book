@@ -3,6 +3,7 @@ title: "VoxCPM2 深度解析：无 Tokenizer 架构如何实现 30 语言语音�
 description: "从架构设计到工程实现，分析 OpenBMB 开源的 VoxCPM2 语音合成系统如何通过扩散自回归架构绕过离散 Tokenization，在 2B 参数规模下实现 30 语言 TTS、声音设计和可控声音克隆。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "LLM 与模型推理"
 tags: ["tts", "speech-synthesis", "voice-cloning", "openbmb", "llm"]
 draft: false
 ---

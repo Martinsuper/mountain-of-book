@@ -2,7 +2,8 @@
 title: "JDK 版本特性详解（一）：JDK 8-11 现代化基础"
 description: "JDK 8 到 11 的核心特性详解：Lambda、Stream、Optional、新日期时间 API、模块化系统 Jigsaw、var 类型推断、HTTP Client API，配代码示例。这是 JDK 8-21 特性系列的第一篇。"
 date: 2026-04-21
-category: "后端开发"
+category: "应用开发"
+subcategory: "Java 与数据"
 tags: ["java", "jdk", "jdk-features", "java-version"]
 draft: false
 ---

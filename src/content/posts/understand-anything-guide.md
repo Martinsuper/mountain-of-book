@@ -2,18 +2,15 @@
 title: "Understand-Anything：把任意代码库变成可交互的知识图谱"
 description: "Understand-Anything 是一个开源的代码理解工具，59k stars。它用 Tree-sitter + LLM 的混合方案，把代码、文档转化为可交互的知识图谱，支持浏览、搜索、问答。本文解析它的双引擎架构和多 Agent 流水线。"
 date: 2026-06-14
-category: "工具教程"
+category: "开发工具"
+subcategory: "CLI 与开发环境"
 tags: ["knowledge-graph", "code-understanding", "tree-sitter", "llm", "claude-code"]
 draft: false
 ---
 
 ## 简介
 
-接手一个陌生代码库时，真正费时的不是读代码本身，而是理解代码之间的关系——哪个函数调用了哪个、数据从哪来、业务逻辑如何串联。传统的代码搜索和 IDE 跳转能解决局部问题，但缺少全局视图。
-
-Understand-Anything 的做法是把代码转化为**可交互的知识图谱**。文件、函数、类成为节点，调用关系、导入关系成为边。你可以在图谱上点击、搜索、探索，甚至直接向 AI 提问"一个 HTTP 请求是如何到达数据库的"。
-
-59k stars，支持 13+ 个 AI 编码平台（Claude Code、Cursor、VS Code + Copilot、Codex、Gemini CLI 等），它的口号是"Graphs that teach, not graphs that impress"——教人的图，而非取悦人的图。
+Understand-Anything 是一个开源的代码理解工具，用 Tree-sitter 做语法解析、用 LLM 做语义补全，把代码库转成可交互的知识图谱——文件、函数、类是节点，调用和导入关系是边。支持在图谱上点击、搜索，以及向 AI 提问"一个 HTTP 请求如何到达数据库"这类跨文件问题。59k stars，兼容 Claude Code、Cursor、VS Code + Copilot 等 13+ 个 AI 编码平台。
 
 ## 项目概览
 

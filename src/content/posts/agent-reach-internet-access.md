@@ -3,6 +3,7 @@ title: "Agent Reach：一句话给 AI Agent 装上全互联网访问能力"
 description: "Agent Reach 是一个 AI Agent 能力层，31.7k stars。它不是一个新工具，而是一个选型、安装、体检、路由层——帮你把 Twitter、Reddit、YouTube、小红书、B站等 13+ 个平台的访问能力一键接入 AI Agent。本文解析它的多后端路由架构和零配置设计理念。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "Agent 与 AI 编程"
 tags: ["agent-reach", "ai-agent", "twitter", "reddit", "youtube", "bilibili", "python", "mcp"]
 draft: false
 ---

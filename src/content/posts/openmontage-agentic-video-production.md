@@ -3,11 +3,12 @@ title: "OpenMontage：把 AI 编程助手变成视频制作工作室"
 description: "OpenMontage 是一个 agent-first 的开源视频制作系统，没有代码编排器，由 AI 编程助手充当导演，通过 12 条流水线、约 50 个工具和数百个 skill 指令文件，完成从调研到成片的端到端制作。"
 date: 2026-06-26
 category: "AI 工程"
+subcategory: "AI 内容与研究"
 tags: ["ai-agent", "video-generation", "claude-code", "skills", "python"]
 draft: false
 ---
 
-## OpenMontage：把 AI 编程助手变成视频制作工作室
+## 简介
 
 OpenMontage 是一个开源的 agentic 视频制作系统，让 Claude Code、Cursor、Copilot 等 AI 编程助手充当"制片人"，从选题调研、脚本、资产生成一路做到剪辑合成。它最不一样的地方是：**整个系统没有一行编排代码，AI 编程助手本身就是编排器**，所有创意决策和质量标准都写在人类可读的指令文件里。
 

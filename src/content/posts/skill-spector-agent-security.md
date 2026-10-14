@@ -3,6 +3,7 @@ title: "NVIDIA SkillSpector：AI Agent 技能的安全扫描器，64 种漏洞�
 description: "分析 NVIDIA 开源的 SkillSpector 项目，理解其两阶段安全检测管线设计：静态模式匹配 + LLM 语义分析，覆盖 64 种漏洞模式、16 个安全类别。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "Skills 与工作流"
 tags: ["security", "ai-agent", "nvidia", "skill-audit", "prompt-injection"]
 draft: false
 ---
@@ -200,7 +201,7 @@ AI 安全领域已有不少工具，但 SkillSpector 的定位有其独特性。
 | 输出格式 | Terminal/JSON/MD/SARIF | 多种 | 多种 | API |
 | 集成方式 | CLI + Python API + Docker | CLI | CLI | Python SDK |
 
-SkillSpector 的核心差异在于它理解 AI Agent 技能的上下文。传统静态分析工具检测的是通用代码漏洞（SQL 注入、XSS 等），对 prompt injection、memory poisoning 这类 AI 特有的攻击模式无能为力。Semgrep 可以通过自定义规则覆盖部分场景，但需要大量手动编写规则。SkillSpector 开箱即用，64 种模式都是针对 AI Agent 场景设计的。
+上表反映的是目标对象的差异：Bandit/Semgrep 面向通用代码漏洞（SQL 注入、XSS），Giskard 面向 ML 模型，SkillSpector 面向 AI Agent 技能文件。对于 prompt injection、memory poisoning 这类 AI 特有攻击模式，Bandit/Semgrep 需要自定义规则覆盖，SkillSpector 内置 64 种针对 AI Agent 场景的模式。
 
 ---
 
@@ -275,7 +276,7 @@ docker run --rm -v "$PWD:/scan" skillspector scan ./some-skill/ --no-llm
 
 ---
 
-## 局限与展望
+## 适用场景与局限
 
 SkillSpector 当前有几个明确的局限：
 
@@ -284,4 +285,7 @@ SkillSpector 当前有几个明确的局限：
 3. **非英语内容覆盖不足**：正则模式主要针对英文设计
 4. **不加密/二进制分析**：编译或加密的内容无法扫描
 
-作为一个刚开源不久的项目，它已经覆盖了 AI Agent 技能安全审计的核心需求。随着 Agent 生态的扩展，技能安全会变得越来越重要。SkillSpector 提供了基础的检测框架，后续社区可能会贡献更多语言支持和检测规则。
+## 参考资料
+
+- [NVIDIA/SkillSpector GitHub 仓库](https://github.com/NVIDIA/SkillSpector)
+- [SkillSpector 项目文档](https://nvidia.github.io/SkillSpector/)

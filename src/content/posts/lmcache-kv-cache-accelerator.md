@@ -3,6 +3,7 @@ title: "LMCache：LLM 推理最快的 KV Cache 加速层"
 description: "深入分析 LMCache 的核心设计，包括分层 KV Cache 卸载、非前缀复用、PD 分离等机制，以及它在 LLM 推理生态中的定位。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "LLM 与模型推理"
 tags: ["llm", "kv-cache", "inference-optimization", "python", "gpu"]
 draft: false
 ---

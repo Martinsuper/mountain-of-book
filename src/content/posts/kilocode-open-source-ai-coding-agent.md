@@ -3,6 +3,7 @@ title: "Kilo Code：开源的多模型 AI 编码 Agent 平台"
 description: "22k star 的开源编码 Agent——支持 VS Code、JetBrains、CLI 三种形态，500+ 模型无加价，中途切换模型，内置代码审查和自主模式。本文拆解其 monorepo 架构和 5 种专用 Agent 的设计。"
 date: 2026-06-19
 category: "AI 工程"
+subcategory: "Agent 与 AI 编程"
 tags: ["kilocode", "ai-coding", "vscode-extension", "cli", "open-source"]
 draft: false
 ---
@@ -227,7 +228,7 @@ packages/
 
 Kilo 和 Cursor 的核心差异在于**开放性**。Cursor 是一个完整的产品，模型选择和定价由 Cursor 控制；Kilo 是一个开源平台，模型通过网关路由，用户可以自带 key 或用 Kilo 账户。
 
-Kilo 和 Claude Code 的差异在于**模型多样性**。Claude Code 只能用 Claude 模型，但 Kilo 可以用任何提供商的模型。如果你需要深度使用 Claude 的特定能力（如 extended thinking），Claude Code 的原生支持会更完整；如果你想在成本和性能之间灵活权衡，Kilo 的多模型路由更有优势。
+Kilo 和 Claude Code 的差异在于模型多样性：Claude Code 只能用 Claude 模型，Kilo 可以用任何提供商的模型。Claude Code 对 Claude 特定能力（如 extended thinking）是原生支持，Kilo 通过多模型路由支持中途切换。
 
 ## 设计上的权衡
 

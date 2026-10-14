@@ -162,6 +162,12 @@ const currentSlug = post.id.replace('.md', '');
                 <span class="dev-fm-value">"{post.data.category}"</span>
               </div>
             )}
+            {post.data.subcategory && (
+              <div class="dev-fm-row">
+                <span class="dev-fm-key">subcategory:</span>
+                <span class="dev-fm-value">"{post.data.subcategory}"</span>
+              </div>
+            )}
             {post.data.tags && post.data.tags.length > 0 && (
               <div class="dev-fm-row">
                 <span class="dev-fm-key">tags:</span>

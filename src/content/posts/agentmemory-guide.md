@@ -3,6 +3,7 @@ title: "AgentMemory：AI 编程代理的持久化记忆系统"
 description: "agentmemory 是一个开源的 AI 编程代理持久化记忆系统，22.8k stars。它基于自研 iii 引擎，通过三流检索融合（BM25 + Vector + Graph）和四层记忆巩固（Working → Episodic → Semantic → Procedural），让 AI 代理记住一切，不用再重复解释。在 LongMemEval-S 基准测试中排名第一。"
 date: 2026-06-14
 category: "AI 工程"
+subcategory: "RAG 与知识库"
 tags: ["agentmemory", "ai-agent", "memory", "mcp", "rag", "iii-engine"]
 draft: false
 ---

@@ -2,20 +2,15 @@
 title: "CloakBrowser：源码级反检测 Chromium 浏览器"
 description: "CloakBrowser 是一个开源的反检测自动化浏览器，26k stars。它不是配置修补或 JS 注入，而是在 C++ 源码级别修改了指纹的真实 Chromium 二进制，58 个补丁覆盖 Canvas、WebGL、Audio、字体、GPU、WebRTC、TLS 指纹等维度。Playwright/Puppeteer 的直接替代品。"
 date: 2026-06-14
-category: "工具教程"
+category: "开发工具"
+subcategory: "浏览器自动化"
 tags: ["cloakbrowser", "chromium", "anti-detection", "browser-automation", "playwright", "puppeteer"]
 draft: false
 ---
 
 ## 简介
 
-Playwright 和 Puppeteer 是主流的浏览器自动化工具，但它们有一个共同的局限：容易被反 bot 系统检测。Cloudflare Turnstile、FingerprintJS、reCAPTCHA v3 等检测服务可以识别出自动化浏览器。
-
-市面上的解决方案（undetected-chromedriver、Patchright 等）主要通过 JavaScript 注入或 CDP 协议层面的修补来隐藏自动化痕迹。但这有一个根本性的弱点：修改发生在运行时，TLS 指纹、Canvas/WebGL 指纹等底层特征仍然暴露。
-
-CloakBrowser 的做法更激进——**在 C++ 源码级别修改 Chromium**，然后重新编译。这意味着反 bot 系统看到的不是一个"被修补的浏览器"，而是一个"指纹被修改的正常浏览器"。58 个 C++ 补丁覆盖 Canvas、WebGL、Audio、字体、GPU、屏幕、WebRTC、网络计时、自动化信号、CDP 输入行为等维度，通过 30/30 检测测试。
-
-26k stars，它是 Playwright/Puppeteer 的**直接替代品（drop-in replacement）**，API 完全兼容，只需换一行 import。
+CloakBrowser 是一个源码级反检测的 Chromium 浏览器，26k stars。它在 C++ 源码级别修改 Chromium 后重新编译，让反 bot 系统看到的不是"被修补的浏览器"，而是"指纹被修改的正常浏览器"。58 个 C++ 补丁覆盖 Canvas、WebGL、Audio、字体、GPU、屏幕、WebRTC、网络计时、自动化信号、CDP 输入行为等维度，通过 30/30 检测测试。它是 Playwright/Puppeteer 的直接替代品（drop-in replacement），API 完全兼容，只需换一行 import。
 
 ## 项目概览
 

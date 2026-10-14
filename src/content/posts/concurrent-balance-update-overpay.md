@@ -2,7 +2,8 @@
 title: "并发累加金额的丢失更新与超扣：一条 SQL 的解法"
 description: "分次扣款场景下，paid_amount 用「读-改-写」更新会导致丢失更新和超扣。本文分析成因，并给出一条带条件的原子增量 UPDATE 如何在数据库层根治问题，以及为何不必引入版本号。"
 date: 2026-06-27
-category: "后端开发"
+category: "应用开发"
+subcategory: "Java 与数据"
 tags: ["mysql", "concurrency", "optimistic-lock", "transaction"]
 draft: false
 ---

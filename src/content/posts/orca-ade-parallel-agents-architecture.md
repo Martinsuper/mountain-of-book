@@ -2,12 +2,13 @@
 title: "Orca：管理并行 agent 舰队的 ADE 架构解读"
 description: "Orca 是一个 ADE（Agent 开发环境），用 git worktree 隔离并行运行的多个编码 agent，用一套 RPC 方法面 + 多传输层让桌面、CLI、手机、远程 SSH 都能驱动同一个运行时。本文拆解它的编排引擎和客户端/服务端架构。"
 date: 2026-06-26
-category: "工具教程"
+category: "开发工具"
+subcategory: "CLI 与开发环境"
 tags: ["ai-agent", "ade", "claude-code", "worktrees", "electron"]
 draft: false
 ---
 
-## Orca：管理并行 agent 舰队的 ADE 架构解读
+## 简介
 
 Orca 是一个 ADE（Agent Development Environment，agent 开发环境），用来同时管理一支并行运行的编码 agent 舰队。它的两个核心设计值得拆解：一是用 **git worktree 隔离**让多个 agent 并行干活而不互相冲突，二是用**一套 RPC 方法面 + 多传输层**让桌面客户端、`orca` CLI、手机 App、远程 SSH 主机都能驱动同一个运行时。本文从源码角度看它怎么实现。
 

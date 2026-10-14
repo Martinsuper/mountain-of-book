@@ -3,6 +3,7 @@ title: "AI Engineering from Scratch：从零构建完整 AI 工程体系的 503 
 description: "ai-engineering-from-scratch 是一个开源的 AI 工程课程体系，32.2k stars。503 节课、20 个阶段、约 320 学时，从基础数学到自主多智能体系统，每个算法都从原始数学开始手动实现。本文解析它的课程架构和学习路径。"
 date: 2026-06-14
 category: "AI 工程"
+subcategory: "LLM 与模型推理"
 tags: ["ai-engineering", "education", "machine-learning", "deep-learning", "llm", "course"]
 draft: false
 ---

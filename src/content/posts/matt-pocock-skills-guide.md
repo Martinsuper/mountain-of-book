@@ -3,17 +3,14 @@ title: "Matt Pocock 的 Skills：AI 编码助手的工程原则技能"
 description: "mattpocock/skills 是 TypeScript 大佬 Matt Pocock 开源的 Claude Code 技能集，128k stars。它把 TDD、DDD、Pragmatic Programmer 等经典工程方法论沉淀成 SKILL.md 文件，让 AI 编码助手可以按工程纪律工作，而不是 vibe coding。"
 date: 2026-06-14
 category: "AI 工程"
+subcategory: "Skills 与工作流"
 tags: ["claude-code", "skills", "engineering", "tdd", "ddd", "matt-pocock"]
 draft: false
 ---
 
 ## 简介
 
-AI 编码助手（Claude Code、Cursor、Copilot）有一个常见的问题：倾向于"vibe coding"——氛围到了就写，缺乏工程纪律。它会跳过需求澄清、忘记写测试、不做架构思考，直接输出看起来能跑的代码。
-
-Matt Pocock（Total TypeScript 创始人）开源的 `skills` 项目试图解决这个问题。它不是一个框架，也不是一个工具，而是一组 **SKILL.md 文件**——每个文件是一条给 AI 的指令，告诉它"在 TDD 时应该先写失败测试再实现"、"在诊断 bug 时应该先复现再最小化再假设"。
-
-128k stars，本质上是把《Pragmatic Programmer》《DDD》《Extreme Programming Explained》这些经典著作的工程智慧，翻译成了 AI 能直接执行的 prompt。
+Matt Pocock（Total TypeScript 创始人）开源的 `skills` 项目是一组 SKILL.md 文件，128k stars。每个文件是一条给 AI 的指令，告诉它"在 TDD 时应该先写失败测试再实现"、"在诊断 bug 时应该先复现再最小化再假设"。本质上是把《Pragmatic Programmer》《DDD》《Extreme Programming Explained》这些经典著作的工程智慧，翻译成 AI 能直接执行的 prompt。
 
 ## 项目概览
 

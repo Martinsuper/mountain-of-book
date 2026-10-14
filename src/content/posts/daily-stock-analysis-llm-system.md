@@ -3,11 +3,12 @@ title: "daily_stock_analysis：LLM 驱动的多市场股票分析系统"
 description: "ZhuLinsen/daily_stock_analysis 是一个 LLM 驱动的自选股分析系统，每个交易日自动抓取多市场行情与新闻、调用大模型分析、把决策仪表盘推送到企业微信/飞书/Telegram，靠 GitHub Actions 实现零成本定时运行。"
 date: 2026-06-26
 category: "AI 工程"
+subcategory: "LLM 与模型推理"
 tags: ["llm", "quant", "stock-analysis", "github-actions", "python"]
 draft: false
 ---
 
-## daily_stock_analysis：LLM 驱动的多市场股票分析系统
+## 简介
 
 daily_stock_analysis 是一个自部署的自选股智能分析系统：你给它一份股票清单，它每个交易日自动抓取行情和新闻、用大模型逐只分析，再把「决策仪表盘」（买入/观望/卖出 + 评分 + 风险 + 催化）推送到企业微信、飞书、Telegram 等聊天工具。支持 A 股、港股、美股，以及新加入的日股、韩股。整套流程可以跑在 GitHub Actions 的免费额度上，实现零服务器、零成本的定时运行。
 

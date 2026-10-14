@@ -2,12 +2,13 @@
 title: "DESIGN.md：给 AI 编程 agent 描述视觉身份的格式规范"
 description: "DESIGN.md 是 Google Labs 开源的格式规范，用一份结构化的 Markdown 文件给 AI 编程 agent 提供持久的设计系统理解。它的核心主张是『散文重于 token』——一个具体的参照比一串形容词更能引导模型生成在品牌调性上一致的 UI。"
 date: 2026-06-26
-category: "前端开发"
+category: "AI 工程"
+subcategory: "Agent 与 AI 编程"
 tags: ["design-system", "ai-agent", "design-tokens", "google-labs", "frontend"]
 draft: false
 ---
 
-## DESIGN.md：给 AI 编程 agent 描述视觉身份的格式规范
+## 简介
 
 DESIGN.md 是 Google Labs 开源的一份格式规范，用一个结构化的 Markdown 文件给 AI 编程 agent（Claude Code、Cursor、Gemini 等）提供对设计系统的持久理解。可以把它理解成"设计系统版的 CLAUDE.md"——让 agent 在每次生成 UI 时都知道你的配色、字体、间距、组件和品牌调性，从而产出风格一致、符合品牌的界面。
 

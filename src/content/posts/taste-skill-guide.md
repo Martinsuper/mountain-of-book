@@ -3,6 +3,7 @@ title: "Taste-Skill：提升 AI 生成 UI 的设计品味"
 description: "taste-skill 是一个开源的 AI Agent 技能集，43.5k stars。它不是 UI 组件库，而是一组 Markdown 指令，告诉 AI 编码助手如何生成有设计感的前端界面，而不是千篇一律的居中布局。本文解析它的三旋钮系统和反 AI 平庸化理念。"
 date: 2026-06-14
 category: "AI 工程"
+subcategory: "Skills 与工作流"
 tags: ["taste-skill", "ai-design", "frontend", "claude-code", "prompt-engineering"]
 draft: false
 ---

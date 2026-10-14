@@ -3,15 +3,16 @@ title: "Agent Skills：让 AI 编程 Agent 按工程规范干活的 24 个工作
 description: "addyosmani/agent-skills 是一个面向 AI 编程 Agent 的技能集，61k stars。24 个结构化工作流覆盖从需求定义到生产部署的完整开发生命周期，支持 Claude Code、Cursor、Gemini CLI 等 10+ 个 Agent 平台。本文解析它的设计思路和实际用法。"
 date: 2026-06-16
 category: "AI 工程"
+subcategory: "Skills 与工作流"
 tags: ["agent-skills", "claude-code", "cursor", "ai-coding", "software-engineering"]
 draft: false
 ---
 
 ## 简介
 
-AI 编程 Agent 能写代码、改文件、跑测试——但你怎么确保它写出的代码符合你的工程规范？怎么防止它跳过测试、忽略安全审查、直接提交一个大而全的 commit？
+Agent Skills 是一个把高级工程师的工作流编码成 Agent 可执行技能的项目，61k stars。它把步骤、检查点、退出条件都定义成结构化流程，Agent 必须跟着走——不是参考文档让 Agent 读，而是可执行的工程规范。
 
-Agent Skills 的答案是：把高级工程师的工作流编码成 Agent 可执行的结构化技能。不是参考文档让 Agent 读，而是步骤、检查点、退出条件都定义清楚的流程，Agent 必须跟着走。
+具体实现上，这些技能不是供 Agent 参考的文档，而是把步骤、检查点、退出条件定义清楚、必须遵循的流程。
 
 61k stars，覆盖从 `/spec` 到 `/ship` 的 7 个开发生命周期阶段，24 个技能，支持 Claude Code、Cursor、Gemini CLI、Windsurf、Copilot 等 10+ 个平台。这是 Addy Osmani（Google Chrome 团队前工程经理）维护的项目。
 
@@ -206,7 +207,7 @@ gemini skills install https://github.com/addyosmani/agent-skills.git --path skil
 | 可组合性 | 技能间可组合，command 自动编排 | 无编排 | 无 |
 | 维护成本 | 社区维护，持续更新 | 自己维护 | 自己维护 |
 
-Agent Skills 的关键特点在于**可执行性**。它不是一个"最佳实践列表"，而是一个 Agent 必须遵循的工作流引擎。CLAUDE.md 说"要写测试"，Agent Skills 的 TDD 技能说"先写一个失败的测试（Red），再写最少的代码让测试通过（Green），再重构（Refactor），三个步骤缺一不可，证据是测试输出"。
+这张表反映的是三种约束方式的差异：CLAUDE.md/.cursorrules 是全局加载的约束文件，手写 prompt 是每次临时组织，Agent Skills 是按需触发的结构化流程。以 TDD 为例，CLAUDE.md 写"要写测试"，Agent Skills 的 TDD 技能定义为"先写失败测试（Red）→ 最少代码通过（Green）→ 重构（Refactor）"，三步缺一不可，证据是测试输出。
 
 ## 设计上的权衡
 
