@@ -43,6 +43,8 @@ jobs:
           curl -L -o bin/plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2025.2/plantuml-1.2025.2.jar
 
       - name: Build
+        env:
+          PUBLIC_CALENDAR_PROXY_URL: https://calendar.younote.top/api/calendar/apple-cn
         run: pnpm run build
 
       - name: Upload artifact
