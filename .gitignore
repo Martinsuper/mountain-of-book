@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Build output
 dist/
@@ -23,6 +24,10 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Test artifacts
+test-results/
+playwright-report/
 # PlantUML 渲染缓存
 .plantuml-cache/
 
