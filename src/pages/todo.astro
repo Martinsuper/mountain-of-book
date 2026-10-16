@@ -90,8 +90,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <textarea id="taskDesc" placeholder="输入任务描述" rows="3"></textarea>
         </div>
         <div class="form-group">
-          <label for="taskDue">截止时间</label>
-          <input type="datetime-local" id="taskDue" min="" />
+          <label for="taskDue">截止日期</label>
+          <input type="date" id="taskDue" min="" />
         </div>
         <div class="form-group">
           <label>选择象限</label>
@@ -136,8 +136,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <textarea id="editTaskDesc" placeholder="输入任务描述" rows="3"></textarea>
         </div>
         <div class="form-group">
-          <label for="editTaskDue">截止时间</label>
-          <input type="datetime-local" id="editTaskDue" />
+          <label for="editTaskDue">截止日期</label>
+          <input type="date" id="editTaskDue" />
         </div>
         <div class="form-group">
           <label>选择象限</label>
@@ -216,7 +216,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <span class="detail-badge" id="detailPriority"></span>
           </div>
           <div class="detail-section">
-            <label class="detail-label">截止时间</label>
+            <label class="detail-label">截止日期</label>
             <span class="detail-value" id="detailDue"></span>
           </div>
           <div class="detail-section">
@@ -247,10 +247,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 .todo-page{--todo-bg:#fff;--todo-text:#111827;--todo-muted:#6b7280;--todo-line:#e5e7eb;--todo-soft:#f9fafb;--todo-accent:#2563eb;--todo-tint:#eff6ff;color:var(--todo-text)}
 .dark .todo-page{--todo-bg:#111827;--todo-text:#f3f4f6;--todo-muted:#9ca3af;--todo-line:#374151;--todo-soft:#1f2937;--todo-accent:#60a5fa;--todo-tint:#1e293b}
-:root[data-theme='purple'] .todo-page{--todo-bg:#fdfdff;--todo-text:#2d2d3a;--todo-muted:#79758d;--todo-line:#e0e5ff;--todo-soft:#eef1ff;--todo-accent:#8b6ff0;--todo-tint:#eef1ff}
 .todo-header{display:flex;align-items:center;justify-content:space-between;gap:16px}.todo-header h1{font-size:1.875rem;font-weight:700;margin:0}.todo-subtitle{font-size:.875rem;color:var(--todo-muted);margin:6px 0 0}.todo-actions{display:flex;gap:8px;align-items:center}.todo-page button{cursor:pointer}.todo-page button:focus-visible,.todo-page summary:focus-visible,.todo-page input:focus-visible{outline:2px solid var(--todo-accent);outline-offset:3px}.add-task-btn{background:var(--todo-accent);color:#fff;padding:9px 15px;border-radius:8px;font-size:.875rem}.dark .add-task-btn{background:#3b82f6}.todo-more{position:relative;font-size:.8rem}.todo-more summary{list-style:none;cursor:pointer;border:1px solid var(--todo-line);border-radius:8px;padding:9px 12px}.todo-more summary::-webkit-details-marker{display:none}.todo-more-menu{position:absolute;right:0;top:45px;width:156px;z-index:20;padding:5px;background:var(--todo-bg);border:1px solid var(--todo-line);border-radius:9px;box-shadow:0 8px 24px #0001}.todo-more-menu button{display:block;text-align:left;width:100%;padding:9px;border-radius:5px}.todo-more-menu button:hover{background:var(--todo-soft)}.stats-panel{display:flex;gap:22px;margin:24px 0;color:var(--todo-muted);font-size:.75rem}.stats-panel b{color:var(--todo-text);font-size:1.125rem;font-weight:600;margin-right:4px}.todo-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.todo-filters{display:flex;gap:3px;flex-wrap:wrap}.todo-filter{padding:7px 9px;border-radius:7px;font-size:.75rem;color:var(--todo-muted);white-space:nowrap}.todo-filter.active{background:var(--todo-tint);color:var(--todo-accent)}.todo-filter span{font-size:.65rem;opacity:.8;margin-left:3px}.todo-filter:hover{background:var(--todo-soft)}.todo-filter.drag-over{outline:2px dashed var(--todo-accent);background:var(--todo-tint)}.search-wrapper{position:relative;flex:0 1 190px}.search-input{width:100%;padding:8px 27px 8px 11px;border:1px solid var(--todo-line);border-radius:8px;background:var(--todo-bg);color:var(--todo-text);font-size:.8rem}.search-input::-webkit-search-cancel-button{display:none}.search-clear-btn{position:absolute;right:10px;top:7px;color:var(--todo-muted)}.todo-split{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:20px;align-items:start}.todo-col-left,.todo-col-right{min-width:0}.focus-list{border:1px solid var(--todo-line);border-radius:12px;overflow:hidden;background:var(--todo-bg)}.task-group-title{font-size:.75rem;color:var(--todo-muted);font-weight:500;display:flex;gap:8px;padding:11px 16px;margin:0;background:var(--todo-soft)}.task-group-title span{font-size:.65rem}.task-list{min-width:0}.task-item{display:flex;align-items:flex-start;gap:10px;padding:17px 16px;border-top:1px solid var(--todo-line);position:relative;cursor:grab}.task-item:hover,.task-item:focus-within{background:var(--todo-soft)}.task-content{flex:1;min-width:0}.task-title{font-size:.875rem;font-weight:500;text-align:left;line-height:1.6;background:transparent;padding:0;overflow-wrap:anywhere}.task-title:hover{color:var(--todo-accent)}.task-desc{font-size:.75rem;color:var(--todo-muted);margin:3px 0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow-wrap:anywhere}.task-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px;font-size:.65rem;color:var(--todo-muted)}.task-due.overdue{color:#b45353}.dark .task-due.overdue{color:#fca5a5}.task-priority{background:var(--todo-soft);padding:0 5px;border-radius:4px}.task-priority.high{color:#b45353}.dark .task-priority.high{color:#fca5a5}.task-quadrant.q2{color:var(--todo-accent)}.task-checkbox,.task-batch-checkbox{width:17px;height:17px;border:1.5px solid var(--todo-line);border-radius:5px;flex-shrink:0;margin-top:3px;background:var(--todo-bg)}.task-checkbox:hover,.task-batch-checkbox:hover{border-color:var(--todo-accent)}.task-checkbox.checked,.task-batch-checkbox.checked{background:var(--todo-accent);border-color:var(--todo-accent)}.task-checkbox.checked:after,.task-batch-checkbox.checked:after{content:'✓';color:white;display:block;font-size:11px;line-height:14px}.task-batch-checkbox{display:none}.batch-mode .task-batch-checkbox{display:block}.batch-mode .task-checkbox{display:none}.task-actions{display:flex;gap:6px;flex-shrink:0}.task-action-btn{font-size:.65rem;padding:3px 5px;color:var(--todo-muted);border-radius:4px}.task-action-btn:hover{color:var(--todo-accent);background:var(--todo-tint)}.task-action-btn.delete:hover{color:#b45353}.list-add-btn{padding:13px 16px;text-align:left;width:100%;font-size:.8rem;color:var(--todo-muted);border-top:1px solid var(--todo-line)}.list-add-btn:hover{background:var(--todo-soft);color:var(--todo-accent)}.task-empty{padding:40px 18px;text-align:center;color:var(--todo-muted);font-size:.8rem}.todo-hint{font-size:.65rem;color:var(--todo-muted);margin-top:10px}.calendar-view,.todo-progress{padding:14px;border:1px solid var(--todo-line);border-radius:12px;background:var(--todo-bg)}.cal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:12px}.cal-title{font-size:.75rem;font-weight:600}.cal-nav-btn{padding:1px 5px;color:var(--todo-muted)}.cal-today-btn{font-size:.65rem;border:1px solid var(--todo-line);padding:2px 5px;border-radius:5px}.cal-weekdays,.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.cal-weekdays{text-align:center;font-size:.6rem;color:var(--todo-muted);margin-bottom:8px}.cal-cell{min-height:36px;min-width:0;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:2px;padding:3px 0;border-radius:5px;cursor:pointer}.cal-cell:hover{background:var(--todo-soft)}.cal-cell-other{opacity:.4}.cal-cell-today{background:var(--todo-tint);color:var(--todo-accent)}.cal-date{font-size:.65rem;width:100%;text-align:center}.cal-chip{display:flex;cursor:grab;width:7px;height:7px;padding:1px}.cal-chip-dot{height:5px;width:5px;border-radius:50%;background:var(--todo-accent);flex-shrink:0}.cal-chip-dot.high{background:#c36969}.cal-chip-dot.medium{background:#ac894d}.cal-chip-dot.low{background:#9ca3af}.cal-chip.completed{opacity:.35}.cal-chip-time,.cal-chip-title{display:none}.cal-more{font-size:.5rem;color:var(--todo-accent);cursor:pointer}.cal-drop-over{outline:2px dashed var(--todo-accent)}.cal-unscheduled{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:10px}.cal-unscheduled-label{font-size:.6rem;color:var(--todo-muted)}.cal-unscheduled:empty{display:none}.todo-progress{margin-top:16px}.todo-progress h2{font-size:.8rem;font-weight:500;margin:0}.todo-progress p{font-size:.7rem;color:var(--todo-muted);margin:8px 0 0}.progress-track{height:4px;background:var(--todo-soft);border-radius:8px;overflow:hidden;margin-top:15px}#taskProgress{height:100%;background:var(--todo-accent);width:0}.todo-archive{margin-top:20px;border:1px solid var(--todo-line);border-radius:10px;overflow:hidden;background:var(--todo-bg)}.archive-header{display:flex;align-items:center;gap:8px;width:100%;padding:13px 16px;font-size:.8rem;color:var(--todo-muted)}.archive-arrow{margin-left:auto}.collapsed .archive-arrow{transform:rotate(-90deg)}.collapsed .archive-body{display:none}.archive-list{padding:0 16px}.archive-item{display:flex;align-items:center;gap:8px;padding:12px 0;border-top:1px solid var(--todo-line)}.archive-item-title{flex:1;min-width:0;font-size:.8rem;text-decoration:line-through;color:var(--todo-muted);cursor:pointer;overflow-wrap:anywhere}.archive-item-time{font-size:.6rem;color:var(--todo-muted)}.archive-item-actions{display:flex;gap:8px}.archive-action-btn{font-size:.7rem;color:var(--todo-muted)}.archive-empty{padding:20px;font-size:.75rem;color:var(--todo-muted)}.dragging{opacity:.5}.drag-placeholder{border:1px dashed var(--todo-accent);background:var(--todo-tint)}.completion-particles{display:none}
 .modal-overlay{position:fixed;inset:0;background:#0f172a66;display:none;align-items:center;justify-content:center;z-index:1000}.modal-overlay.show{display:flex}.modal{background:#fff;border-radius:12px;width:calc(100% - 32px);max-width:480px;max-height:90vh;overflow:auto}.dark .modal{background:#1f2937}.modal-small{max-width:340px}.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e5e7eb}.dark .modal-header{border-color:#374151}.modal-header h3{font-size:1.05rem;font-weight:600;margin:0}.modal-close{font-size:1.5rem;color:#9ca3af}.modal-body{padding:20px 22px}.form-group{margin-bottom:16px}.form-group label,.detail-label{display:block;font-size:.75rem;color:#6b7280;margin-bottom:6px}.dark .form-group label,.dark .detail-label{color:#9ca3af}.form-group input,.form-group textarea{width:100%;padding:9px 11px;border:1px solid #e5e7eb;border-radius:7px;background:transparent;font-size:.875rem}.dark .form-group input,.dark .form-group textarea{border-color:#4b5563}.quadrant-selector,.priority-selector{display:flex;gap:6px;flex-wrap:wrap}.quadrant-btn,.priority-btn{border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;font-size:.75rem}.dark .quadrant-btn,.dark .priority-btn{border-color:#4b5563}.quadrant-btn.active,.priority-btn.active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}.dark .quadrant-btn.active,.dark .priority-btn.active{background:#1e3a5f;color:#93c5fd}.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:15px 22px;border-top:1px solid #e5e7eb}.dark .modal-footer{border-color:#374151}.modal-footer button,.batch-actions-panel button{padding:8px 12px;border-radius:7px;font-size:.8rem;cursor:pointer}.btn-cancel{background:#f3f4f6;color:#374151}.dark .btn-cancel{background:#374151;color:#f3f4f6}.btn-submit,.btn-edit,.btn-batch-complete{background:#2563eb;color:#fff}.btn-delete,.btn-delete-confirm,.btn-batch-delete{background:#b45353;color:#fff}.detail-section{margin-bottom:16px}.detail-value{font-size:.875rem;margin:0;overflow-wrap:anywhere}.detail-desc-full{white-space:pre-wrap}.detail-meta-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-badge{font-size:.8rem}.batch-actions-panel{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;display:none;align-items:center;gap:10px;z-index:100;box-shadow:0 8px 30px #0001;font-size:.8rem}.batch-actions-panel.show{display:flex}.dark .batch-actions-panel{background:#1f2937;border-color:#374151}.undo-toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;border-radius:9px;padding:12px 20px;gap:16px;align-items:center;z-index:1100;font-size:.8rem}.undo-toast.show{display:flex}.undo-btn{color:#93c5fd}
-:root[data-theme='purple'] .modal{background:#fdfdff;color:#2d2d3a}:root[data-theme='purple'] .btn-submit,:root[data-theme='purple'] .btn-edit{background:#8b6ff0}:root[data-theme='purple'] .quadrant-btn.active,:root[data-theme='purple'] .priority-btn.active{background:#eef1ff;color:#6a5ac0;border-color:#b9a8f6}
 @media(max-width:760px){.todo-split{grid-template-columns:1fr}.todo-col-right{display:grid;grid-template-columns:1fr 1fr;gap:14px}.todo-progress{margin:0;align-self:start}.search-wrapper{flex-basis:100%}.search-input{width:100%}}@media(max-width:480px){.todo-header h1{font-size:1.5rem}.todo-subtitle{font-size:.75rem}.add-task-btn{padding:8px 10px;font-size:.75rem}.todo-more summary{font-size:.7rem;padding:8px}.todo-col-right{grid-template-columns:1fr}.task-item{padding:14px 12px;gap:8px;flex-wrap:wrap}.task-actions{margin-left:25px}.task-content{flex-basis:calc(100% - 35px)}.archive-item-time{display:none}.batch-actions-panel{width:calc(100% - 24px);flex-wrap:wrap;justify-content:center}.stats-panel{gap:16px}.task-meta{gap:5px}.todo-filter{padding:7px 6px}}
 .calendar-subscription{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem;color:var(--todo-muted)}.calendar-subscription summary{cursor:pointer;color:var(--todo-accent)}.calendar-subscription label{display:block;margin-top:10px}.calendar-subscription input[type=text]{width:100%;font-size:.65rem;padding:7px;border:1px solid var(--todo-line);border-radius:5px;background:var(--todo-bg);color:var(--todo-text);margin:5px 0}.calendar-subscription button,.calendar-day-details button{padding:5px 7px;border:1px solid var(--todo-line);border-radius:5px;font-size:.65rem;margin:4px 0;color:var(--todo-accent)}.subscription-toggle{display:flex!important;gap:7px;align-items:center}.subscription-actions{display:flex;gap:7px}.calendar-subscription p{font-size:.6rem;margin-top:7px;overflow-wrap:anywhere}.calendar-day-details{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem}.calendar-day-details h3{font-weight:600;margin:0 0 7px}.calendar-day-details p{font-size:.65rem;color:var(--todo-muted);margin:4px 0}.cal-cell{position:relative;min-height:42px}.holiday-marker{font-size:8px;line-height:10px;border-radius:2px;padding:0 2px}.holiday-marker.holiday{color:#348365;background:#e8f5ed}.holiday-marker.workday{color:#9c711f;background:#fff4dd}.holiday-marker.event{color:var(--todo-accent)}.dark .holiday-marker.holiday{background:#1d3b32;color:#93d1b4}.dark .holiday-marker.workday{background:#3b3020;color:#e1c081}
 </style>
@@ -307,28 +305,36 @@ function formatDate(timestamp: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-// 给 datetime-local 输入框用的格式：YYYY-MM-DDTHH:mm（本地时间）
-function formatDateTimeLocal(timestamp: number): string {
-  const date = new Date(timestamp);
-  return `${formatDate(timestamp)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+function formatDateTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleString('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+  });
 }
 
-// 展示用：YYYY-MM-DD HH:mm
-function formatDateTime(timestamp: number): string {
-  const date = new Date(timestamp);
-  return `${formatDate(timestamp)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+// 给 date 输入框用的本地日期格式：YYYY-MM-DD
+function formatDateInput(timestamp: number): string {
+  return formatDate(timestamp);
+}
+
+// 日期截止按当天结束处理，避免当天任务在 00:00 就显示逾期
+function dateToDeadline(value: string): number | undefined {
+  if (!value) return undefined;
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
 }
 
 function isDueSoon(dueDate?: number): boolean {
   if (!dueDate) return false;
-  const now = Date.now();
-  const diff = dueDate - now;
-  return diff > 0 && diff < 24 * 60 * 60 * 1000; // 24小时内
+  const today = new Date();
+  const tomorrowStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime();
+  return dueDate >= today.getTime() && dueDate < tomorrowStart;
 }
 
 function isOverdue(dueDate?: number): boolean {
   if (!dueDate) return false;
-  return dueDate < Date.now();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  return dueDate < todayStart.getTime();
 }
 
 function getQuadrantColor(q: number): string {
@@ -348,11 +354,9 @@ function getPriorityOrder(p: string): number {
 
 // 设置日期输入的最小值（今天）
 function setDateMinToday() {
-  // datetime-local 的 min 用「今天 00:00」，保证今天任意时刻都可选
-  const now = new Date();
-  const todayStart = formatDateTimeLocal(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0).getTime());
-  taskDue.min = todayStart;
-  editTaskDue.min = todayStart;
+  const today = formatDate(Date.now());
+  taskDue.min = today;
+  editTaskDue.min = today;
 }
 
 // 清空添加表单
@@ -455,7 +459,7 @@ function createTaskElement(task: TodoItem): HTMLElement {
   item.dataset.id = task.id;
   item.draggable = !batchModeActive; // 批量模式下禁用拖拽
 
-  const dueText = task.dueDate ? formatDateTime(task.dueDate) : '';
+  const dueText = task.dueDate ? formatDate(task.dueDate) : '';
   const overdueClass = isOverdue(task.dueDate) ? 'overdue' : '';
 
   // 安全构建 DOM，避免 XSS
@@ -747,7 +751,7 @@ function renderCalendar(filter?: string) {
     buckets.get(key)!.push(item);
   });
 
-  // 格内排序：未完成在前 → 截止时间升序 → 优先级降序
+  // 格内排序：未完成在前 → 截止日期升序 → 优先级降序
   buckets.forEach(list => {
     list.sort((a, b) => {
       if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -854,7 +858,7 @@ function addTask() {
     quadrant: currentQuadrant,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    dueDate: taskDue.value ? new Date(taskDue.value).getTime() : undefined,
+    dueDate: dateToDeadline(taskDue.value),
     completed: false,
     priority: currentPriority
   };
@@ -886,7 +890,7 @@ function openEditModal(taskId: string) {
   editTaskId.value = taskId;
   editTaskTitle.value = task.title;
   editTaskDesc.value = task.description || '';
-  editTaskDue.value = task.dueDate ? formatDateTimeLocal(task.dueDate) : '';
+  editTaskDue.value = task.dueDate ? formatDateInput(task.dueDate) : '';
 
   currentQuadrant = task.quadrant;
   currentPriority = task.priority;
@@ -908,7 +912,7 @@ function saveEdit() {
   task.description = editTaskDesc.value.trim() || undefined;
   task.quadrant = currentQuadrant;
   task.priority = currentPriority;
-  task.dueDate = editTaskDue.value ? new Date(editTaskDue.value).getTime() : undefined;
+  task.dueDate = dateToDeadline(editTaskDue.value);
   task.updatedAt = Date.now();
 
   saveStorage(storage);
@@ -1094,7 +1098,7 @@ function openDetailModal(taskId: string) {
   }
 
   if (detailDue) {
-    detailDue.textContent = task.dueDate ? formatDateTime(task.dueDate) : '无截止日期';
+    detailDue.textContent = task.dueDate ? formatDate(task.dueDate) : '无截止日期';
     if (isOverdue(task.dueDate)) {
       detailDue.style.color = '#ef4444';
     } else {
@@ -1162,14 +1166,14 @@ function exportToJson() {
 
 function exportToCsv() {
   const storage = getStorage();
-  const headers = ['ID', '标题', '描述', '象限', '优先级', '截止时间', '状态', '创建时间'];
+  const headers = ['ID', '标题', '描述', '象限', '优先级', '截止日期', '状态', '创建时间'];
   const rows = storage.items.map(item => [
     item.id,
     item.title,
     item.description || '',
     item.quadrant,
     item.priority,
-    item.dueDate ? formatDateTime(item.dueDate) : '',
+    item.dueDate ? formatDate(item.dueDate) : '',
     item.completed ? '已完成' : '待处理',
     formatDate(item.createdAt)
   ]);
@@ -1194,21 +1198,16 @@ function requestNotificationPermission() {
 function checkDeadlineNotifications() {
   if ('Notification' in window && Notification.permission === 'granted') {
     const storage = getStorage();
-    const now = Date.now();
-    const oneHour = 60 * 60 * 1000;
-
     storage.items.forEach(item => {
       if (item.completed || !item.dueDate) return;
 
-      const diff = item.dueDate - now;
-      if (diff > 0 && diff < oneHour) {
-        // 1小时内截止的任务
-        const hoursLeft = Math.round(diff / (60 * 60 * 1000));
-        const minutesLeft = Math.round(diff / (60 * 1000));
-        const timeText = hoursLeft > 0 ? `${hoursLeft}小时` : `${minutesLeft}分钟`;
-
-        new Notification(`任务即将截止: ${item.title}`, {
-          body: `距离截止时间还有 ${timeText}`,
+      const dueDayStart = new Date(item.dueDate);
+      dueDayStart.setHours(0, 0, 0, 0);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      if (dueDayStart.getTime() === todayStart.getTime()) {
+        new Notification(`任务今天截止: ${item.title}`, {
+          body: '这是今天到期的任务。',
           icon: '/favicon.ico'
         });
       }
@@ -1405,11 +1404,8 @@ function handleCalDrop(e: DragEvent) {
   const storage = getStorage();
   const task = storage.items.find(i => i.id === calDraggedId);
   if (task) {
-    // 只改日期部分，保留原时分；无原时分默认 9:00
-    const prev = task.dueDate ? new Date(task.dueDate) : null;
-    const hh = prev ? prev.getHours() : 9;
-    const mi = prev ? prev.getMinutes() : 0;
-    task.dueDate = new Date(y, m - 1, dd, hh, mi, 0, 0).getTime();
+    // 截止日期按当天结束处理，不保留具体时分
+    task.dueDate = new Date(y, m - 1, dd, 23, 59, 59, 999).getTime();
     task.updatedAt = Date.now();
     saveStorage(storage);
     renderTasks(searchInput.value);
@@ -1424,7 +1420,7 @@ function handleCalDragEnd() {
   calDraggedId = null;
 }
 
-// 点击日历格子空白处快速新建（截止该天 9:00）
+// 点击日历格子空白处快速新建（截止该天）
 function openAddForDate(dateKey: string) {
   const [y, m, dd] = dateKey.split('-').map(Number);
   currentQuadrant = 1;
@@ -1432,7 +1428,7 @@ function openAddForDate(dateKey: string) {
   updateQuadrantBtns(quadrantBtns, currentQuadrant);
   updatePriorityBtns(priorityBtns, currentPriority);
   showModal(addModal!);
-  taskDue.value = formatDateTimeLocal(new Date(y, m - 1, dd, 9, 0).getTime());
+  taskDue.value = `${y}-${String(m).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
   taskTitle.focus();
 }
 

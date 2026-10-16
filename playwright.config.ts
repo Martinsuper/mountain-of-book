@@ -8,7 +8,10 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:4322',
+    baseURL: 'http://127.0.0.1:4322',
+    launchOptions: process.env.PLAYWRIGHT_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+      : {},
     trace: { mode: 'on-first-retry' },
   },
   projects: [
@@ -18,9 +21,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:4322',
-    reuseExistingServer: true,
+    command: 'pnpm dev --port 4322 --host 127.0.0.1',
+    url: 'http://127.0.0.1:4322',
+    reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {
       ASTRO_DEV_TOOLBAR: 'false',

@@ -7,7 +7,7 @@ import CodeCopy from '../../components/CodeCopy.astro';
 import { calculateReadingTime } from '../../lib/reading-time';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts');
+  const posts = await getCollection('posts', ({ data }) => import.meta.env.DEV || !data.draft);
   return posts.map((post) => ({
     params: { slug: post.id },
     props: { post }
@@ -23,19 +23,19 @@ const { Content, headings } = await post.render();
 const readingTime = calculateReadingTime(post.body || '');
 ---
 
-<BaseLayout title={post.data.title} type="article">
+<BaseLayout title={post.data.title} description={post.data.description || `${post.data.title}，书山有路技术笔记。`} publishedTime={post.data.date.toISOString()} type="article">
   <!-- 移动端：目录在文章上方 -->
   <div class="lg:hidden mb-8">
     <TableOfContents headings={headings} />
   </div>
 
   <!-- 桌面端：双栏布局 -->
-  <div class="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12 lg:max-w-5xl">
-    <article class="prose dark:prose-invert max-w-none">
+  <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-12 lg:max-w-5xl">
+    <article class="prose dark:prose-invert max-w-none min-w-0">
       <header class="mb-8 not-prose">
         <h1 class="text-2xl lg:text-4xl font-bold mb-4">{post.data.title}</h1>
         <div class="flex items-center gap-4 text-gray-500 dark:text-gray-400 flex-wrap">
-          <time>
+          <time datetime={post.data.date.toISOString()}>
             {post.data.date.toLocaleDateString('zh-CN', {
               year: 'numeric',
               month: 'long',
@@ -46,7 +46,7 @@ const readingTime = calculateReadingTime(post.body || '');
           {post.data.category && (
             <a
               href={`/categories/${post.data.category}/`}
-              class="hover:text-blue-600 dark:hover:text-blue-400"
+              class="break-words [overflow-wrap:anywhere] hover:text-blue-600 dark:hover:text-blue-400"
             >
               {post.data.category}
             </a>
@@ -54,17 +54,17 @@ const readingTime = calculateReadingTime(post.body || '');
           {post.data.category && post.data.subcategory && (
             <a
               href={`/categories/${post.data.category}/${post.data.subcategory}/`}
-              class="hover:text-blue-600 dark:hover:text-blue-400"
+              class="break-words [overflow-wrap:anywhere] hover:text-blue-600 dark:hover:text-blue-400"
             >
               / {post.data.subcategory}
             </a>
           )}
           {post.data.tags && (
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2 min-w-0">
               {post.data.tags.map((tag) => (
                 <a
                   href={`/tags/${tag}/`}
-                  class="hover:text-blue-600 dark:hover:text-blue-400"
+                  class="break-words [overflow-wrap:anywhere] hover:text-blue-600 dark:hover:text-blue-400"
                 >
                   #{tag}
                 </a>
@@ -79,7 +79,7 @@ const readingTime = calculateReadingTime(post.body || '');
 
     <!-- 桌面端：侧边目录 -->
     <aside class="hidden lg:block">
-      <div class="sticky top-8">
+      <div class="sticky top-24">
         <TableOfContents headings={headings} />
       </div>
     </aside>

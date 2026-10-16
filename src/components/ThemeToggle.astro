@@ -19,12 +19,11 @@
   <div id="theme-menu" class="theme-menu" role="menu" aria-label="主题选择">
     <button type="button" class="theme-option" data-theme="light" role="menuitemradio" aria-checked="false">浅色</button>
     <button type="button" class="theme-option" data-theme="dark" role="menuitemradio" aria-checked="false">深色</button>
-    <button type="button" class="theme-option" data-theme="purple" role="menuitemradio" aria-checked="false">紫蓝阅读</button>
   </div>
 </div>
 
 <script>
-  type Theme = 'light' | 'dark' | 'purple';
+  type Theme = 'light' | 'dark';
 
   const root = document.documentElement;
   const toggle = document.getElementById('theme-toggle');
@@ -32,7 +31,6 @@
   const options = document.querySelectorAll<HTMLButtonElement>('.theme-option');
 
   function currentTheme(): Theme {
-    if (root.dataset.theme === 'purple') return 'purple';
     return root.classList.contains('dark') ? 'dark' : 'light';
   }
 
@@ -46,8 +44,6 @@
 
   function applyTheme(theme: Theme) {
     root.classList.toggle('dark', theme === 'dark');
-    if (theme === 'purple') root.dataset.theme = 'purple';
-    else delete root.dataset.theme;
     localStorage.setItem('theme', theme);
     updateOptions(theme);
   }

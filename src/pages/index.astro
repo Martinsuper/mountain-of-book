@@ -19,7 +19,7 @@ sortPostsByDate(posts);
         <li>
           <article class="border-b border-gray-200 dark:border-gray-800 pb-6">
             <div class="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
-              <time>
+              <time datetime={post.data.date.toISOString()}>
                 {post.data.date.toLocaleDateString('zh-CN', {
                   year: 'numeric',
                   month: 'long',
@@ -54,11 +54,11 @@ sortPostsByDate(posts);
               </p>
             )}
             {post.data.tags && (
-              <div class="flex gap-2 mt-3">
+              <div class="flex flex-wrap gap-2 mt-3">
                 {post.data.tags.map((tag) => (
                   <a
                     href={`/tags/${tag}/`}
-                    class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
+                    class="max-w-full break-words [overflow-wrap:anywhere] px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
                   >
                     #{tag}
                   </a>

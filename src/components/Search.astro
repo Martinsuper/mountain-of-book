@@ -2,151 +2,226 @@
 // src/components/Search.astro
 ---
 
-<!-- 搜索按钮 -->
 <button
   id="search-btn"
   type="button"
   class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
   aria-label="搜索文章"
+  aria-haspopup="dialog"
+  aria-controls="search-modal"
 >
-  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-    />
+  <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
   </svg>
 </button>
 
-<!-- 搜索弹窗 -->
-<div
-  id="search-modal"
-  class="fixed inset-0 z-50 hidden"
->
-  <!-- 背景遮罩 -->
-  <div class="absolute inset-0 bg-black/50" id="search-backdrop"></div>
-
-  <!-- 搜索框容器 -->
-  <div class="relative flex items-start justify-center pt-20 px-4">
-    <div class="w-full max-w-xl bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden">
-      <!-- 搜索输入 -->
-      <div class="flex items-center border-b border-gray-200 dark:border-gray-800 px-4">
-        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
+<dialog id="search-modal" aria-labelledby="search-title" class="bg-transparent text-gray-900 dark:text-gray-100">
+  <div id="search-backdrop" class="absolute inset-0" aria-hidden="true"></div>
+  <div id="search-panel" class="relative w-full max-w-xl bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden">
+    <h2 id="search-title" class="sr-only">搜索文章</h2>
+    <div class="flex items-center border-b border-gray-200 dark:border-gray-800 px-4">
+      <svg aria-hidden="true" class="w-5 h-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <label for="search-input" class="sr-only">搜索标题、摘要或标签</label>
+      <input id="search-input" type="search" placeholder="搜索文章..." autocomplete="off" autofocus aria-controls="search-results" class="w-full min-w-0 px-4 py-3 bg-transparent outline-none text-gray-900 dark:text-gray-100" />
+      <button id="search-close" type="button" aria-label="关闭搜索" class="p-1 shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
-        <input
-          id="search-input"
-          type="text"
-          placeholder="搜索文章..."
-          class="w-full px-4 py-3 bg-transparent outline-none text-gray-900 dark:text-gray-100"
-        />
-        <button
-          id="search-close"
-          class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- 搜索结果 -->
-      <ul id="search-results" class="max-h-80 overflow-y-auto p-2"></ul>
-
-      <!-- 无结果提示 -->
-      <p id="search-empty" class="hidden p-4 text-center text-gray-500">
-        未找到相关文章
-      </p>
+      </button>
     </div>
+    <p id="search-status" role="status" aria-live="polite" class="p-4 text-center text-gray-500" hidden></p>
+    <div id="search-error" class="p-4 text-center" hidden>
+      <p role="alert" class="text-red-600 dark:text-red-400">搜索索引加载失败，请重试。</p>
+      <button id="search-retry" type="button" class="mt-2 rounded px-3 py-2 text-blue-600 dark:text-blue-400 hover:underline">重新加载</button>
+    </div>
+    <ul id="search-results" aria-label="搜索结果" class="max-h-80 overflow-y-auto p-2"></ul>
+    <p id="search-empty" role="status" class="p-4 text-center text-gray-500" hidden>未找到相关文章</p>
   </div>
-</div>
+</dialog>
+
+<style>
+  #search-modal {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    padding: min(5rem, 10vh) 1rem 1rem;
+    overflow-y: auto;
+  }
+  #search-modal[open] {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  #search-modal::backdrop { background: rgb(0 0 0 / 0.5); }
+  #search-modal[data-fallback] { z-index: 50; background: rgb(0 0 0 / 0.5); }
+  #search-panel { max-height: 100%; overflow-y: auto; }
+</style>
 
 <script>
-  const btn = document.getElementById('search-btn');
-  const modal = document.getElementById('search-modal');
-  const backdrop = document.getElementById('search-backdrop');
-  const input = document.getElementById('search-input');
-  const closeBtn = document.getElementById('search-close');
-  const results = document.getElementById('search-results');
-  const empty = document.getElementById('search-empty');
-
-  // 搜索索引缓存
-  let searchIndex: any[] = [];
-
-  // 打开搜索
-  function openSearch() {
-    modal!.classList.remove('hidden');
-    input!.focus();
-    // 加载索引
-    if (searchIndex.length === 0) {
-      fetch('/api/search-index.json')
-        .then(res => res.json())
-        .then(data => searchIndex = data);
-    }
+  interface SearchPost {
+    slug: string;
+    title: string;
+    description: string;
+    tags: string[];
   }
 
-  // 关闭搜索
-  function closeSearch() {
-    modal!.classList.add('hidden');
-    input!.value = '';
-    results!.innerHTML = '';
-    empty!.classList.add('hidden');
-  }
+  const btn = document.getElementById('search-btn') as HTMLButtonElement;
+  const modal = document.getElementById('search-modal') as HTMLDialogElement;
+  const backdrop = document.getElementById('search-backdrop')!;
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const closeBtn = document.getElementById('search-close')!;
+  const results = document.getElementById('search-results')!;
+  const empty = document.getElementById('search-empty')!;
+  const statusMessage = document.getElementById('search-status')!;
+  const error = document.getElementById('search-error')!;
+  const retry = document.getElementById('search-retry')!;
+  const nativeDialog = typeof modal.showModal === 'function';
+  let previousFocus: HTMLElement | null = null;
+  let previousOverflow = '';
+  let searchIndex: SearchPost[] = [];
+  let indexPromise: Promise<void> | null = null;
+  let state: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 
-  // 搜索过滤
-  function search(query: string) {
-    if (!query.trim()) {
-      results!.innerHTML = '';
-      empty!.classList.add('hidden');
-      return;
-    }
+  function renderSearch() {
+    results.replaceChildren();
+    results.setAttribute('aria-busy', String(state === 'loading'));
+    statusMessage.hidden = state !== 'loading';
+    statusMessage.textContent = state === 'loading' ? '正在加载搜索索引…' : '';
+    error.hidden = state !== 'error';
+    empty.hidden = true;
+    const query = input.value.trim().toLowerCase();
+    if (state !== 'ready' || !query) return;
 
-    const q = query.toLowerCase();
     const matched = searchIndex.filter(post =>
-      post.title.toLowerCase().includes(q) ||
-      post.description.toLowerCase().includes(q) ||
-      post.tags.some(tag => tag.toLowerCase().includes(q))
+      [post.title, post.description, ...post.tags].some(value => value.toLowerCase().includes(query))
     );
-
-    if (matched.length === 0) {
-      results!.innerHTML = '';
-      empty!.classList.remove('hidden');
-      return;
+    empty.hidden = matched.length !== 0;
+    const fragment = document.createDocumentFragment();
+    for (const post of matched) {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = `/posts/${post.slug.split('/').map(segment => encodeURIComponent(segment)).join('/')}/`;
+      link.className = 'block min-w-0 break-words p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800';
+      const title = document.createElement('h3');
+      title.className = 'font-medium';
+      title.textContent = post.title;
+      link.append(title);
+      if (post.description) {
+        const description = document.createElement('p');
+        description.className = 'text-sm text-gray-500 mt-1';
+        description.textContent = post.description.slice(0, 80) + (post.description.length > 80 ? '...' : '');
+        link.append(description);
+      }
+      if (post.tags.length) {
+        const tags = document.createElement('div');
+        tags.className = 'flex flex-wrap gap-2 mt-2 min-w-0';
+        for (const tag of post.tags) {
+          const label = document.createElement('span');
+          label.className = 'text-xs text-gray-400 max-w-full whitespace-normal [overflow-wrap:anywhere]';
+          label.textContent = `#${tag}`;
+          tags.append(label);
+        }
+        link.append(tags);
+      }
+      item.append(link);
+      fragment.append(item);
     }
-
-    empty!.classList.add('hidden');
-    results!.innerHTML = matched.map(post => `
-      <li>
-        <a href="/posts/${post.slug}/" class="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-          <h3 class="font-medium">${post.title}</h3>
-          ${post.description ? `<p class="text-sm text-gray-500 mt-1">${post.description.slice(0, 80)}${post.description.length > 80 ? '...' : ''}</p>` : ''}
-          ${post.tags.length > 0 ? `<div class="flex gap-2 mt-2">${post.tags.map(t => `<span class="text-xs text-gray-400">#${t}</span>`).join('')}</div>` : ''}
-        </a>
-      </li>
-    `).join('');
+    results.append(fragment);
   }
 
-  // 事件绑定
-  btn!.addEventListener('click', openSearch);
-  closeBtn!.addEventListener('click', closeSearch);
-  backdrop!.addEventListener('click', closeSearch);
-  input!.addEventListener('input', e => search((e.target as HTMLInputElement).value));
+  // 缓存整个请求，包含空索引；失败转为可重试状态，不向事件处理器抛出拒绝。
+  function loadIndex(): Promise<void> {
+    if (indexPromise) return indexPromise;
+    state = 'loading';
+    renderSearch();
+    indexPromise = (async () => {
+      try {
+        const response = await fetch('/api/search-index.json');
+        if (!response.ok) throw new Error(`Search index: ${response.status}`);
+        const data: unknown = await response.json();
+        if (!Array.isArray(data) || !data.every(post =>
+          post && typeof post.slug === 'string' && typeof post.title === 'string' &&
+          typeof post.description === 'string' && Array.isArray(post.tags) &&
+          post.tags.every((tag: unknown) => typeof tag === 'string')
+        )) throw new Error('Invalid search index');
+        searchIndex = data;
+        state = 'ready';
+      } catch {
+        state = 'error';
+        indexPromise = null;
+      }
+      // 请求期间输入可能已改变，始终按此刻的输入重新搜索。
+      renderSearch();
+    })();
+    return indexPromise;
+  }
 
-  // ESC 关闭
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !modal!.classList.contains('hidden')) {
-      closeSearch();
+  function restoreFocus() {
+    document.body.style.overflow = previousOverflow;
+    (previousFocus?.isConnected ? previousFocus : btn).focus();
+  }
+
+  function openSearch() {
+    if (!modal.open) {
+      previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : btn;
+      previousOverflow = document.body.style.overflow;
+      if (nativeDialog) modal.showModal();
+      else {
+        modal.setAttribute('open', '');
+        modal.setAttribute('data-fallback', '');
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+      }
+      document.body.style.overflow = 'hidden';
     }
-    // Ctrl/Cmd + K 打开搜索
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
+    input.focus();
+    renderSearch();
+    void loadIndex();
+  }
+
+  function closeSearch() {
+    if (!modal.open) return;
+    input.value = '';
+    renderSearch();
+    if (nativeDialog) modal.close();
+    else modal.removeAttribute('open');
+    // close 事件异步派发；同步释放滚动锁，避免关闭后短暂无法滚动。
+    restoreFocus();
+  }
+
+  btn.addEventListener('click', openSearch);
+  closeBtn.addEventListener('click', closeSearch);
+  backdrop.addEventListener('click', closeSearch);
+  modal.addEventListener('click', event => { if (event.target === modal) closeSearch(); });
+  modal.addEventListener('cancel', event => { event.preventDefault(); closeSearch(); });
+  modal.addEventListener('close', () => { if (!modal.open) restoreFocus(); });
+  retry.addEventListener('click', () => { void loadIndex(); });
+  input.addEventListener('input', renderSearch);
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
       openSearch();
+    }
+    if (!modal.open) return;
+    if (event.key === 'Escape') { event.preventDefault(); closeSearch(); }
+    // 显式约束首尾焦点，避免浏览器/系统键盘偏好导致焦点落到文档或地址栏。
+    if (event.key === 'Tab') {
+      const focusable = Array.from(modal.querySelectorAll<HTMLElement>('button, input, a[href]'))
+        .filter(element => element.getClientRects().length > 0);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+        event.preventDefault(); first?.focus();
+      }
     }
   });
 </script>

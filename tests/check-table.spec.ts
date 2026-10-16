@@ -1,47 +1,32 @@
 import { test, expect } from '@playwright/test';
 
-test('检查表格渲染效果', async ({ page }) => {
-  await page.goto('http://localhost:4321/posts/mimo-code-ai-coding-agent.md/');
-  await page.waitForLoadState('networkidle');
-  
-  // 强制刷新CSS缓存
-  await page.reload();
-  await page.waitForLoadState('networkidle');
-  
+test('手机表格在自身容器横向滚动，页面不横向溢出', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/posts/mimo-code-ai-coding-agent.md/');
+
   const table = page.locator('article.prose table').first();
   await expect(table).toBeVisible();
-  
-  // 检查表格实际样式
-  const styles = await table.evaluate((el) => {
-    const computed = window.getComputedStyle(el);
-    return {
-      display: computed.display,
-      overflowX: computed.overflowX,
-      width: computed.width,
-      minWidth: computed.minWidth,
-      scrollWidth: el.scrollWidth,
-      clientWidth: el.clientWidth,
-      isOverflowing: el.scrollWidth > el.clientWidth,
-    };
+  await expect(table.locator('th')).toHaveText(['属性', '详情']);
+  await expect(table).toHaveCSS('overflow-x', 'auto');
+
+  // 当前概览表可能不够宽；仅在浏览器 DOM 加入压力数据，验证滚动而非依赖文章长度。
+  await table.locator('td').last().evaluate(cell => {
+    const longValue = document.createElement('span');
+    longValue.style.whiteSpace = 'nowrap';
+    longValue.textContent = 'table-scroll-regression-'.repeat(30);
+    cell.append(longValue);
   });
-  console.log('Table styles:', JSON.stringify(styles, null, 2));
-  
-  // 检查"安装"行代码
-  const installCode = page.locator('article.prose td code').filter({ hasText: 'curl' }).first();
-  if (await installCode.count() > 0) {
-    const codeStyles = await installCode.evaluate((el) => {
-      const computed = window.getComputedStyle(el);
-      return {
-        whiteSpace: computed.whiteSpace,
-        wordBreak: computed.wordBreak,
-      };
-    });
-    console.log('Code styles:', JSON.stringify(codeStyles, null, 2));
-  }
-  
-  // 截图
-  await table.screenshot({ path: '/tmp/table-screenshot.png' });
-  await page.screenshot({ path: '/tmp/full-page.png', fullPage: true });
-  
-  console.log('Screenshots saved');
+  await expect.poll(() => table.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+  await table.evaluate(el => { el.scrollLeft = el.scrollWidth; });
+  await expect.poll(() => table.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+
+  const bounds = await table.evaluate(el => {
+    const rect = el.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, viewport: document.documentElement.clientWidth };
+  });
+  expect(bounds.left).toBeGreaterThanOrEqual(0);
+  expect(bounds.right).toBeLessThanOrEqual(bounds.viewport + 1);
+  await expect.poll(() => page.evaluate(() =>
+    Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth
+  )).toBeLessThanOrEqual(1);
 });

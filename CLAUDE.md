@@ -29,7 +29,6 @@
 - 搜索功能（search-index.json）
 - RSS 订阅
 - Sitemap 自动生成
-- 宝可梦浮动伙伴（FloatingCompanion）
 - 草稿/发布工作流
 
 ---
@@ -47,7 +46,6 @@
 │   │   ├── tags/[tag].astro         # 标签归档页
 │   │   ├── archive.astro       # 归档页
 │   │   ├── timeline.astro      # 时间线
-│   │   ├── collection.astro    # 合集页
 │   │   ├── tools.astro         # 工具页
 │   │   ├── todo.astro          # 待办页
 │   │   ├── dev/                # 开发模式页面

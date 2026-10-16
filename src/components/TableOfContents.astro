@@ -1,19 +1,22 @@
 ---
+import { randomUUID } from 'node:crypto';
+
 interface Props {
   headings: { depth: number; slug: string; text: string }[];
 }
 
 const { headings } = Astro.props;
 const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
+const listId = `toc-list-${randomUUID()}`;
 ---
 
 {toc.length > 0 && (
   <nav class="toc">
-    <button class="toc-toggle" aria-label="展开/收起目录">
+    <button type="button" class="toc-toggle" aria-label="展开/收起目录" aria-expanded="true" aria-controls={listId}>
       <span class="toc-toggle-title">目录</span>
       <span class="toc-toggle-icon">▾</span>
     </button>
-    <ul class="space-y-2 toc-list">
+    <ul id={listId} class="space-y-2 toc-list">
       {toc.map((heading) => (
         <li class={`toc-item toc-depth-${heading.depth}`}>
           <a
@@ -73,15 +76,18 @@ const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
     transform: rotate(-90deg);
   }
 
-  .toc.collapsed .toc-list {
-    display: none;
+  /* 与 Tailwind lg 一致：1024px 起始终显示，不依赖窄屏遗留的折叠类。 */
+  @media (min-width: 1024px) {
+    .toc.collapsed .toc-list {
+      display: block;
+    }
   }
 
-  :global(.lg) .toc.collapsed .toc-list {
-    display: block;
-  }
+  @media (width < 1024px) {
+    .toc.collapsed .toc-list {
+      display: none;
+    }
 
-  @media (max-width: 1024px) {
     .toc-toggle {
       display: flex;
     }
@@ -116,17 +122,22 @@ const toc = headings.filter(h => h.depth >= 2 && h.depth <= 4);
 </style>
 
 <script>
-  document.querySelectorAll('.toc').forEach(toc => {
-    const toggle = toc.querySelector('.toc-toggle');
+  const desktop = window.matchMedia('(min-width: 1024px)');
+  document.querySelectorAll<HTMLElement>('.toc').forEach(toc => {
+    const toggle = toc.querySelector<HTMLButtonElement>('.toc-toggle');
     if (!toggle) return;
-
-    // 移动端默认收起
-    if (window.innerWidth < 1024) {
-      toc.classList.add('collapsed');
-    }
-
+    // 单独保留窄屏偏好；宽屏强制展开，跨断点时同步 ARIA 和实际可见性。
+    let mobileExpanded = false;
+    const syncExpanded = () => {
+      const expanded = desktop.matches || mobileExpanded;
+      toc.classList.toggle('collapsed', !expanded);
+      toggle.setAttribute('aria-expanded', String(expanded));
+    };
+    syncExpanded();
+    desktop.addEventListener('change', syncExpanded);
     toggle.addEventListener('click', () => {
-      toc.classList.toggle('collapsed');
+      if (!desktop.matches) mobileExpanded = !mobileExpanded;
+      syncExpanded();
     });
   });
 </script>

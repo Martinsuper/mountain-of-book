@@ -16,7 +16,8 @@ export function groupPostsByYear(posts: CollectionEntry<'posts'>[]): Map<number,
   posts.forEach((post) => {
     const year = post.data.date.getFullYear();
     const existing = groups.get(year) || [];
-    groups.set(year, [...existing, post]);
+    existing.push(post);
+    groups.set(year, existing);
   });
   return groups;
 }

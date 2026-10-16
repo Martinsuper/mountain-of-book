@@ -4,7 +4,7 @@
 // 支持缩放（按钮 / 键盘 +-0 / 滚轮）、拖拽平移、Esc / 背景 / 关闭按钮关闭。
 ---
 
-<div id="zoom-modal" class="zoom-modal">
+<dialog id="zoom-modal" class="zoom-modal" aria-label="图表放大查看器">
   <div class="zoom-modal-content">
     <button class="zoom-modal-close" aria-label="关闭">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -38,13 +38,16 @@
       <div class="zoom-modal-stage"></div>
     </div>
   </div>
-</div>
+</dialog>
 
 <script>
-  const modal = document.getElementById('zoom-modal');
+  const modal = document.getElementById('zoom-modal') as HTMLDialogElement | null;
   const modalBody = modal?.querySelector('.zoom-modal-body') as HTMLElement | null;
   const stage = modalBody?.querySelector('.zoom-modal-stage') as HTMLElement | null;
-  const closeBtn = modal?.querySelector('.zoom-modal-close');
+  const closeBtn = modal?.querySelector<HTMLButtonElement>('.zoom-modal-close');
+  let returnFocus: HTMLElement | null = null;
+  let previousOverflow = '';
+  let opening = 0;
   const zoomInBtn = document.getElementById('zoom-in');
   const zoomOutBtn = document.getElementById('zoom-out');
   const zoomResetBtn = document.getElementById('zoom-reset');
@@ -70,9 +73,8 @@
 
   function closeModal() {
     if (!modal) return;
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-    resetZoom();
+    opening++;
+    modal.close();
   }
 
   function updateZoom(newZoom: number) {
@@ -121,13 +123,20 @@
 
     stage.innerHTML = '';
     stage.appendChild(el);
+    // 先解除隐藏再 showModal，让初始焦点和显式 focus 都能命中按钮。
     modal.classList.add('active');
+    if (!modal.open) {
+      previousOverflow = document.body.style.overflow;
+      modal.showModal();
+    }
     document.body.style.overflow = 'hidden';
+    closeBtn?.focus();
     resetZoom();
   }
 
   // 打开 Mermaid 内联 SVG
   function openSvg(svg: SVGElement) {
+    opening++;
     const clone = svg.cloneNode(true) as SVGElement;
     clone.removeAttribute('style');
     const viewBox = svg.getAttribute('viewBox');
@@ -152,12 +161,13 @@
     img.alt = sourceImg.alt || 'PlantUML diagram';
     img.draggable = false;
 
-    const place = () => show(img, img.naturalWidth || 800, img.naturalHeight || 400);
+    const request = ++opening;
+    const place = () => { if (request === opening) show(img, img.naturalWidth || 800, img.naturalHeight || 400); };
     if (img.complete && img.naturalWidth) {
       place();
     } else {
       img.addEventListener('load', place, { once: true });
-      img.addEventListener('error', () => show(img, 800, 400), { once: true });
+      img.addEventListener('error', place, { once: true });
     }
   }
 
@@ -185,6 +195,7 @@
   document.addEventListener('keydown', (e) => {
     if (!modal?.classList.contains('active')) return;
     if (e.key === 'Escape') {
+      e.preventDefault();
       closeModal();
     } else if (e.key === '=' || e.key === '+') {
       e.preventDefault();
@@ -210,6 +221,8 @@
     const target = e.target as HTMLElement;
     if (modal?.contains(target)) return;
 
+    const trigger = target.closest<HTMLElement>('.mermaid, .plantuml-img');
+    if (trigger) returnFocus = trigger;
     const mermaid = target.closest('.mermaid');
     if (mermaid) {
       const svg = mermaid.querySelector('svg');
@@ -228,6 +241,33 @@
         openImg(img as HTMLImageElement);
       }
     }
+  });
+
+  function prepareTriggers() {
+    document.querySelectorAll<HTMLElement>('.mermaid, .plantuml-img').forEach(element => {
+      element.tabIndex = 0;
+      element.setAttribute('role', 'button');
+      element.setAttribute('aria-label', '放大查看图表');
+      element.setAttribute('aria-haspopup', 'dialog');
+      if (element.dataset.zoomKeyboard) return;
+      element.dataset.zoomKeyboard = 'true';
+      element.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          element.click();
+        }
+      });
+    });
+  }
+  prepareTriggers();
+  document.addEventListener('mermaid-rendered', prepareTriggers);
+  modal?.addEventListener('cancel', event => { event.preventDefault(); closeModal(); });
+  modal?.addEventListener('close', () => {
+    modal.classList.remove('active');
+    document.body.style.overflow = previousOverflow;
+    isDragging = false;
+    returnFocus?.focus();
+    resetZoom();
   });
 
   closeBtn?.addEventListener('click', (e) => {
@@ -258,7 +298,11 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.85);
-    display: flex;
+    display: none;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: 0;
     justify-content: center;
     align-items: center;
     z-index: 9999;
@@ -268,6 +312,9 @@
     padding: 24px;
     box-sizing: border-box;
   }
+
+  .zoom-modal[open] { display: flex; }
+  .zoom-modal::backdrop { background: rgba(0, 0, 0, 0.85); }
 
   .zoom-modal.active {
     opacity: 1;

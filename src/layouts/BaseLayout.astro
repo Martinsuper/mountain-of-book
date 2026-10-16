@@ -6,7 +6,6 @@ import Search from '../components/Search.astro';
 import BackToTop from '../components/BackToTop.astro';
 import Mermaid from '../components/Mermaid.astro';
 import ZoomModal from '../components/ZoomModal.astro';
-import FloatingCompanion from '../components/FloatingCompanion.astro';
 
 interface Props {
   title?: string;
@@ -14,6 +13,7 @@ interface Props {
   keywords?: string;
   image?: string;
   type?: 'website' | 'article';
+  publishedTime?: string;
   fullWidth?: boolean;
   hideHeader?: boolean;
 }
@@ -24,6 +24,7 @@ const {
   keywords = '博客,技术,编程,学习',
   image = '/og-image.png',
   type = 'website',
+  publishedTime,
   fullWidth = false,
   hideHeader = false
 } = Astro.props;
@@ -36,8 +37,8 @@ const currentPath = Astro.url.pathname;
 const isPostsSection =
   ['/archive/', '/timeline/'].includes(currentPath) ||
   currentPath.startsWith('/categories') ||
-  currentPath.startsWith('/tags');
-const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPath);
+  currentPath.startsWith('/tags') || currentPath.startsWith('/posts/');
+const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
 ---
 
 <!doctype html>
@@ -59,6 +60,8 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
     <meta property="og:site_name" content="书山有路" />
     <meta property="og:locale" content="zh_CN" />
 
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
@@ -69,7 +72,6 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
     <link rel="alternate" type="application/rss+xml" title="书山有路 RSS" href="/rss.xml" />
 
     <!-- Preconnect for external domains -->
-    <link rel="preconnect" href="https://raw.githubusercontent.com" />
     <link rel="preconnect" href="https://www.plantuml.com" />
 
     <!-- JSON-LD Structured Data -->
@@ -78,6 +80,7 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
         "@context": "https://schema.org",
         "@type": "Article",
         "headline": title,
+        "datePublished": publishedTime,
         "description": description,
         "image": new URL(image, Astro.site).href,
         "url": canonicalURL.href,
@@ -94,7 +97,7 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
         "url": new URL('/', Astro.site).href,
         "description": description
       }
-    )} />
+    ).replace(/</g, '\\u003c')} />
 
     <title>{fullTitle}</title>
     {hideHeader ? (
@@ -106,11 +109,13 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
       </script>
     ) : (
       <script is:inline>
-        const savedTheme = localStorage.getItem('theme');
+        let savedTheme = localStorage.getItem('theme');
+        if (savedTheme && savedTheme !== 'light' && savedTheme !== 'dark') {
+          localStorage.removeItem('theme');
+          savedTheme = null;
+        }
         const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (savedTheme === 'purple') {
-          document.documentElement.dataset.theme = 'purple';
-        } else if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+        if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
           document.documentElement.classList.add('dark');
         }
       </script>
@@ -123,7 +128,7 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
             书山有路
           </a>
           <!-- 移动端：汉堡菜单按钮 -->
-          <button id="mobile-menu-btn" class="lg:hidden ml-auto p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="菜单">
+          <button id="mobile-menu-btn" class="lg:hidden ml-auto p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="菜单" aria-expanded="false" aria-controls="mobile-menu">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -132,10 +137,6 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
           <div class="flex items-center gap-2 shrink-0 ml-auto lg:ml-0 lg:gap-3">
             <Search />
             <ThemeToggle />
-            <button id="navCompanion" class="nav-companion-btn" title="我的伙伴">
-              <img id="navCompanionSprite" src="" alt="伙伴" class="nav-sprite" />
-              <span id="navCompanionLevel" class="nav-level"></span>
-            </button>
           </div>
           <!-- 桌面端：导航链接 -->
           <div class="hidden lg:flex items-center gap-3 shrink-0 ml-auto">
@@ -175,13 +176,12 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
             <div class="nav-dropdown">
               <a href="/tools/" class={`nav-dropdown-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
               <a href="/todo/" class={`nav-dropdown-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
-              <a href="/collection/" class={`nav-dropdown-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
             </div>
           </div>
         </div>
       </nav>
       <!-- 移动端：下拉导航菜单 -->
-      <div id="mobile-menu" class="mobile-menu lg:hidden">
+      <div id="mobile-menu" class="mobile-menu lg:hidden" inert>
         <a href="/" class={`mobile-nav-link ${currentPath === '/' ? 'active' : ''}`}>首页</a>
         <div class="mobile-nav-group-label">文章</div>
         <a href="/archive/" class={`mobile-nav-link ${currentPath === '/archive/' ? 'active' : ''}`}>归档</a>
@@ -191,7 +191,6 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
         <div class="mobile-nav-group-label">小工具</div>
         <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
         <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
-        <a href="/collection/" class={`mobile-nav-link ${currentPath === '/collection/' ? 'active' : ''}`}>图鉴</a>
       </div>
     </header>}
     <main class={fullWidth ? '' : 'max-w-4xl mx-auto px-4 py-8'}>
@@ -200,45 +199,6 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
     <Mermaid />
     <ZoomModal />
     <BackToTop />
-    <FloatingCompanion />
-
-    <!-- Companion interaction panel -->
-    <div class="companion-panel" id="companionPanel">
-      <div class="companion-panel-inner">
-        <button class="companion-panel-close" id="companionPanelClose">&times;</button>
-        <div class="companion-panel-header">
-          <img id="panelSprite" class="panel-sprite" src="" alt="" />
-          <div class="panel-info">
-            <h3 class="panel-name" id="panelName"></h3>
-            <div class="panel-stats">
-              <span class="panel-stat">Lv.<span id="panelLevel">1</span></span>
-              <span class="panel-stat">亲密度 <span id="panelIntimacy">0</span></span>
-            </div>
-            <div class="panel-xp-bar">
-              <div class="panel-xp-fill" id="panelXpFill"></div>
-            </div>
-            <span class="panel-xp-text" id="panelXpText"></span>
-          </div>
-        </div>
-        <div class="companion-panel-actions">
-          <button class="companion-action-btn" id="panelPetBtn">
-            <span class="action-icon">🤗</span>
-            <span>抚摸</span>
-          </button>
-          <button class="companion-action-btn" id="panelFeedBtn">
-            <span class="action-icon">🍎</span>
-            <span>喂食</span>
-          </button>
-          <button class="companion-action-btn" id="panelSwitchBtn">
-            <span class="action-icon">🔄</span>
-            <span>切换</span>
-          </button>
-        </div>
-        <div class="companion-panel-dialogue" id="panelDialogue">
-          <span class="dialogue-text" id="panelDialogueText"></span>
-        </div>
-      </div>
-    </div>
   </body>
 </html>
 
@@ -361,53 +321,6 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
     color: #6b7280;
   }
 
-  /* Nav companion button */
-  .nav-companion-btn {
-    position: relative;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid #e5e7eb;
-    background: #f3f4f6;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    padding: 0;
-  }
-
-  :global(.dark) .nav-companion-btn {
-    border-color: #4b5563;
-    background: #1f2937;
-  }
-
-  .nav-companion-btn:hover {
-    border-color: #3b82f6;
-    transform: scale(1.1);
-  }
-
-  .nav-sprite {
-    width: 24px;
-    height: 24px;
-    image-rendering: pixelated;
-  }
-
-  .nav-level {
-    position: absolute;
-    bottom: -4px;
-    right: -4px;
-    background: #3b82f6;
-    color: #fff;
-    font-size: 0.55rem;
-    font-weight: 700;
-    padding: 0 3px;
-    border-radius: 6px;
-    line-height: 14px;
-    min-width: 14px;
-    text-align: center;
-  }
-
   /* Mobile menu */
   .mobile-menu {
     max-height: 0;
@@ -459,373 +372,27 @@ const isToolsSection = ['/tools/', '/todo/', '/collection/'].includes(currentPat
     background: rgba(59, 130, 246, 0.1);
   }
 
-  /* Companion panel */
-  .companion-panel {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1100;
-    display: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .companion-panel.show {
-    display: block;
-    opacity: 1;
-  }
-
-  .companion-panel-inner {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 16px;
-    padding: 1.25rem;
-    width: 280px;
-    position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    transform: translateY(10px) scale(0.95);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  @media (max-width: 768px) {
-    .companion-panel {
-      bottom: 12px;
-      right: 12px;
-      left: 12px;
-    }
-    .companion-panel-inner {
-      width: auto;
-      padding: 1rem;
-      border-radius: 12px;
-    }
-    .panel-sprite {
-      width: 72px;
-      height: 72px;
-    }
-  }
-
-  .companion-panel.show .companion-panel-inner {
-    transform: translateY(0) scale(1);
-  }
-
-  .companion-panel-close {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 1.25rem;
-    cursor: pointer;
-    line-height: 1;
-  }
-
-  .companion-panel-close:hover {
-    color: #fff;
-  }
-
-  .companion-panel-header {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .panel-sprite {
-    width: 96px;
-    height: 96px;
-    image-rendering: pixelated;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 4px;
-    animation: spriteFloat 3s ease-in-out infinite;
-  }
-
-  @keyframes spriteFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-  }
-
-  .panel-info {
-    flex: 1;
-  }
-
-  .panel-name {
-    color: #fff;
-    font-size: 1.1rem;
-    margin: 0 0 0.25rem;
-  }
-
-  .panel-stats {
-    display: flex;
-    gap: 0.75rem;
-    font-size: 0.75rem;
-    color: #aaa;
-    margin-bottom: 0.5rem;
-  }
-
-  .panel-stat {
-    color: #ccc;
-  }
-
-  .panel-xp-bar {
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 0.25rem;
-  }
-
-  .panel-xp-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #f59e0b, #ef4444);
-    border-radius: 3px;
-    transition: width 0.5s ease;
-  }
-
-  .panel-xp-text {
-    font-size: 0.65rem;
-    color: #888;
-  }
-
-  .companion-panel-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .companion-action-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    color: #ccc;
-    cursor: pointer;
-    font-size: 0.7rem;
-    transition: all 0.2s ease;
-  }
-
-  .companion-action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    transform: translateY(-2px);
-  }
-
-  .companion-action-btn:active {
-    transform: translateY(0) scale(0.95);
-  }
-
-  .companion-action-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .action-icon {
-    font-size: 1.25rem;
-  }
-
-  .companion-panel-dialogue {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 0.75rem;
-    min-height: 40px;
-    position: relative;
-  }
-
-  .companion-panel-dialogue::before {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: 24px;
-    width: 12px;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    transform: rotate(45deg);
-  }
-
-  .dialogue-text {
-    color: #ddd;
-    font-size: 0.8rem;
-    line-height: 1.4;
-  }
 </style>
 
 <script>
-import { ensureCompanion, feedPokemon, petPokemon, getRandomDialogue, getCompanionPokemon, switchCompanion, canFeed, getFeedRemaining } from '../lib/poke-companion.js';
-
-const COMPANION_KEY = 'poke_companion';
-
-function getCompanion() {
-  try { return JSON.parse(localStorage.getItem(COMPANION_KEY)) || null; }
-  catch { return null; }
-}
-
-function saveCompanion(data) {
-  localStorage.setItem(COMPANION_KEY, JSON.stringify(data));
-}
-
-const navCompanion = document.getElementById('navCompanion');
-const navCompanionSprite = document.getElementById('navCompanionSprite');
-const navCompanionLevel = document.getElementById('navCompanionLevel');
-
-const companionPanel = document.getElementById('companionPanel');
-const panelSprite = document.getElementById('panelSprite');
-const panelName = document.getElementById('panelName');
-const panelLevel = document.getElementById('panelLevel');
-const panelIntimacy = document.getElementById('panelIntimacy');
-const panelXpFill = document.getElementById('panelXpFill');
-const panelXpText = document.getElementById('panelXpText');
-const panelPetBtn = document.getElementById('panelPetBtn');
-const panelFeedBtn = document.getElementById('panelFeedBtn');
-const panelSwitchBtn = document.getElementById('panelSwitchBtn');
-const panelDialogue = document.getElementById('panelDialogue');
-const panelDialogueText = document.getElementById('panelDialogueText');
-const companionPanelClose = document.getElementById('companionPanelClose');
-
-let panelOpen = false;
-
-function updateNavSprite() {
-  const companion = getCompanion();
-  if (companion) {
-    navCompanionSprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${companion.id}.png`;
-    navCompanionLevel.textContent = `Lv.${companion.level}`;
-  } else {
-    navCompanion.style.display = 'none';
-  }
-}
-
-function updatePanel() {
-  const companion = getCompanion();
-  if (!companion) return;
-
-  panelSprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${companion.id}.png`;
-  panelName.textContent = `#${String(companion.id).padStart(3, '0')} ${companion.name}`;
-  panelLevel.textContent = companion.level;
-  panelIntimacy.textContent = companion.intimacy || 0;
-
-  const xpNeeded = companion.level * 20 + 10;
-  const xpPercent = Math.round(((companion.xp || 0) / xpNeeded) * 100);
-  panelXpFill.style.width = `${xpPercent}%`;
-  panelXpText.textContent = `经验值 ${companion.xp || 0} / ${xpNeeded}`;
-
-  if (canFeed()) {
-    panelFeedBtn.disabled = false;
-    panelFeedBtn.querySelector('span:last-child').textContent = '喂食';
-  } else {
-    panelFeedBtn.disabled = true;
-    const mins = getFeedRemaining();
-    panelFeedBtn.querySelector('span:last-child').textContent = `${mins}分钟`;
-  }
-}
-
-function showPanel() {
-  updatePanel();
-  companionPanel.style.display = 'block';
-  requestAnimationFrame(() => companionPanel.classList.add('show'));
-  panelOpen = true;
-
-  const dialogue = getRandomDialogue();
-  if (dialogue) panelDialogueText.textContent = dialogue;
-}
-
-function hidePanel() {
-  companionPanel.classList.remove('show');
-  setTimeout(() => { companionPanel.style.display = 'none'; }, 300);
-  panelOpen = false;
-}
-
-function showResponse(message) {
-  panelDialogueText.textContent = message;
-  panelDialogue.style.animation = 'none';
-  panelDialogue.offsetHeight;
-  panelDialogue.style.animation = 'dialoguePop 0.3s ease';
-}
-
-navCompanion?.addEventListener('click', () => {
-  if (panelOpen) hidePanel();
-  else showPanel();
-});
-
-companionPanelClose?.addEventListener('click', hidePanel);
-
-panelPetBtn?.addEventListener('click', () => {
-  const result = petPokemon();
-  if (result) {
-    updatePanel();
-    updateNavSprite();
-    showResponse(`${result.petResponse} ${result.message}`);
-    panelSprite.style.animation = 'none';
-    panelSprite.offsetHeight;
-    panelSprite.style.animation = 'petBounce 0.4s ease, spriteFloat 3s ease-in-out 0.4s infinite';
-  }
-});
-
-panelFeedBtn?.addEventListener('click', () => {
-  const result = feedPokemon();
-  if (result) {
-    updatePanel();
-    if (result.success) {
-      updateNavSprite();
-      showResponse(result.leveledUp
-        ? `${result.feedResponse} 升级了！现在是 Lv.${result.level}！`
-        : `${result.feedResponse} ${result.message}`);
-      panelSprite.style.animation = 'none';
-      panelSprite.offsetHeight;
-      panelSprite.style.animation = 'feedBounce 0.5s ease, spriteFloat 3s ease-in-out 0.5s infinite';
-    } else {
-      showResponse(result.message);
-    }
-  }
-});
-
-panelSwitchBtn?.addEventListener('click', () => {
-  const result = switchCompanion();
-  if (result) {
-    updatePanel();
-    updateNavSprite();
-    showResponse(`切换到了 ${result.name}！`);
-  }
-});
-
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @keyframes petBounce {
-    0%, 100% { transform: scale(1); }
-    25% { transform: scale(1.2) rotate(-10deg); }
-    50% { transform: scale(0.9) rotate(10deg); }
-    75% { transform: scale(1.1); }
-  }
-  @keyframes feedBounce {
-    0% { transform: scale(1) translateY(0); }
-    30% { transform: scale(1.3) translateY(-15px); }
-    60% { transform: scale(0.8) translateY(5px); }
-    100% { transform: scale(1) translateY(0); }
-  }
-  @keyframes dialoguePop {
-    0% { transform: scale(0.95); opacity: 0.5; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-`;
-document.head.appendChild(styleSheet);
-
-ensureCompanion();
-
-// Mobile menu toggle
+// 收起的菜单不应保留可聚焦链接。
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
-mobileMenuBtn?.addEventListener('click', () => {
-  mobileMenu?.classList.toggle('open');
-});
-// Close mobile menu when clicking a link
+function setMobileMenu(open: boolean) {
+  if (!mobileMenu) return;
+  mobileMenu.classList.toggle('open', open);
+  mobileMenu.inert = !open;
+  mobileMenuBtn?.setAttribute('aria-expanded', String(open));
+}
+mobileMenuBtn?.addEventListener('click', () => setMobileMenu(!mobileMenu?.classList.contains('open')));
 mobileMenu?.querySelectorAll('.mobile-nav-link').forEach(link => {
-  link.addEventListener('click', () => {
-    mobileMenu.classList.remove('open');
-  });
+  link.addEventListener('click', () => setMobileMenu(false));
 });
-updateNavSprite();
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && mobileMenu?.classList.contains('open')) {
+    setMobileMenu(false);
+    mobileMenuBtn?.focus();
+  }
+});
+window.matchMedia('(min-width: 1024px)').addEventListener('change', () => setMobileMenu(false));
 </script>
