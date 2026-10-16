@@ -1,0 +1,225 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AccountShell from '../../components/AccountShell.astro';
+---
+<BaseLayout title="个人中心"><AccountShell title="个人中心">
+  <form id="login-form" hidden>
+    <p class="hint">请使用受邀邮箱登录。</p>
+    <label>邮箱<input name="email" type="email" autocomplete="email" required maxlength="254" /></label>
+    <label>密码<input name="password" type="password" autocomplete="current-password" required maxlength="128" /></label>
+    <div class="login-actions"><button type="submit" class="login-primary">登录</button><button type="button" id="forgot-password">忘记密码</button></div>
+    <div class="email-fallback"><span class="hint">首次登录或尚未设置密码？</span><button type="button" id="email-login">发送登录邮件</button></div>
+  </form>
+  <div id="account-private" hidden>
+    <div class="account-identity"><p id="account-email"></p><button id="sign-out" class="quiet-action">退出登录</button></div>
+    <details id="account-settings" class="password-settings">
+      <summary>账号设置</summary>
+      <h2 id="password-heading">设置或修改密码</h2>
+      <p class="hint">密码至少 8 位。</p>
+      <form id="password-form">
+        <label>新密码<input name="new-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" /></label>
+        <label>确认新密码<input name="confirm-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" /></label>
+        <button type="submit">保存密码</button><p id="password-status" role="status" aria-live="polite"></p>
+      </form>
+    </details>
+    <section class="reading-section" aria-labelledby="reading-heading">
+      <div class="section-heading"><h2 id="reading-heading">最近阅读</h2><button id="clear-history" class="quiet-action">清空阅读记录</button></div>
+      <ul id="reading-history"></ul>
+    </section>
+    <details id="todo-settings" class="todo-settings">
+      <summary>我的待办</summary>
+      <form id="todo-form"><label>新待办<input name="text" placeholder="记下一件要做的事" required maxlength="500" /></label><button>添加待办</button></form>
+      <ul id="user-todos"></ul>
+    </details>
+  </div>
+</AccountShell></BaseLayout>
+<style is:global>
+  .account-shell:has(#account-private) { --account-rule:#e5e7eb; --account-muted:#6b7280; }
+  .dark .account-shell:has(#account-private) { --account-rule:#374151; --account-muted:#9ca3af; }
+  .account-shell:has(#account-private) #account-status:empty { display:none; }
+  .account-shell #login-form { max-width:420px;gap:16px; }
+  .account-shell .login-actions { display:flex;gap:12px;align-items:center; }
+  .account-shell .login-primary, .account-shell #password-form button, .account-shell #todo-form button { background:#2563eb;border-color:#2563eb;color:white;padding-inline:24px; }
+  .account-shell #forgot-password { border:0;color:var(--link-color); }
+  .account-shell .email-fallback { border-top:1px solid var(--account-rule);padding-top:20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px; }
+  .account-shell #email-login { border:0;color:var(--link-color);padding:6px 0; }
+  .account-shell .account-identity { display:flex;align-items:center;justify-content:space-between;gap:16px; }
+  .account-shell #account-email { min-width:0;overflow-wrap:anywhere;font-size:.95rem; }
+  .account-shell .quiet-action { border:0;color:var(--account-muted);font-size:.85rem;padding:6px 0;flex-shrink:0; }
+  .account-shell .quiet-action:hover { color:var(--link-color);text-decoration:underline; }
+  .account-shell :is(.password-settings,.todo-settings) summary { width:fit-content;cursor:pointer;color:var(--account-muted);font-size:.9rem;padding:12px 0; }
+  .account-shell details[open] > summary { color:var(--link-color); }
+  .account-shell .password-settings { margin-top:4px; }
+  .account-shell #password-form { max-width:420px; }
+  .account-shell #password-status { font-size:14px; }
+  .account-shell #password-status:empty { display:none; }
+  .account-shell .reading-section { margin-top:28px; }
+  .account-shell .section-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--account-rule);padding-bottom:12px; }
+  .account-shell .section-heading h2 { margin:0;font-size:1.1rem; }
+  .account-shell #reading-history { gap:0; }
+  .account-shell #reading-history li { display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:18px 0;border:0;border-bottom:1px solid var(--account-rule);border-radius:0; }
+  .account-shell #reading-history :is(a,span) { min-width:0;line-height:1.7; }
+  .account-shell #reading-history a { color:inherit; }
+  .account-shell #reading-history a:hover { color:var(--link-color); }
+  .account-shell #reading-history button { margin:0;border:0;padding:4px 0;color:var(--account-muted);font-size:.8rem;flex-shrink:0; }
+  .account-shell #reading-history button:hover { color:var(--link-color);text-decoration:underline; }
+  .account-shell #reading-history .empty-state { color:var(--account-muted);padding:28px 0; }
+  .account-shell .todo-settings { border-top:1px solid var(--account-rule);margin-top:32px;padding-top:8px; }
+  .account-shell #todo-form { grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px; }
+  .account-shell #user-todos li { border-color:var(--account-rule);line-height:1.8; }
+  .account-shell:has(#account-private) :is(button,summary,input):focus-visible { outline:2px solid #2563eb;outline-offset:4px; }
+  @media(max-width:520px) {
+    .account-shell .account-identity { align-items:baseline;gap:12px; }
+    .account-shell #todo-form { grid-template-columns:1fr; }
+    .account-shell .reading-section { margin-top:20px; }
+  }
+</style>
+<script>
+import { supabase, configurationMessage, safeArticlePath } from '../../lib/supabase';
+const status = document.getElementById('account-status')!;
+const login = document.getElementById('login-form') as HTMLFormElement;
+const panel = document.getElementById('account-private')!;
+let generation = 0;
+const passwordForm = document.getElementById('password-form') as HTMLFormElement;
+const passwordStatus = document.getElementById('password-status')!;
+const settings = document.getElementById('account-settings') as HTMLDetailsElement;
+const todos = document.getElementById('todo-settings') as HTMLDetailsElement;
+const passwordInput = login.elements.namedItem('password') as HTMLInputElement;
+let recoveryMode = new URLSearchParams(location.search).get('reset') === '1';
+async function render() {
+  const current = ++generation;
+  panel.hidden = true;
+  document.getElementById('account-email')!.textContent = '';
+  for (const id of ['user-todos', 'reading-history']) document.getElementById(id)!.replaceChildren();
+  if (!supabase) { status.textContent = configurationMessage; return; }
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (current !== generation) return;
+  if (!user) { settings.open = false; todos.open = false; login.hidden = false; status.textContent = error && !error.message.includes('Auth session missing') ? '登录已失效，请重新登录。' : '请先登录。'; return; }
+  login.hidden = true; passwordInput.value = ''; panel.hidden = false;
+  if (recoveryMode) {
+    settings.open = true;
+    document.getElementById('password-heading')!.textContent = '重置密码';
+    passwordStatus.textContent = '请设置新密码，完成后可使用邮箱密码登录。';
+    recoveryMode = false;
+    history.replaceState(null, '', '/account/');
+    passwordForm.querySelector('input')?.focus();
+  }
+  document.getElementById('account-email')!.textContent = user.email || '已登录';
+  status.textContent = '正在加载个人数据…';
+  const results = await Promise.all([
+    supabase.from('user_todos').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    supabase.from('reading_history').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }).limit(50),
+  ]);
+  if (current !== generation) return;
+  status.textContent = results.some(r => r.error) ? '部分数据加载失败，请检查网络后刷新重试。' : '';
+  const containers = ['user-todos', 'reading-history'];
+  results.forEach((result, index) => {
+    const list = document.getElementById(containers[index])!;
+    if (!result.data?.length) {
+      const item = document.createElement('li'); item.className = 'empty-state';
+      item.textContent = result.error ? '暂时无法加载，请刷新重试。' : index === 0 ? '还没有待办。' : '还没有阅读记录，阅读文章后会显示在这里。';
+      list.append(item);
+    }
+    if (index === 1) (document.getElementById('clear-history') as HTMLButtonElement).hidden = !result.data?.length;
+    result.data?.forEach(row => {
+      const item = document.createElement('li');
+      if (index === 0) {
+        const toggle = document.createElement('button'); toggle.textContent = row.completed ? '标记未完成' : '标记完成';
+        item.append(document.createTextNode((row.completed ? '已完成：' : '') + row.text), toggle);
+        toggle.onclick = () => mutate(() => supabase!.from('user_todos').update({ completed: !row.completed }).eq('id', row.id).eq('user_id', user.id));
+      } else {
+        const path = safeArticlePath(row.article_path);
+        const link = document.createElement(path ? 'a' : 'span'); link.textContent = row.title;
+        if (path) (link as HTMLAnchorElement).href = path;
+        item.append(link);
+      }
+      const remove = document.createElement('button'); remove.textContent = '删除';
+      remove.onclick = () => mutate(() => {
+        const query = supabase!.from(['user_todos', 'reading_history'][index]).delete().eq('user_id', user.id);
+        return index === 0 ? query.eq('id', row.id) : query.eq('article_path', row.article_path);
+      });
+      item.append(remove); list.append(item);
+    });
+  });
+}
+let busy = false;
+async function mutate(action: () => PromiseLike<{ error: unknown }>) {
+  if (busy) return;
+  busy = true;
+  try { const { error } = await action(); if (error) throw error; await render(); }
+  catch { status.textContent = '操作失败，请检查网络或权限后重试。'; }
+  finally { busy = false; }
+}
+let authBusy = false;
+async function authenticate(mode: 'password' | 'email' | 'recover') {
+  if (!supabase || authBusy) return;
+  const email = login.elements.namedItem('email') as HTMLInputElement;
+  if (!email.reportValidity()) return;
+  if (mode === 'password' && !passwordInput.reportValidity()) return;
+  authBusy = true;
+  login.querySelectorAll('button').forEach(button => button.disabled = true);
+  try {
+    if (mode === 'password') {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.value.trim(), password: passwordInput.value });
+      passwordInput.value = '';
+      if (error) { status.textContent = '邮箱或密码错误，或账号暂时无法登录。请重试，也可使用邮件登录。'; return; }
+      await render();
+    } else if (mode === 'recover') {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.value.trim(), { redirectTo: new URL('/account/?reset=1', location.origin).href });
+      status.textContent = error ? '重置邮件发送失败，请稍后重试。' : '若该邮箱已获邀请，将收到重置密码邮件，请在当前浏览器打开链接。';
+    } else {
+      const { error } = await supabase.auth.signInWithOtp({ email: email.value.trim(), options: { shouldCreateUser: false, emailRedirectTo: new URL('/account/', location.origin).href } });
+      status.textContent = error ? '无法发送登录邮件，请确认已获邀请，或稍后重试。' : '登录邮件已发送，请在当前浏览器打开邮件中的链接。';
+    }
+  } catch { status.textContent = '网络异常，请稍后重试。'; }
+  finally { authBusy = false; login.querySelectorAll('button').forEach(button => button.disabled = false); }
+}
+login.addEventListener('submit', event => { event.preventDefault(); void authenticate('password'); });
+document.getElementById('email-login')!.onclick = () => void authenticate('email');
+document.getElementById('forgot-password')!.onclick = () => void authenticate('recover');
+let passwordBusy = false;
+passwordForm.addEventListener('submit', async event => {
+  event.preventDefault(); if (!supabase || passwordBusy) return;
+  const fields = new FormData(passwordForm);
+  const password = String(fields.get('new-password'));
+  if (password !== fields.get('confirm-password')) { passwordStatus.textContent = '两次输入的密码不一致。'; return; }
+  passwordBusy = true;
+  const button = passwordForm.querySelector('button')!; button.disabled = true;
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) { passwordStatus.textContent = '登录已失效，请先重新登录。'; return; }
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) { passwordStatus.textContent = '密码更新失败，请检查密码强度；若需要重新验证身份，请重新登录后再试。'; return; }
+    passwordForm.reset(); passwordStatus.textContent = '密码已更新，下次可使用邮箱和密码登录。';
+  } catch { passwordStatus.textContent = '网络异常，密码未能更新，请重试。'; }
+  finally { passwordBusy = false; button.disabled = false; }
+});
+document.getElementById('sign-out')!.onclick = () => mutate(async () => {
+  const result = await supabase!.auth.signOut();
+  if (!result.error) { panel.hidden = true; passwordForm.reset(); passwordStatus.textContent = ''; await render(); }
+  return result;
+});
+document.getElementById('todo-form')!.addEventListener('submit', event => {
+  event.preventDefault(); const form = event.currentTarget as HTMLFormElement;
+  const text = String(new FormData(form).get('text')).trim(); if (!text) return;
+  void mutate(async () => {
+    const { data: { user } } = await supabase!.auth.getUser();
+    if (!user) throw new Error('请登录');
+    const result = await supabase!.from('user_todos').insert({ user_id: user.id, text });
+    if (!result.error) form.reset(); return result;
+  });
+});
+document.getElementById('clear-history')!.onclick = () => { if (confirm('确定清空当前账号的阅读记录？')) void mutate(async () => {
+  const { data: { user } } = await supabase!.auth.getUser(); if (!user) throw new Error('请登录');
+  return supabase!.from('reading_history').delete().eq('user_id', user.id);
+}); };
+// Defer Supabase calls out of the auth callback to avoid auth-lock deadlocks.
+supabase?.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') recoveryMode = true;
+  if (event === 'SIGNED_OUT') { passwordForm.reset(); passwordStatus.textContent = ''; }
+  panel.hidden = true; generation++; setTimeout(() => void render(), 0);
+});
+window.addEventListener('pagehide', () => { generation++; panel.hidden = true; });
+window.addEventListener('pageshow', () => void render());
+void render();
+</script>

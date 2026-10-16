@@ -39,6 +39,11 @@ const isPostsSection =
   currentPath.startsWith('/categories') ||
   currentPath.startsWith('/tags') || currentPath.startsWith('/posts/');
 const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
+const accountLinks = [
+  { href: '/account/', label: '个人中心' },
+  { href: '/account/admin/', label: '文章管理' },
+];
+const isAccountSection = currentPath.startsWith('/account/');
 ---
 
 <!doctype html>
@@ -49,6 +54,8 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
     <meta name="description" content={description} />
     <meta name="keywords" content={keywords} />
     <meta name="author" content="书山有路" />
+    {(currentPath.startsWith('/account') || currentPath.startsWith('/members')) && <meta name="robots" content="noindex, nofollow" />}
+    {currentPath.startsWith('/members') && <meta name="referrer" content="no-referrer" />}
     <link rel="canonical" href={canonicalURL} />
 
     <!-- Open Graph -->
@@ -133,13 +140,8 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <!-- 右侧工具按钮（始终可见） -->
-          <div class="flex items-center gap-2 shrink-0 ml-auto lg:ml-0 lg:gap-3">
-            <Search />
-            <ThemeToggle />
-          </div>
-          <!-- 桌面端：导航链接 -->
-          <div class="hidden lg:flex items-center gap-3 shrink-0 ml-auto">
+          <!-- 桌面端：同级页面导航 -->
+          <div id="desktop-navigation" class="hidden lg:flex items-center gap-2 shrink-0 ml-auto">
           <a
             href="/"
             class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
@@ -151,12 +153,12 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
           <div class="nav-group">
             <button
               class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isPostsSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-              aria-haspopup="true"
+              aria-expanded="false" aria-controls="posts-menu"
             >
               文章
               <svg class="nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <div class="nav-dropdown">
+            <div id="posts-menu" class="nav-dropdown" inert>
               <a href="/archive/" class={`nav-dropdown-link ${currentPath === '/archive/' ? 'active' : ''}`}>归档</a>
               <a href="/timeline/" class={`nav-dropdown-link ${currentPath === '/timeline/' ? 'active' : ''}`}>时间轴</a>
               <a href="/categories/" class={`nav-dropdown-link ${currentPath.startsWith('/categories') ? 'active' : ''}`}>分类</a>
@@ -168,16 +170,29 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
           <div class="nav-group">
             <button
               class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isToolsSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-              aria-haspopup="true"
+              aria-expanded="false" aria-controls="tools-menu"
             >
               小工具
               <svg class="nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <div class="nav-dropdown">
+            <div id="tools-menu" class="nav-dropdown" inert>
               <a href="/tools/" class={`nav-dropdown-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
               <a href="/todo/" class={`nav-dropdown-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
             </div>
           </div>
+          <div class="nav-group account-nav">
+            <button class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isAccountSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`} aria-label="账号与个人中心" aria-expanded="false" aria-controls="account-menu">
+              账号
+              <svg class="nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div id="account-menu" class="nav-dropdown" inert>
+              {accountLinks.map(link => <a href={link.href} class={`nav-dropdown-link ${currentPath === link.href ? 'active' : ''}`} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>)}
+            </div>
+          </div>
+        </div>
+        <div id="header-tools" class="flex items-center gap-2 shrink-0 lg:pl-3 lg:border-l lg:border-gray-200 lg:dark:border-gray-800">
+          <Search />
+          <ThemeToggle />
         </div>
       </nav>
       <!-- 移动端：下拉导航菜单 -->
@@ -191,6 +206,8 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
         <div class="mobile-nav-group-label">小工具</div>
         <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
         <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
+        <div class="mobile-nav-group-label">账号</div>
+        {accountLinks.map(link => <a href={link.href} class={`mobile-nav-link ${currentPath === link.href ? 'active' : ''}`} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>)}
       </div>
     </header>}
     <main class={fullWidth ? '' : 'max-w-4xl mx-auto px-4 py-8'}>
@@ -209,6 +226,7 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
     display: inline-flex;
   }
 
+
   .nav-group-btn {
     display: inline-flex;
     align-items: center;
@@ -222,8 +240,7 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
     transition: transform 0.2s ease;
   }
 
-  .nav-group:hover .nav-caret,
-  .nav-group:focus-within .nav-caret {
+  .nav-group.open .nav-caret {
     transform: rotate(180deg);
   }
 
@@ -264,8 +281,7 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
     height: 0.5rem;
   }
 
-  .nav-group:hover .nav-dropdown,
-  .nav-group:focus-within .nav-dropdown {
+  .nav-group.open .nav-dropdown {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
@@ -330,7 +346,8 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
   }
 
   .mobile-menu.open {
-    max-height: 500px;
+    max-height: calc(100dvh - 70px);
+    overflow-y: auto;
     border-top-color: #e5e7eb;
   }
 
@@ -375,6 +392,38 @@ const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
 </style>
 
 <script>
+const groups = [...document.querySelectorAll<HTMLElement>('#desktop-navigation .nav-group')];
+function setDropdown(group: HTMLElement, open: boolean) {
+  group.classList.toggle('open', open);
+  group.querySelector('button')?.setAttribute('aria-expanded', String(open));
+  const menu = group.querySelector<HTMLElement>('.nav-dropdown');
+  if (menu) menu.inert = !open;
+}
+function closeDropdowns(except?: HTMLElement) {
+  groups.forEach(group => { if (group !== except) setDropdown(group, false); });
+}
+groups.forEach(group => {
+  const button = group.querySelector('button')!;
+  button.addEventListener('click', () => {
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    closeDropdowns(); setDropdown(group, open);
+  });
+  group.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { setDropdown(group, false); button.focus(); event.preventDefault(); return; }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault(); closeDropdowns(group); setDropdown(group, true);
+    const links = [...group.querySelectorAll<HTMLAnchorElement>('.nav-dropdown a')];
+    const index = links.indexOf(document.activeElement as HTMLAnchorElement);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? links.length - 1 : event.key === 'ArrowDown' ? (index + 1) % links.length : (index < 0 ? links.length - 1 : (index - 1 + links.length) % links.length);
+    links[next]?.focus();
+  });
+});
+document.addEventListener('click', event => {
+  if (event.target instanceof Node) closeDropdowns(groups.find(group => group.contains(event.target as Node)));
+});
+document.addEventListener('focusin', event => {
+  if (event.target instanceof Node) closeDropdowns(groups.find(group => group.contains(event.target as Node)));
+});
 // 收起的菜单不应保留可聚焦链接。
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
@@ -394,5 +443,5 @@ document.addEventListener('keydown', event => {
     mobileMenuBtn?.focus();
   }
 });
-window.matchMedia('(min-width: 1024px)').addEventListener('change', () => setMobileMenu(false));
+window.matchMedia('(min-width: 1024px)').addEventListener('change', () => { setMobileMenu(false); closeDropdowns(); });
 </script>

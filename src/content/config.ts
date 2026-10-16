@@ -10,6 +10,8 @@ const postsCollection = defineCollection({
     category: z.enum(CATEGORIES).optional(),
     subcategory: z.string().optional(),
     tags: z.array(z.string()).default([]),
+    // Repository content is public by design. Fail closed if a private visibility is added.
+    visibility: z.literal('public').default('public'),
     draft: z.boolean().default(false)
   }).superRefine((data, ctx) => {
     if (data.category && !data.subcategory) {

@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// A dedicated port avoids reusing a dev server with different build-time auth variables.
+const port = Number(process.env.PLAYWRIGHT_PORT || 4322);
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
@@ -8,7 +11,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4322',
+    baseURL: `http://127.0.0.1:${port}`,
     launchOptions: process.env.PLAYWRIGHT_EXECUTABLE_PATH
       ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
       : {},
@@ -21,8 +24,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev --port 4322 --host 127.0.0.1',
-    url: 'http://127.0.0.1:4322',
+    command: `pnpm dev --port ${port} --host 127.0.0.1`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {

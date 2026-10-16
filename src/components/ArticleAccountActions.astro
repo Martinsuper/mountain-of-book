@@ -1,0 +1,31 @@
+---
+interface Props { title: string; path?: string }
+const { title, path = Astro.url.pathname } = Astro.props;
+---
+<div id="article-account-actions" data-title={title} data-path={path} class="not-prose my-5 text-sm text-gray-500">
+  <span id="article-account-message" role="status"></span>
+</div>
+<script>
+import { supabase, safeArticlePath } from '../lib/supabase';
+const root = document.getElementById('article-account-actions');
+const message = document.getElementById('article-account-message');
+let sequence = 0;
+async function init() {
+  if (!root || !message) return;
+  const seq = ++sequence;
+  message.textContent = '';
+  if (!supabase) return;
+  const path = safeArticlePath(root.dataset.path || ''); if (!path) return;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (seq !== sequence || !user) return;
+    const { error } = await supabase.from('reading_history').upsert({ user_id: user.id, article_path: path, title: root.dataset.title || '文章', updated_at: new Date().toISOString() }, { onConflict: 'user_id,article_path' });
+    if (seq !== sequence) return;
+    message.textContent = error ? '阅读记录同步失败，请稍后重试' : '阅读记录已同步';
+  } catch { if (seq === sequence) message.textContent = '阅读记录同步失败，请稍后重试'; }
+}
+supabase?.auth.onAuthStateChange(() => { sequence++; if (message) message.textContent = ''; setTimeout(() => void init(), 0); });
+window.addEventListener('pagehide', () => { sequence++; if (message) message.textContent = ''; });
+window.addEventListener('pageshow', event => { if (event.persisted) void init(); });
+void init();
+</script>

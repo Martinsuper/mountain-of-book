@@ -3,10 +3,11 @@
 ---
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  function initializeCodeCopy() {
     const codeBlocks = document.querySelectorAll('pre');
 
     codeBlocks.forEach((pre) => {
+      if (pre.closest('.code-wrapper')) return;
       const btn = document.createElement('button');
       btn.className = 'copy-btn';
       btn.innerHTML = `
@@ -44,7 +45,9 @@
         }, 1500);
       });
     });
-  });
+  }
+  document.addEventListener('DOMContentLoaded', initializeCodeCopy);
+  document.addEventListener('article:rendered', initializeCodeCopy);
 </script>
 
 <style is:global>
