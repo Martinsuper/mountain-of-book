@@ -26,7 +26,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -45,6 +45,8 @@ jobs:
       - name: Build
         env:
           PUBLIC_CALENDAR_PROXY_URL: https://calendar.younote.top/api/calendar/apple-cn
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
         run: pnpm run build
 
       - name: Upload artifact
