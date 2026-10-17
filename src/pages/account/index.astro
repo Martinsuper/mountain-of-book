@@ -1,14 +1,24 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AccountShell from '../../components/AccountShell.astro';
+import ConfirmDialog from '../../components/ConfirmDialog.astro';
 ---
 <BaseLayout title="个人中心"><AccountShell title="个人中心">
   <form id="login-form" hidden>
-    <p class="hint">请使用受邀邮箱登录。</p>
-    <label>邮箱<input name="email" type="email" autocomplete="email" required maxlength="254" /></label>
-    <label>密码<input name="password" type="password" autocomplete="current-password" required maxlength="128" /></label>
+    <div class="login-welcome">
+      <span class="login-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z"/><path d="M12 6v14"/></svg></span>
+      <h2>欢迎回到书山有路</h2>
+      <p class="hint">登录账号，继续你的阅读与探索。</p>
+    </div>
+    <label>邮箱<input name="email" type="email" autocomplete="email" placeholder="输入受邀邮箱" required maxlength="254" /></label>
+    <label>密码<input name="password" type="password" autocomplete="current-password" placeholder="输入登录密码" required maxlength="128" /></label>
     <div class="login-actions"><button type="submit" class="login-primary">登录</button><button type="button" id="forgot-password">忘记密码</button></div>
     <div class="email-fallback"><span class="hint">首次登录或尚未设置密码？</span><button type="button" id="email-login">发送登录邮件</button></div>
+    <div id="passkey-login-row" hidden>
+      <div class="passkey-divider" aria-hidden="true"><span>或</span></div>
+      <button type="button" id="passkey-login" class="login-secondary">使用通行密钥登录</button>
+      <p class="hint">通行密钥保存在 iCloud 钥匙串等位置，登录时通过面容 ID 确认，无需密码或邮件。</p>
+    </div>
   </form>
   <div id="account-private" hidden>
     <div class="account-identity"><p id="account-email"></p><button id="sign-out" class="quiet-action">退出登录</button></div>
@@ -21,6 +31,12 @@ import AccountShell from '../../components/AccountShell.astro';
         <label>确认新密码<input name="confirm-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" /></label>
         <button type="submit">保存密码</button><p id="password-status" role="status" aria-live="polite"></p>
       </form>
+      <div class="passkey-rule" role="presentation"></div>
+      <h2 id="passkey-heading">通行密钥</h2>
+      <p class="hint">为账号添加通行密钥后，可在 iPhone、Mac 等设备上通过面容 ID、触控 ID 或设备密码直接登录，无需再收邮件。不支持的浏览器会自动隐藏本节。</p>
+      <ul id="passkey-list"></ul>
+      <button type="button" id="register-passkey">添加通行密钥</button>
+      <p id="passkey-status" role="status" aria-live="polite"></p>
     </details>
     <section class="reading-section" aria-labelledby="reading-heading">
       <div class="section-heading"><h2 id="reading-heading">最近阅读</h2><button id="clear-history" class="quiet-action">清空阅读记录</button></div>
@@ -32,7 +48,7 @@ import AccountShell from '../../components/AccountShell.astro';
       <ul id="user-todos"></ul>
     </details>
   </div>
-</AccountShell></BaseLayout>
+</AccountShell><ConfirmDialog /></BaseLayout>
 <style is:global>
   .account-shell:has(#account-private) { --account-rule:#e5e7eb; --account-muted:#6b7280; }
   .dark .account-shell:has(#account-private) { --account-rule:#374151; --account-muted:#9ca3af; }
@@ -73,9 +89,82 @@ import AccountShell from '../../components/AccountShell.astro';
     .account-shell #todo-form { grid-template-columns:1fr; }
     .account-shell .reading-section { margin-top:20px; }
   }
+
+  /* Keep the signed-out experience focused without changing account tools. */
+  .account-shell:has(#login-form:not([hidden])) {
+    max-width: 460px;
+    margin: clamp(24px, 6vh, 72px) auto;
+    padding: 36px 36px 28px;
+    border: 1px solid #e5eaf2;
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 16px 56px -24px rgb(30 58 100 / 22%);
+    --account-muted: #748094;
+    --account-rule: #e8edf4;
+  }
+  .account-shell:has(#login-form:not([hidden])) .account-heading { display: none; }
+  .account-shell:has(#login-form:not([hidden])) #account-status {
+    margin: 0; font-size: 13px; color: var(--account-muted);
+  }
+  .account-shell:has(#login-form:not([hidden])) #account-status:has(+ noscript) { margin-bottom: 8px; }
+  .account-shell #login-form { max-width: none; margin: 0; gap: 20px; }
+  .account-shell .login-welcome { margin-bottom: 8px; }
+  .account-shell .login-mark {
+    display: grid; place-items: center; width: 48px; height: 48px;
+    margin-bottom: 20px; border-radius: 14px; background: #eff5ff; color: #2563eb;
+  }
+  .account-shell .login-mark svg { width: 27px; height: 27px; }
+  .account-shell .login-welcome h2 { margin: 0 0 10px; font-size: 25px; line-height: 1.4; letter-spacing: -.5px; }
+  .account-shell .login-welcome .hint { margin: 0; font-size: 14px; line-height: 1.7; color: var(--account-muted); }
+  .account-shell #login-form label { gap: 8px; font-size: 14px; font-weight: 500; }
+  .account-shell #login-form input {
+    height: 48px; padding: 0 14px; border-color: #dce3ed; border-radius: 10px;
+    background: #f9fbfd; font-size: 15px; transition: border-color .15s, box-shadow .15s;
+  }
+  .account-shell #login-form input::placeholder { color: #98a2b3; font-weight: 400; }
+  .account-shell #login-form input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgb(37 99 235 / 12%); }
+  .account-shell .login-actions { flex-direction: column; gap: 10px; }
+  .account-shell #login-form .login-primary { width: 100%; min-height: 48px; border-radius: 10px; font-size: 15px; font-weight: 600; transition: background .15s; }
+  .account-shell #login-form .login-primary:hover { background: #1d4ed8; }
+  .account-shell #forgot-password { align-self: flex-end; padding: 4px 0; font-size: 13px; }
+  .account-shell .email-fallback { justify-content: center; gap: 4px 8px; padding-top: 20px; font-size: 13px; }
+  .account-shell .email-fallback .hint { font-size: 13px; }
+  .account-shell #email-login { font-size: 13px; font-weight: 500; }
+  .account-shell #passkey-login-row { display: grid; gap: 10px; }
+  .account-shell .passkey-divider { display: flex; align-items: center; gap: 12px; color: var(--account-muted); font-size: 13px; }
+  .account-shell .passkey-divider::before, .account-shell .passkey-divider::after { content: ''; flex: 1; height: 1px; background: var(--account-rule); }
+  .account-shell #passkey-login {
+    width: 100%; min-height: 48px; border-radius: 10px; font-size: 15px; font-weight: 600;
+    background: #111827; border-color: #111827; color: white; transition: background .15s;
+  }
+  .account-shell #passkey-login:hover { background: #1f2937; }
+  .dark .account-shell #passkey-login { background: #374151; border-color: #374151; }
+  .dark .account-shell #passkey-login:hover { background: #4b5563; }
+  .account-shell .passkey-rule { border: 0; border-top: 1px solid var(--account-rule); margin: 24px 0 0; }
+  .account-shell #passkey-heading { margin-top: 8px; }
+  .account-shell #passkey-list { gap: 0; }
+  .account-shell #passkey-list li {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    border: 0; border-bottom: 1px solid var(--account-rule); border-radius: 0; padding: 14px 0;
+  }
+  .account-shell #passkey-list li button { margin: 0; border: 0; padding: 4px 0; color: var(--account-muted); font-size: .8rem; flex-shrink: 0; }
+  .account-shell #passkey-list li button:hover { color: var(--link-color); text-decoration: underline; }
+  .account-shell #passkey-list .empty-state { justify-content: center; color: var(--account-muted); padding: 20px 0; font-size: .9rem; }
+  .account-shell #register-passkey { margin: 14px 0 0; }
+  .account-shell #passkey-status { font-size: 14px; }
+  .account-shell #passkey-status:empty { display: none; }
+  .dark .account-shell:has(#login-form:not([hidden])) { background: #151e2d; border-color: #2b3749; --account-rule: #2b3749; --account-muted: #a0aec0; }
+  .dark .account-shell .login-mark { background: #203354; color: #93b9ff; }
+  .dark .account-shell #login-form input { background: #111a28; border-color: #3a475b; }
+  @media (max-width: 520px) {
+    .account-shell:has(#login-form:not([hidden])) { margin: 24px auto; padding: 28px 22px 24px; border-radius: 18px; }
+    .account-shell .login-welcome h2 { font-size: 23px; }
+  }
+
 </style>
 <script>
 import { supabase, configurationMessage, safeArticlePath } from '../../lib/supabase';
+const confirmDialog = (window as unknown as { confirmDialog: (o: { title?: string; message: string; confirmText?: string; cancelText?: string; variant?: 'danger' | 'info' }) => Promise<boolean> }).confirmDialog;
 const status = document.getElementById('account-status')!;
 const login = document.getElementById('login-form') as HTMLFormElement;
 const panel = document.getElementById('account-private')!;
@@ -85,16 +174,22 @@ const passwordStatus = document.getElementById('password-status')!;
 const settings = document.getElementById('account-settings') as HTMLDetailsElement;
 const todos = document.getElementById('todo-settings') as HTMLDetailsElement;
 const passwordInput = login.elements.namedItem('password') as HTMLInputElement;
+const passkeyLoginRow = document.getElementById('passkey-login-row') as HTMLDivElement;
+const passkeyList = document.getElementById('passkey-list')!;
+const passkeyStatus = document.getElementById('passkey-status')!;
+const passkeyRegister = document.getElementById('register-passkey') as HTMLButtonElement;
+const webauthnAvailable = typeof window.PublicKeyCredential !== 'undefined';
+if (supabase && webauthnAvailable) passkeyLoginRow.hidden = false;
 let recoveryMode = new URLSearchParams(location.search).get('reset') === '1';
 async function render() {
   const current = ++generation;
   panel.hidden = true;
   document.getElementById('account-email')!.textContent = '';
-  for (const id of ['user-todos', 'reading-history']) document.getElementById(id)!.replaceChildren();
+  for (const id of ['user-todos', 'reading-history', 'passkey-list']) document.getElementById(id)!.replaceChildren();
   if (!supabase) { status.textContent = configurationMessage; return; }
   const { data: { user }, error } = await supabase.auth.getUser();
   if (current !== generation) return;
-  if (!user) { settings.open = false; todos.open = false; login.hidden = false; status.textContent = error && !error.message.includes('Auth session missing') ? '登录已失效，请重新登录。' : '请先登录。'; return; }
+  if (!user) { settings.open = false; todos.open = false; login.hidden = false; status.textContent = error && !error.message.includes('Auth session missing') ? '登录已失效，请重新登录。' : ''; return; }
   login.hidden = true; passwordInput.value = ''; panel.hidden = false;
   if (recoveryMode) {
     settings.open = true;
@@ -141,6 +236,46 @@ async function render() {
       item.append(remove); list.append(item);
     });
   });
+  if (webauthnAvailable) await renderPasskeys(current);
+}
+type PasskeyItem = { id: string; friendly_name?: string; created_at: string; last_used_at?: string };
+function passkeyDescription(passkey: PasskeyItem): string {
+  const name = passkey.friendly_name?.trim() || '通行密钥';
+  const created = new Date(passkey.created_at).toLocaleDateString();
+  const lastUsed = passkey.last_used_at ? `，最近使用 ${new Date(passkey.last_used_at).toLocaleDateString()}` : '';
+  return `${name}（添加于 ${created}${lastUsed}）`;
+}
+async function renderPasskeys(generationAtCall: number) {
+  if (!supabase) return;
+  const { data, error } = await supabase.auth.passkey.list();
+  if (generationAtCall !== generation) return;
+  const items = error ? null : (data as PasskeyItem[] | null);
+  if (!items?.length) {
+    const item = document.createElement('li'); item.className = 'empty-state';
+    item.textContent = error ? '通行密钥信息暂时无法加载，请刷新重试。' : '尚未添加通行密钥。';
+    passkeyList.append(item); return;
+  }
+  items.forEach(passkey => {
+    const item = document.createElement('li');
+    item.append(document.createTextNode(passkeyDescription(passkey)));
+    const rename = document.createElement('button'); rename.textContent = '重命名';
+    rename.onclick = () => {
+      const input = window.prompt('为这个通行密钥起个名字（例如：iPhone）：', passkey.friendly_name || '');
+      if (input === null) return;
+      const friendlyName = input.trim().slice(0, 120);
+      if (!friendlyName) return;
+      void mutate(async () => supabase!.auth.passkey.update({ passkeyId: passkey.id, friendlyName }));
+    };
+    const remove = document.createElement('button'); remove.textContent = '删除';
+    remove.onclick = () => void (async () => {
+      if (!(await confirmDialog({ title: '删除通行密钥', message: `将删除「${passkeyDescription(passkey)}」。删除后该条目无法再用于登录本站。`, confirmText: '删除' }))) return;
+      void mutate(async () => supabase!.auth.passkey.delete({ passkeyId: passkey.id }));
+    })();
+    item.append(rename, remove); passkeyList.append(item);
+  });
+}
+function passkeyErrorCode(error: { code?: string; message?: string }): string | undefined {
+  return error.code ?? /^(passkey_disabled|too_many_passkeys|webauthn_credential_exists|user_banned)/.exec(error.message ?? '')?.[1];
 }
 let busy = false;
 async function mutate(action: () => PromiseLike<{ error: unknown }>) {
@@ -177,6 +312,50 @@ async function authenticate(mode: 'password' | 'email' | 'recover') {
 login.addEventListener('submit', event => { event.preventDefault(); void authenticate('password'); });
 document.getElementById('email-login')!.onclick = () => void authenticate('email');
 document.getElementById('forgot-password')!.onclick = () => void authenticate('recover');
+document.getElementById('passkey-login')!.onclick = () => void authenticateWithPasskey();
+async function authenticateWithPasskey() {
+  if (!supabase || authBusy) return;
+  authBusy = true;
+  login.querySelectorAll('button').forEach(button => button.disabled = true);
+  try {
+    const { error } = await supabase.auth.signInWithPasskey();
+    if (error) {
+      const code = passkeyErrorCode(error);
+      status.textContent =
+        code === 'passkey_disabled' ? '站点尚未启用通行密钥登录，请使用邮箱方式登录。' :
+        code === 'user_banned' ? '该账号暂时无法登录。' :
+        '通行密钥登录未能完成；如果你取消了面容 ID 确认，可重试或使用邮箱方式登录。';
+      return;
+    }
+    await render();
+  } catch { status.textContent = '网络异常，请稍后重试。'; }
+  finally { authBusy = false; login.querySelectorAll('button').forEach(button => button.disabled = false); }
+}
+let passkeyBusy = false;
+async function registerPasskeyCredential() {
+  if (!supabase || passkeyBusy) return;
+  passkeyBusy = true;
+  passkeyRegister.disabled = true;
+  passkeyStatus.textContent = '请在弹出的确认框中通过面容 ID、触控 ID 或设备密码确认…';
+  try {
+    const { error } = await supabase.auth.registerPasskey();
+    const code = error ? passkeyErrorCode(error) : undefined;
+    if (error) {
+      passkeyStatus.textContent =
+        code === 'passkey_disabled' ? '站点尚未启用通行密钥，请稍后再试或联系站长。' :
+        code === 'too_many_passkeys' ? '通行密钥数量已达上限，请先删除不再使用的条目。' :
+        code === 'webauthn_credential_exists' ? '此设备的钥匙串中已保存本站通行密钥，无需重复添加。' :
+        '未能添加通行密钥；如果你取消了确认或浏览器不支持，可稍后重试。';
+      return;
+    }
+    passkeyStatus.textContent = '通行密钥已添加，下次登录无需输入密码或邮件。';
+    await render();
+  } catch {
+    passkeyStatus.textContent = '网络异常，添加通行密钥失败，请重试。';
+  }
+  finally { passkeyBusy = false; passkeyRegister.disabled = false; }
+}
+passkeyRegister.onclick = () => void registerPasskeyCredential();
 let passwordBusy = false;
 passwordForm.addEventListener('submit', async event => {
   event.preventDefault(); if (!supabase || passwordBusy) return;
@@ -209,10 +388,13 @@ document.getElementById('todo-form')!.addEventListener('submit', event => {
     if (!result.error) form.reset(); return result;
   });
 });
-document.getElementById('clear-history')!.onclick = () => { if (confirm('确定清空当前账号的阅读记录？')) void mutate(async () => {
-  const { data: { user } } = await supabase!.auth.getUser(); if (!user) throw new Error('请登录');
-  return supabase!.from('reading_history').delete().eq('user_id', user.id);
-}); };
+document.getElementById('clear-history')!.onclick = async () => {
+  if (!(await confirmDialog({ title: '清空阅读记录', message: '将移除当前账号的全部阅读记录，此操作无法撤销。', confirmText: '全部清空' }))) return;
+  void mutate(async () => {
+    const { data: { user } } = await supabase!.auth.getUser(); if (!user) throw new Error('请登录');
+    return supabase!.from('reading_history').delete().eq('user_id', user.id);
+  });
+};
 // Defer Supabase calls out of the auth callback to avoid auth-lock deadlocks.
 supabase?.auth.onAuthStateChange((event) => {
   if (event === 'PASSWORD_RECOVERY') recoveryMode = true;

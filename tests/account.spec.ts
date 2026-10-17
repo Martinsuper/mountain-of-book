@@ -144,6 +144,10 @@ async function mockSupabase(page: Page, options: MockOptions = {}) {
     if (path === '/auth/v1/recover') return respond({});
     if (path === '/auth/v1/user') return respond(request.method() === 'PUT' ? { user } : user);
     if (path === '/auth/v1/otp') return respond({});
+    if (/^\/auth\/v1\/passkeys/.test(path)) {
+      if (request.method() === 'GET') return respond([]);
+      return respond(null);
+    }
     if (path === '/auth/v1/logout') return respond({});
     if (path === '/rest/v1/rpc/is_site_admin') return respond(Boolean(options.admin));
     if (path === '/rest/v1/rpc/admin_grant_article') {
@@ -204,6 +208,8 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expect(page.locator('#account-status')).toBeEmpty();
     await page.getByText('账号设置', { exact: true }).click();
     await expect(page.locator('#password-form')).toBeVisible();
+    await expect(page.locator('#passkey-heading')).toBeVisible();
+    await expect(page.locator('#register-passkey')).toBeVisible();
     await page.getByText('我的待办', { exact: true }).click();
     await expect(page.locator('#todo-form')).toBeVisible();
     await page.setViewportSize({ width: 375, height: 812 });
@@ -226,6 +232,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     const mock = await mockSupabase(page);
     await page.goto('/account/');
     await expect(page.locator('#login-form')).toBeVisible();
+    await expect(page.locator('#passkey-login')).toBeVisible();
     await page.getByLabel('邮箱', { exact: true }).fill('reader@example.invalid');
     await page.getByLabel('密码', { exact: true }).fill('Wrong-password-123!');
     await page.getByRole('button', { name: '登录', exact: true }).click();
@@ -266,7 +273,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
   test('匿名用户仅可申请邀请邮箱登录，不创建账号且无法访问私有或管理页面', async ({ page }) => {
     const mock = await mockSupabase(page);
     await page.goto('/account/');
-    await expect(page.locator('#account-status')).toHaveText('请先登录。');
+    await expect(page.locator('#account-status')).toHaveText('');
     await expect(page.locator('#login-form')).toBeVisible();
     await expectNoPrivateUI(page);
     await page.getByLabel('邮箱', { exact: true }).fill('invitee@example.invalid');
@@ -386,8 +393,9 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expect(page.locator('#article-library')).toBeHidden();
     await page.getByRole('textbox', { name: '标题', exact: true }).fill('New draft');
     await page.getByRole('textbox', { name: 'Markdown 正文' }).fill('Draft body');
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByRole('button', { name: '返回文章列表' }).click();
+    await expect(page.locator('#app-confirm')).toBeVisible();
+    await page.locator('#app-confirm-cancel').click();
     await expect(page.locator('#article-editor')).toBeVisible();
     await page.getByRole('button', { name: '保存草稿', exact: true }).click();
     await expect(page.locator('#save-state')).toHaveText('已保存至云端');
@@ -411,16 +419,17 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await page.getByRole('textbox', { name: '标题', exact: true }).fill('Public article');
     await page.getByRole('textbox', { name: 'Markdown 正文' }).fill('Public body');
     await page.getByLabel('可见范围').selectOption('public');
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByRole('button', { name: '发布文章', exact: true }).click();
+    await expect(page.locator('#app-confirm')).toBeVisible();
+    await page.locator('#app-confirm-cancel').click();
     expect(mock.requests.filter(r => r.method() === 'POST' && new URL(r.url()).pathname === '/rest/v1/articles')).toHaveLength(0);
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '发布文章', exact: true }).click();
+    await page.locator('#app-confirm-ok').click();
     await expect(page.locator('#save-state')).toHaveText('已保存至云端');
     await expect(page.locator('#grant-panel')).toBeHidden();
     await page.locator('#article-more summary').click();
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '删除文章', exact: true }).click();
+    await page.locator('#app-confirm-ok').click();
     await expect(page.locator('#article-library')).toBeVisible();
     await expect(page.locator('#admin-articles li')).toHaveCount(0);
   });
@@ -642,11 +651,12 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     page.on('pageerror', error => errors.push(error.message));
     await page.getByRole('button', { name: '编辑', exact: true }).click();
     await page.locator('[name="body"]').fill('Unsaved local UI test');
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByRole('button', { name: '返回文章列表' }).click();
+    await expect(page.locator('#app-confirm')).toBeVisible();
+    await page.locator('#app-confirm-cancel').click();
     await expect(page.locator('[name="body"]')).toHaveValue('Unsaved local UI test');
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '返回文章列表' }).click();
+    await page.locator('#app-confirm-ok').click();
     await page.getByRole('button', { name: '新建文章', exact: true }).click();
     await expect(page.locator('[name="body"]')).toBeEmpty();
     expect(errors).toEqual([]);
@@ -663,7 +673,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expect(page.locator('#user-todos')).toContainText('Synthetic personal task');
     await expect(page.locator('#bookmarks')).toHaveCount(0);
     await page.getByRole('button', { name: '退出登录' }).click();
-    await expect(page.locator('#account-status')).toHaveText('请先登录。');
+    await expect(page.locator('#account-status')).toHaveText('');
     await expectNoPrivateUI(page);
     expect(mock.unexpected).toEqual([]);
   });
