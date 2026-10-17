@@ -9,9 +9,3 @@ export const supabase = url && key ? createClient(url, key, {
 }) : null;
 
 export const configurationMessage = '账号服务尚未配置。请按部署说明设置 Supabase 公开环境变量并重新构建站点。';
-
-export function safeArticlePath(value: string): string | null {
-  // Personal records must never become arbitrary javascript: or external links.
-  return /^\/posts\/[a-z0-9-]+(?:\.md)?\/$/.test(value) ||
-    /^\/(?:members|posts)\/read\/\?id=[0-9a-f-]{36}$/i.test(value) ? value : null;
-}

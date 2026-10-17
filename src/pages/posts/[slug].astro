@@ -4,7 +4,6 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
 import CodeCopy from '../../components/CodeCopy.astro';
-import ArticleAccountActions from '../../components/ArticleAccountActions.astro';
 import { calculateReadingTime } from '../../lib/reading-time';
 
 export async function getStaticPaths() {
@@ -74,7 +73,6 @@ const readingTime = calculateReadingTime(post.body || '');
           )}
         </div>
       </header>
-      <ArticleAccountActions title={post.data.title} />
       <Content />
       <CodeCopy />
     </article>

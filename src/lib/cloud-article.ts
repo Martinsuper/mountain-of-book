@@ -3,12 +3,11 @@ const status = document.getElementById('account-status')!;
 const article = document.getElementById('private-article')!;
 const body = document.getElementById('private-body')!;
 const title = document.getElementById('private-title')!;
-const saveStatus = document.getElementById('private-save-status')!;
 const toc = document.querySelector('#cloud-toc ul')!;
 let generation = 0;
 function clear() {
   generation++; article.hidden = true; body.replaceChildren(); title.textContent = ''; toc.replaceChildren();
-  saveStatus.textContent = ''; status.hidden = false;
+  status.hidden = false;
   document.title = '文章 | 书山有路';
   for (const id of ['article-date', 'article-reading-time', 'article-visibility']) document.getElementById(id)!.textContent = '';
 }
@@ -45,12 +44,6 @@ async function load() {
     document.getElementById('article-reading-time')!.textContent = `· ${Math.max(1, Math.ceil(data.body.length / 500))} 分钟阅读`;
     document.getElementById('article-visibility')!.textContent = data.visibility === 'public' ? '公开' : data.visibility === 'restricted' ? '指定账号可见' : '登录可见';
     article.hidden = false; document.dispatchEvent(new Event('article:rendered')); status.textContent = data.status === 'draft' ? '草稿预览：尚未发布。' : ''; status.hidden = data.status !== 'draft';
-    if (!user) return;
-    // Preserve the existing reading-history path for legacy links.
-    const path = `${location.pathname}?id=${id}`;
-    const history = await supabase.from('reading_history').upsert({ user_id: user.id, article_path: path, title: data.title, updated_at: new Date().toISOString() }, { onConflict: 'user_id,article_path' });
-    if (current !== generation) return;
-    saveStatus.textContent = history.error ? '阅读记录同步失败' : '阅读记录已同步';
   } catch {
     if (current === generation) { clear(); status.textContent = '文章加载失败，请检查网络后刷新重试。'; }
   }

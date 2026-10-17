@@ -28,7 +28,7 @@ async function expectNoPrivateUI(page: Page) {
   for (const selector of ['#account-private', '#private-article', '#admin-panel', '#grant-panel']) {
     await expect(page.locator(selector)).not.toBeVisible();
   }
-  for (const selector of ['#member-articles', '#user-todos', '#bookmarks', '#reading-history', '#admin-articles', '#article-grants', '#private-title', '#private-body']) {
+  for (const selector of ['#member-articles', '#user-todos', '#bookmarks', '#admin-articles', '#article-grants', '#private-title', '#private-body']) {
     if (await page.locator(selector).count()) await expect(page.locator(selector)).toBeEmpty();
   }
   await expect(page.getByRole('button', { name: /注册|sign up|signup/i })).toHaveCount(0);
@@ -96,7 +96,7 @@ test('账号静态 HTML 不包含用户记录、受限正文或编辑器预填�
     const shell = await page.evaluate(source => {
       const document = new DOMParser().parseFromString(source, 'text/html');
       return {
-        records: [...document.querySelectorAll('#member-articles, #user-todos, #bookmarks, #reading-history, #admin-articles, #article-grants, #private-title, #private-body')].map(element => element.textContent?.trim()),
+        records: [...document.querySelectorAll('#member-articles, #user-todos, #bookmarks, #admin-articles, #article-grants, #private-title, #private-body')].map(element => element.textContent?.trim()),
         panelsHidden: [...document.querySelectorAll('#account-private, #private-article, #admin-panel, #grant-panel, #login-form')].every(element => element.hasAttribute('hidden')),
         values: [...document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('.account-shell input:not([type="hidden"]), .account-shell textarea')].map(element => element.value),
       };
@@ -183,11 +183,10 @@ async function mockSupabase(page: Page, options: MockOptions = {}) {
       if (request.method() === 'PATCH') { todos = todos.map(todo => todo.id === id ? { ...todo, ...request.postDataJSON() } : todo); return respond(null); }
       if (request.method() === 'DELETE') { todos = todos.filter(todo => todo.id !== id); return respond(null); }
     }
-    if (/^\/rest\/v1\/(reading_history|bookmarks)$/.test(path)) {
+    if (/^\/rest\/v1\/bookmarks$/.test(path)) {
       if (request.method() !== 'GET') return respond(null, 201);
-      if (path.endsWith('/bookmarks') && url.searchParams.has('article_path')) return respond(null);
-      if (path.endsWith('/bookmarks')) return respond([{ article_path: 'javascript:alert(1)', title: 'Unsafe personal link' }, { article_path: `/members/read/?id=${articleID}`, title: privateTitle }]);
-      return respond([]);
+      if (url.searchParams.has('article_path')) return respond(null);
+      return respond([{ article_path: 'javascript:alert(1)', title: 'Unsafe personal link' }, { article_path: `/members/read/?id=${articleID}`, title: privateTitle }]);
     }
     unexpected.push(`${request.method()} ${url.pathname}`);
     return respond({ message: 'Unexpected mock request' }, 500);
@@ -198,11 +197,13 @@ async function mockSupabase(page: Page, options: MockOptions = {}) {
 test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）', () => {
   test.skip(!mockMode, `Start a fresh server with PUBLIC_SUPABASE_URL=${mockURL} and PUBLIC_SUPABASE_ANON_KEY=public-test-key.`);
 
-  test('个人中心优先展示阅读，设置和待办按需展开且移动端不溢出', async ({ page }) => {
+  test('个人中心不再展示最近阅读，设置和待办按需展开且移动端不溢出', async ({ page }) => {
     await mockSupabase(page, { signedIn: true });
     await page.goto('/account/');
-    await expect(page.locator('#reading-history li').first()).toBeAttached();
-    await expect(page.getByRole('heading', { name: '最近阅读' })).toBeVisible();
+    await expect(page.locator('#account-email')).toHaveText('reader@example.invalid');
+    await expect(page.locator('#user-todos li').first()).toBeAttached();
+    await expect(page.getByRole('heading', { name: '最近阅读' })).toHaveCount(0);
+    await expect(page.locator('#reading-history')).toHaveCount(0);
     await expect(page.locator('#password-form')).not.toBeVisible();
     await expect(page.locator('#todo-form')).not.toBeVisible();
     await expect(page.locator('#account-status')).toBeEmpty();
@@ -304,22 +305,23 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(mock.unexpected).toEqual([]);
   });
 
-  test('移除收藏入口与请求，普通文章、云端阅读和个人中心仍保留阅读历史', async ({ page }) => {
+  test('移除收藏与阅读记录入口，普通文章、云端阅读不写个人数据', async ({ page }) => {
     const mock = await mockSupabase(page, { signedIn: true });
     await page.goto('/');
     await page.locator('#home-posts a[href^="/posts/"]').filter({ hasNotText: privateTitle }).first().click();
-    await expect(page.locator('#article-account-message')).toHaveText('阅读记录已同步');
+    await expect(page.locator('#article-account-actions')).toHaveCount(0);
     await expect(page.getByRole('button', { name: /收藏/ })).toHaveCount(0);
     await page.goto(`/posts/read/?id=${articleID}`);
-    await expect(page.locator('#private-save-status')).toHaveText('阅读记录已同步');
-    await expect(page.getByRole('button', { name: /收藏/ })).toHaveCount(0);
+    await expect(page.locator('#private-save-status')).toHaveCount(0);
     await page.goto('/account/');
-    await expect(page.locator('#reading-history li').first()).toBeAttached();
+    await expect(page.locator('#reading-history')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: '最近阅读' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: '我的收藏' })).toHaveCount(0);
-    expect(mock.requests.some(r => new URL(r.url()).pathname === '/rest/v1/bookmarks')).toBe(false);
+    expect(mock.requests.some(r => /reading_history|bookmarks/.test(r.url()))).toBe(false);
+    expect(mock.unexpected).toEqual([]);
   });
 
-  test('授权列表、受限 Markdown 消毒及阅读记录通过模拟 HTTP', async ({ page }) => {
+  test('授权列表与受限 Markdown 消毒通过模拟 HTTP', async ({ page }) => {
     const mock = await mockSupabase(page, { signedIn: true });
     const externalImages: string[] = [];
     await page.route('https://private-image.invalid/**', async route => { externalImages.push(route.request().url()); await route.abort(); });
@@ -332,11 +334,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expect(page.locator('#private-body a[href="https://example.invalid/reference"]')).toHaveAttribute('rel', 'noreferrer noopener');
     expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__privateXss)).toBeUndefined();
     expect(externalImages).toEqual([]);
-    await expect(page.locator('#private-save-status')).toHaveText('阅读记录已同步');
-    for (const table of ['reading_history']) {
-      const write = mock.requests.find(request => new URL(request.url()).pathname === `/rest/v1/${table}` && request.method() === 'POST');
-      expect(write?.postDataJSON()).toMatchObject({ user_id: userID, article_path: `/members/read/?id=${articleID}`, title: privateTitle });
-    }
+    await expect(page.locator('#private-save-status')).toHaveCount(0);
     expect(mock.unexpected).toEqual([]);
   });
 
@@ -668,7 +666,6 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expect(page.locator('#account-status')).toHaveText('文章不存在或当前账号无权访问。');
     await expectNoPrivateUI(page);
     await page.goto('/account/');
-    await expect(page.locator('#reading-history li').first()).toBeAttached();
     await expect(page.locator('#account-email')).toHaveText('reader@example.invalid');
     await expect(page.locator('#user-todos')).toContainText('Synthetic personal task');
     await expect(page.locator('#bookmarks')).toHaveCount(0);
