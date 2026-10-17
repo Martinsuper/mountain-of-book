@@ -49,6 +49,12 @@ jobs:
           PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
         run: pnpm run build
 
+      # 双部署到腾讯 EdgeOne Pages（中国大陆外全球加速节点，免费）。
+      # 未配置 EDGEONE_API_TOKEN 时自动跳过，不影响 GitHub Pages 部署。
+      - name: Deploy to EdgeOne Pages
+        if: ${{ secrets.EDGEONE_API_TOKEN != '' }}
+        run: npx edgeone pages deploy ./dist -n mountain-of-book -t ${{ secrets.EDGEONE_API_TOKEN }}
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

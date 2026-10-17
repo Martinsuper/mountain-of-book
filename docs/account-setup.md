@@ -109,6 +109,7 @@ Astro 的 `PUBLIC_*` 变量在 **构建时**嵌入脚本。GitHub Pages 没有�
 
 1. Repository Settings → Secrets and variables → Actions → **Secrets**，创建 `PUBLIC_SUPABASE_URL` 和 `PUBLIC_SUPABASE_ANON_KEY`。公开这两个值是正常设计（anon key 只随 RLS 生效），以 Secrets 储存仅为配置习惯；显示在前端产物中不代表泄漏。
 2. 重新运行部署（后续 push 到 main 或手动 Dispatch 均会生效），并在生产 `/account/`、`/todo/` 验证真实登录、同步与退出。缺少配置时账号功能不可用不代表生产已接通。
+3. 可选：双部署到 [EdgeOne Pages](https://pages.edgeone.ai)（腾讯免费版，中国香港及亚太节点加速，改善大陆访问）。在 EdgeOne 控制台生成 API Token，添加到仓库 Secrets 的 `EDGEONE_API_TOKEN` 后，Build 步骤之后的 `Deploy to EdgeOne Pages` 会自动把 `dist` 推送到 EdgeOne 项目 `mountain-of-book`（项目不存在时自动创建）。未配置该 Secret 时此步骤自动跳过。建议首次部署后在控制台确认项目「加速区域」为「全球（不含中国大陆）」，该选项不要求域名备案；完成 ICP 备案后可切换为「中国大陆」获得国内直连节点。
 
 不要在工作流、前端环境或构建日志中放入数据库 URL/密码、SMTP 密钥或管理 key。迁移和邀请都不需要在 Pages 构建任务里执行。
 
