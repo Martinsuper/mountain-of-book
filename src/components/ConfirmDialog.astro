@@ -57,7 +57,7 @@ function confirmDialog(options: ConfirmOptions): Promise<boolean> {
 
 okBtn.onclick = () => finish(true);
 cancelBtn.onclick = () => finish(false);
-layer.querySelector('.app-confirm-mask')!.onclick = () => finish(false);
+(layer.querySelector('.app-confirm-mask') as HTMLElement).onclick = () => finish(false);
 card.addEventListener('keydown', (event: KeyboardEvent) => {
   if (event.key === 'Escape') { event.preventDefault(); finish(false); }
   else if (event.key === 'Enter') { event.preventDefault(); finish(true); }
