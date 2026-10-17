@@ -55,6 +55,21 @@ jobs:
         if: ${{ secrets.EDGEONE_API_TOKEN != '' }}
         run: npx edgeone pages deploy ./dist -n mountain-of-book -t ${{ secrets.EDGEONE_API_TOKEN }}
 
+      # 同步到自托管服务器（Caddy 静态托管）。
+      # 需要两个仓库 Secret：SERVER_HOST（如 deploy@1.2.3.4）与 SERVER_SSH_KEY（deploy 用户私钥）。
+      # 未配置时自动跳过，不影响其他部署。
+      - name: Deploy to self-hosted server
+        if: ${{ secrets.SERVER_HOST != '' && secrets.SERVER_SSH_KEY != '' }}
+        env:
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${SSH_HOST#*@}" >> ~/.ssh/known_hosts 2>/dev/null
+          rsync -az --delete dist/ "$SSH_HOST":/var/www/mountain-of-book/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
