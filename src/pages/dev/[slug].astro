@@ -2,6 +2,7 @@
 // 开发预览页面 - IDE 风格布局
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ConfirmDialog from '../../components/ConfirmDialog.astro';
 
 export async function getStaticPaths() {
   if (!import.meta.env.DEV) return [];
@@ -225,7 +226,7 @@ const currentSlug = post.id.replace('.md', '');
       </div>
     </div>
   </div>
-
+  <ConfirmDialog />
   <style>
     /* === Theme Variables === */
     .dev-ide {
@@ -896,7 +897,14 @@ const currentSlug = post.id.replace('.md', '');
     }
 
     function exitEditMode() {
-      if (isDirty && !confirm('有未保存的更改，确定退出编辑模式？')) return;
+      const confirmDialog = (window as unknown as { confirmDialog: (o: { title?: string; message: string; confirmText?: string; cancelText?: string; variant?: 'danger' | 'info' }) => Promise<boolean> }).confirmDialog;
+      void (async () => {
+        if (isDirty && !(await confirmDialog({ title: '退出编辑模式', message: '有未保存的更改，退出后这些更改将丢失。', confirmText: '放弃更改' }))) return;
+        closeEditMode();
+      })();
+    }
+
+    function closeEditMode() {
       editMode!.style.display = 'none';
       previewMode!.style.display = '';
       isEditMode = false;

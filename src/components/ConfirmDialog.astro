@@ -1,0 +1,118 @@
+---
+// 全局二次确认弹框：通过 window.confirmDialog({ title, message, confirmText, cancelText, variant }) 调用。
+---
+<div id="app-confirm" class="app-confirm" hidden>
+  <div class="app-confirm-mask"></div>
+  <div class="app-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="app-confirm-title" aria-describedby="app-confirm-message">
+    <div class="app-confirm-icon" id="app-confirm-icon" aria-hidden="true">
+      <svg class="icon-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <svg class="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <h2 id="app-confirm-title">确认操作</h2>
+    <p id="app-confirm-message"></p>
+    <div class="app-confirm-actions">
+      <button type="button" id="app-confirm-cancel">取消</button>
+      <button type="button" id="app-confirm-ok">确定</button>
+    </div>
+  </div>
+</div>
+<script>
+const layer = document.getElementById('app-confirm')!;
+const card = layer.querySelector<HTMLElement>('.app-confirm-card')!;
+const titleEl = document.getElementById('app-confirm-title')!;
+const messageEl = document.getElementById('app-confirm-message')!;
+const iconEl = document.getElementById('app-confirm-icon')!;
+const okBtn = document.getElementById('app-confirm-ok') as HTMLButtonElement;
+const cancelBtn = document.getElementById('app-confirm-cancel') as HTMLButtonElement;
+type ConfirmOptions = { title?: string; message: string; confirmText?: string; cancelText?: string; variant?: 'danger' | 'info' };
+let resolvePending: ((ok: boolean) => void) | null = null;
+let lastFocus: HTMLElement | null = null;
+let closeTimer: number | undefined;
+
+function finish(ok: boolean) {
+  if (!resolvePending) return;
+  resolvePending(ok); resolvePending = null;
+  layer.classList.remove('is-open');
+  clearTimeout(closeTimer);
+  closeTimer = window.setTimeout(() => { layer.hidden = true; }, 180);
+  lastFocus?.focus(); lastFocus = null;
+}
+
+function confirmDialog(options: ConfirmOptions): Promise<boolean> {
+  resolvePending?.(false);
+  lastFocus = document.activeElement as HTMLElement | null;
+  clearTimeout(closeTimer);
+  titleEl.textContent = options.title || '确认操作';
+  messageEl.textContent = options.message;
+  okBtn.textContent = options.confirmText || '确定';
+  cancelBtn.textContent = options.cancelText || '取消';
+  const variant = options.variant ?? 'danger';
+  iconEl.dataset.variant = variant;
+  okBtn.dataset.variant = variant;
+  layer.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => layer.classList.add('is-open')));
+  (variant === 'danger' ? cancelBtn : okBtn).focus();
+  return new Promise(resolve => { resolvePending = resolve; });
+}
+
+okBtn.onclick = () => finish(true);
+cancelBtn.onclick = () => finish(false);
+layer.querySelector('.app-confirm-mask')!.onclick = () => finish(false);
+card.addEventListener('keydown', (event: KeyboardEvent) => {
+  if (event.key === 'Escape') { event.preventDefault(); finish(false); }
+  else if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+  else if (event.key === 'Tab') {
+    event.preventDefault();
+    (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
+  }
+});
+
+(window as unknown as Record<string, unknown>).confirmDialog = confirmDialog;
+</script>
+<style is:global>
+.app-confirm { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; padding: 24px; opacity: 0; transition: opacity .18s ease; }
+.app-confirm[hidden] { display: none; }
+.app-confirm.is-open { opacity: 1; }
+.app-confirm-mask { position: absolute; inset: 0; background: rgb(15 23 42 / 44%); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+.app-confirm-card {
+  position: relative; width: min(380px, 100%); padding: 28px 28px 24px; border-radius: 18px;
+  text-align: center; background: #fff; border: 1px solid #e5eaf2;
+  box-shadow: 0 24px 64px -24px rgb(30 58 100 / 40%);
+  transform: scale(.94) translateY(10px); opacity: 0;
+  transition: transform .2s cubic-bezier(.22, 1.4, .4, 1), opacity .18s ease;
+}
+.app-confirm.is-open .app-confirm-card { transform: none; opacity: 1; }
+.app-confirm-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto 16px; border-radius: 14px; }
+.app-confirm-icon svg { width: 25px; height: 25px; }
+.app-confirm-icon svg.icon-info { display: none; }
+.app-confirm-icon[data-variant="danger"] { background: #fef2f2; color: #dc2626; }
+.app-confirm-icon[data-variant="info"] { background: #eff5ff; color: #2563eb; }
+.app-confirm-icon[data-variant="info"] svg.icon-danger { display: none; }
+.app-confirm-icon[data-variant="info"] svg.icon-info { display: block; }
+.app-confirm-card h2 { margin: 0 0 8px; font-size: 17px; font-weight: 600; letter-spacing: -.2px; color: inherit; }
+.app-confirm-card p { margin: 0; font-size: 14px; line-height: 1.7; color: #6b7280; overflow-wrap: anywhere; }
+.app-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+.app-confirm-actions button {
+  min-height: 42px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: background .15s, box-shadow .15s, filter .15s;
+}
+.app-confirm-actions button:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+.app-confirm-actions #app-confirm-cancel { border: 1px solid #dce3ed; background: #fff; color: #374151; }
+.app-confirm-actions #app-confirm-cancel:hover { background: #f3f4f6; }
+.app-confirm-actions #app-confirm-ok[data-variant="danger"] {
+  border: 0; color: #fff; background: linear-gradient(180deg, #ef4444, #dc2626);
+  box-shadow: 0 8px 18px -8px rgb(220 38 38 / 55%);
+}
+.app-confirm-actions #app-confirm-ok[data-variant="danger"]:hover { filter: brightness(.94); }
+.app-confirm-actions #app-confirm-ok[data-variant="info"] {
+  border: 0; color: #fff; background: #2563eb; box-shadow: 0 8px 18px -8px rgb(37 99 235 / 55%);
+}
+.app-confirm-actions #app-confirm-ok[data-variant="info"]:hover { background: #1d4ed8; }
+.dark .app-confirm-card { background: #151e2d; border-color: #2b3749; box-shadow: 0 24px 64px -20px rgb(0 0 0 / 60%); }
+.dark .app-confirm-card p { color: #9ca3af; }
+.dark .app-confirm-icon[data-variant="danger"] { background: rgb(248 113 113 / 14%); color: #f87171; }
+.dark .app-confirm-icon[data-variant="info"] { background: rgba(59, 130, 246, .16); color: #93b9ff; }
+.dark .app-confirm-actions #app-confirm-cancel { background: transparent; border-color: #3a475b; color: #d1d5db; }
+.dark .app-confirm-actions #app-confirm-cancel:hover { background: #1d2739; }
+@media (prefers-reduced-motion: reduce) { .app-confirm, .app-confirm-card { transition: none; } }
+</style>

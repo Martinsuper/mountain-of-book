@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AccountShell from '../../components/AccountShell.astro';
+import ConfirmDialog from '../../components/ConfirmDialog.astro';
 ---
 <BaseLayout title="文章管理"><div class="studio"><AccountShell title="文章管理">
   <button slot="actions" id="new-article" class="primary" aria-label="新建文章" hidden>＋ 新建文章</button>
@@ -20,7 +21,7 @@ import AccountShell from '../../components/AccountShell.astro';
         <form id="article-editor" class="card editor-card">
           <label class="title-label"><span class="sr-only">标题</span><input name="title" required maxlength="200" placeholder="给这篇文章起个标题" /></label>
           <div class="metadata"><label>可见范围<select name="visibility"><option value="authenticated">登录可见</option><option value="public">公开</option></select></label><input name="status" type="hidden" value="draft" /><span id="article-status" class="muted">草稿</span></div>
-          <div class="editor-toolbar"><div class="format-tools" role="group" aria-label="Markdown 格式"><button type="button" data-format="heading" title="插入二级标题" aria-label="插入二级标题">H₂</button><button type="button" data-format="bold" title="加粗" aria-label="加粗"><b>B</b></button><button type="button" data-format="italic" title="斜体" aria-label="斜体"><i>I</i></button><button type="button" data-format="list" title="插入列表" aria-label="插入列表">≡</button><button type="button" data-format="code" title="插入代码块" aria-label="插入代码块">&lt;/&gt;</button></div><div class="view-tools" role="group" aria-label="编辑视图"><button type="button" data-view="write" aria-pressed="true">编辑</button><button type="button" data-view="split" aria-pressed="false">分栏</button><button type="button" data-view="preview" aria-pressed="false">预览</button></div></div>
+          <div class="editor-toolbar"><div class="format-tools" role="group" aria-label="Markdown 格式"><button type="button" data-format="heading" title="插入二级标题" aria-label="插入二级标题">H₂</button><button type="button" data-format="bold" title="加粗" aria-label="加粗"><b>B</b></button><button type="button" data-format="italic" title="斜体" aria-label="斜体"><i>I</i></button><button type="button" data-format="list" title="插入列表" aria-label="插入列表">≡</button><button type="button" data-format="code" title="插入代码块" aria-label="插入代码块">&lt;/&gt;</button></div><div class="view-tools" role="group" aria-label="编辑视图"><button type="button" data-view="write" aria-pressed="true">编辑</button><button type="button" data-view="split" aria-pressed="false">分栏</button><button type="button" data-view="preview" aria-pressed="false">预览</button><button type="button" id="fullscreen-editor" title="全屏写作（Esc 退出）" aria-label="全屏写作" aria-pressed="false">全屏</button></div></div>
           <div class="editor-canvas" data-view="write"><label class="body-label"><span class="sr-only">Markdown 正文</span><textarea name="body" rows="20" required maxlength="200000" placeholder="从这里开始写作…&#10;&#10;支持 Markdown 标题、列表、引用与代码块。"></textarea></label><section id="markdown-preview" aria-label="Markdown 预览" hidden><div id="preview-content" class="prose dark:prose-invert max-w-none"></div></section></div>
           <div class="editor-bottom"><span id="word-count">0 字 · 约 1 分钟阅读</span><span>Markdown <span class="keyboard-hint">· ⌘ / Ctrl + S 保存</span></span></div>
           <p class="editor-notice" id="visibility-notice">发布后登录用户可在首页查看并阅读。未登录访客看不到标题和正文。草稿仅站长可见。</p>
@@ -36,9 +37,10 @@ import AccountShell from '../../components/AccountShell.astro';
       </div>
     </div>
   </div>
-</AccountShell></div></BaseLayout>
+</AccountShell></div><ConfirmDialog /></BaseLayout>
 <script>
 import { supabase, configurationMessage } from '../../lib/supabase';
+const confirmDialog = (window as unknown as { confirmDialog: (o: { title?: string; message: string; confirmText?: string; cancelText?: string; variant?: 'danger' | 'info' }) => Promise<boolean> }).confirmDialog;
 const status = document.getElementById('account-status')!;
 const panel = document.getElementById('admin-panel')!;
 const newArticle = document.getElementById('new-article') as HTMLButtonElement;
@@ -54,10 +56,14 @@ const canvas = document.querySelector<HTMLElement>('.editor-canvas')!;
 const saveState = document.getElementById('save-state')!;
 const library = document.getElementById('article-library')!;
 const writing = document.getElementById('writing-view')!;
+const studioRoot = document.querySelector('.studio')!;
 let editing = false;
 function showEditor(open: boolean) {
   editing = open; library.hidden = open; writing.hidden = !open;
   newArticle.hidden = panel.hidden || open;
+  studioRoot.classList.toggle('editor-open', open);
+  const doc = document as Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> | void };
+  if (!open && (doc.fullscreenElement ?? doc.webkitFullscreenElement)) void (doc.exitFullscreen ?? doc.webkitExitFullscreen)!.call(doc);
 }
 function updateActions() {
   const published = (editor.elements.namedItem('status') as HTMLInputElement).value === 'published';
@@ -105,7 +111,7 @@ function updatePreview() {
   const visibility = (editor.elements.namedItem('visibility') as HTMLSelectElement).value;
   document.getElementById('visibility-notice')!.textContent = visibility === 'restricted' ? '历史指定账号文章：保留原授权范围，草稿仅站长可见。' : visibility === 'public' ? '发布后任何访客均可在首页查看并阅读。草稿仅站长可见。' : '发布后登录用户可在首页查看并阅读。未登录访客看不到标题和正文。草稿仅站长可见。';
 }
-function mayLeave() { return !dirty || confirm('有尚未保存的修改，确定放弃吗？'); }
+async function mayLeave() { return !dirty || confirmDialog({ title: '放弃未保存的修改', message: '有尚未保存的修改，离开后这些修改将丢失。', confirmText: '放弃修改' }); }
 function resetEditor() {
   selected = null; version = null; dirty = false; editor.querySelector('option[value="restricted"]')?.remove(); editor.reset(); (editor.elements.namedItem('status') as HTMLInputElement).value = 'draft'; grantPanel.hidden = true; grants.replaceChildren();
   saveState.textContent = '尚未保存'; canvas.dataset.view = 'write';
@@ -113,8 +119,8 @@ function resetEditor() {
   document.querySelectorAll('button[data-view]').forEach(tab => tab.setAttribute('aria-pressed', String((tab as HTMLElement).dataset.view === 'write')));
   updateActions(); updatePreview(); renderList();
 }
-function selectArticle(row: Article) {
-  if (busy || !mayLeave()) return;
+async function selectArticle(row: Article) {
+  if (busy || !(await mayLeave())) return;
   selected = row.id; version = row.updated_at; dirty = false;
   const visibility = editor.elements.namedItem('visibility') as HTMLSelectElement;
   visibility.querySelector('option[value="restricted"]')?.remove();
@@ -137,8 +143,17 @@ function renderList() {
     const actions = document.createElement('div'); actions.className = 'article-actions';
     const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = '编辑'; edit.setAttribute('aria-current', String(row.id === selected)); edit.onclick = () => selectArticle(row);
     const read = document.createElement('a'); read.textContent = row.status === 'draft' ? '预览草稿 ↗' : '阅读 ↗'; read.href = `/posts/read/?id=${row.id}`;
+    const del = document.createElement('button'); del.type = 'button'; del.textContent = '删除'; del.className = 'delete'; del.onclick = async () => {
+      if (busy || !(await confirmDialog({ title: '删除文章', message: `永久删除《${row.title}》及其授权，此操作无法撤销。`, confirmText: '永久删除' }))) return;
+      void run(async () => {
+        const { error } = await supabase!.from('articles').delete().eq('id', row.id);
+        if (error) throw error;
+        if (selected === row.id) { dirty = false; resetEditor(); showEditor(false); }
+        await load();
+      });
+    };
     const date = document.createElement('time'); date.className = 'updated-date'; date.dateTime = row.updated_at; date.textContent = new Date(row.updated_at).toLocaleDateString('zh-CN');
-    actions.append(edit, read); item.append(title, meta, date, actions); list.append(item);
+    actions.append(edit, read, del); item.append(title, meta, date, actions); list.append(item);
   }
   document.getElementById('list-count')!.textContent = `${visible.length} 篇`;
   const empty = document.getElementById('list-empty')!; empty.hidden = visible.length > 0; empty.textContent = articles.length ? '没有符合条件的文章，试试其他关键词。' : '还没有文章，从一篇新的草稿开始吧。';
@@ -178,17 +193,17 @@ async function run(action: () => Promise<void>) {
   catch (error) { status.hidden = false; status.textContent = error instanceof Error && error.message === 'conflict' ? '文章已被其他窗口修改或权限已变化，请重新加载后编辑。' : '操作失败，请检查网络、权限或授权邮箱。'; saveState.textContent = dirty ? '保存失败 · 修改仍保留' : '操作未完成'; }
   finally { busy = false; newArticle.disabled = false; panel.querySelectorAll<HTMLButtonElement>('button').forEach(button => button.disabled = false); editor.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input,textarea,select').forEach(field => field.disabled = false); }
 }
-document.getElementById('new-article')!.onclick = () => { if (!busy && mayLeave()) { resetEditor(); showEditor(true); titleInput.focus(); } };
+document.getElementById('new-article')!.onclick = async () => { if (!busy && await mayLeave()) { resetEditor(); showEditor(true); titleInput.focus(); } };
 editor.addEventListener('input', () => { dirty = true; saveState.textContent = '有未保存的修改'; clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 180); });
 editor.addEventListener('change', updatePreview);
-document.getElementById('back-to-list')!.onclick = () => { if (!busy && mayLeave()) { resetEditor(); showEditor(false); } };
-editor.onsubmit = event => {
+document.getElementById('back-to-list')!.onclick = async () => { if (!busy && await mayLeave()) { resetEditor(); showEditor(false); } };
+editor.onsubmit = async event => {
   event.preventDefault();
   // Snapshot before fields are disabled by the operation guard.
   const form = new FormData(editor);
   const row = { title: String(form.get('title')).trim(), body: String(form.get('body')), visibility: String(form.get('visibility')), status: (event as SubmitEvent).submitter?.id === 'publish-article' ? 'published' : String(form.get('status')) };
   const original = articles.find(article => article.id === selected);
-  if (row.visibility === 'public' && row.status === 'published' && (original?.visibility !== 'public' || original?.status !== 'published') && !confirm('公开发布后，任何访客均可阅读此文章。确定发布？')) return;
+  if (row.visibility === 'public' && row.status === 'published' && (original?.visibility !== 'public' || original?.status !== 'published') && !(await confirmDialog({ title: '公开发布文章', message: '公开发布后，任何访客均可阅读此文章。确定要发布吗？', confirmText: '公开发布', variant: 'info' }))) return;
   void run(async () => {
     if (!row.title || !row.body.trim()) throw new Error('invalid'); saveState.textContent = '正在保存…';
     const current = generation;
@@ -199,8 +214,8 @@ editor.onsubmit = event => {
   });
 };
 grantForm.onsubmit = event => { event.preventDefault(); const id = selected; if (!id) return; const email = String(new FormData(grantForm).get('email')).trim(); void run(async () => { const { error } = await supabase!.rpc('admin_grant_article', { article: id, email }); if (error) throw error; grantForm.reset(); await loadGrants(id); }); };
-document.getElementById('unpublish-article')!.onclick = () => {
-  if (busy || !selected || !mayLeave()) return;
+document.getElementById('unpublish-article')!.onclick = async () => {
+  if (busy || !selected || !(await mayLeave())) return;
   const id = selected, current = generation;
   void run(async () => {
     const result = await supabase!.from('articles').update({ status: 'draft' }).eq('id', id).eq('updated_at', version).select('id');
@@ -211,9 +226,30 @@ document.getElementById('unpublish-article')!.onclick = () => {
     if (saved) { busy = false; selectArticle(saved); busy = true; }
   });
 };
-document.getElementById('delete-article')!.onclick = () => { const id = selected; if (!id || !confirm('永久删除此文章及其授权？')) return; void run(async () => { const { error } = await supabase!.from('articles').delete().eq('id', id); if (error) throw error; dirty = false; await load(); }); };
+document.getElementById('delete-article')!.onclick = async () => { const id = selected; if (!id || !(await confirmDialog({ title: '删除文章', message: '永久删除此文章及其授权，此操作无法撤销。', confirmText: '永久删除' }))) return; void run(async () => { const { error } = await supabase!.from('articles').delete().eq('id', id); if (error) throw error; dirty = false; await load(); }); };
 document.getElementById('article-search')!.addEventListener('input', renderList);
 document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(button => { button.onclick = () => { filter = button.dataset.filter!; document.querySelectorAll('[data-filter]').forEach(tab => tab.setAttribute('aria-pressed', String(tab === button))); renderList(); }; });
+async function toggleFullscreen() {
+  const doc = document as Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> | void };
+  const root = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+  const active = doc.fullscreenElement ?? doc.webkitFullscreenElement;
+  const request = active
+    ? (doc.exitFullscreen ?? doc.webkitExitFullscreen)?.call(doc)
+    : root.requestFullscreen?.() ?? root.webkitRequestFullscreen?.();
+  if (request) { try { await request; } catch { /* 用户取消或权限被拒时忽略 */ } }
+  refreshFullscreenButton();
+}
+function refreshFullscreenButton() {
+  const active = Boolean(document.fullscreenElement) || Boolean((document as Document & { webkitFullscreenElement?: Element | null }).webkitFullscreenElement);
+  const button = document.getElementById('fullscreen-editor')!;
+  button.setAttribute('aria-pressed', String(active));
+  button.textContent = active ? '退出全屏' : '全屏';
+  button.title = active ? '退出全屏（Esc）' : '全屏写作（Esc 退出）';
+  button.setAttribute('aria-label', button.title);
+  document.body.classList.toggle('fullscreen-writing', active);
+}
+document.getElementById('fullscreen-editor')!.onclick = toggleFullscreen;
+for (const event of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(event, refreshFullscreenButton);
 document.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(button => { button.onclick = () => { const view = button.dataset.view!; canvas.dataset.view = view; document.getElementById('markdown-preview')!.hidden = view === 'write'; document.querySelectorAll('button[data-view]').forEach(tab => tab.setAttribute('aria-pressed', String(tab === button))); updatePreview(); }; });
 document.querySelectorAll<HTMLButtonElement>('[data-format]').forEach(button => { button.onclick = () => { const start = bodyInput.selectionStart, end = bodyInput.selectionEnd; const text = bodyInput.value.slice(start, end); const formats: Record<string, string> = { heading: `\n## ${text || '章节标题'}\n`, bold: `**${text || '加粗文字'}**`, italic: `*${text || '斜体文字'}*`, list: `\n- ${text || '列表项'}\n`, code: `\n\`\`\`text\n${text || '代码内容'}\n\`\`\`\n` }; bodyInput.setRangeText(formats[button.dataset.format!], start, end, 'select'); bodyInput.dispatchEvent(new Event('input', { bubbles: true })); bodyInput.focus(); }; });
 document.addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's' && !panel.hidden && editing) { event.preventDefault(); if (!busy) editor.requestSubmit(); } });
@@ -282,6 +318,12 @@ void load();
 .studio .editor-canvas[data-view=split] #markdown-preview { border-left:1px solid var(--st-line); }
 .studio #markdown-preview { padding:20px;min-width:0;overflow-wrap:anywhere;max-height:700px;overflow-y:auto; }
 .studio #preview-content:empty:before { content:'预览将在这里呈现';font-size:14px;color:var(--st-muted); }
+/* 抵消 AccountShell 的全局 li 边框，还原 Markdown 列表本色 */
+.studio #preview-content :is(ul,ol) { list-style:revert;padding-left:1.6em;margin:.6em 0; }
+.studio #preview-content li { border:0;padding:0;border-radius:0;display:list-item;list-style:revert; }
+.studio #preview-content blockquote { margin:1em 0;padding:2px 0 2px 1em;border-left:3px solid var(--st-line);color:var(--st-muted); }
+.studio #preview-content h2,h3 { margin-top:1.4em; }
+.studio #preview-content h2 { font-family:var(--st-serif); }
 .studio #preview-content pre { overflow:auto; }
 .studio #preview-content table { display:block;overflow:auto; }
 .studio .editor-bottom { display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--st-muted);padding:10px 14px;border:1px solid var(--st-line);border-radius:0 0 6px 6px; }
@@ -294,7 +336,9 @@ void load();
 .studio #article-grants li span { overflow-wrap:anywhere;min-width:0; }
 .studio .danger-zone { border-top:1px solid var(--st-line);padding-top:20px;margin-top:24px;display:flex;gap:12px;justify-content:space-between;align-items:center;font-size:12px;color:var(--st-muted); }
 .studio #delete-article { color:#dc2626;background:transparent; }
+.studio .article-actions button.delete { color:#dc2626; }
 .dark .studio #delete-article { color:#f87171; }
+.dark .studio .article-actions button.delete { color:#f87171; }
 
 @media(max-width:767px) {
   .studio .account-heading h1 { font-size:1.5rem; }
@@ -351,5 +395,107 @@ void load();
   .studio .search-label { max-width:none;width:100%; }
   .studio [data-view=split] { display:none; }
   .studio .title-label input { font-size:24px; }
+}
+/* ===== 沉浸写作模式（紧凑版）：纸面质感 · 高密度排版 ===== */
+.studio { --st-serif:"Noto Serif SC","Songti SC","STSong",Georgia,serif; }
+.studio .editor-card { background:transparent;border:0;box-shadow:none;padding:0;border-radius:0; }
+/* 收进一条居中稍宽的稿纸栏，减少纵向空耗 */
+.studio .editor-card > * { max-width:880px;margin-inline:auto;width:100%; }
+/* 顶部：返回 + 状态，全部弱化为灰色小字 */
+.studio .editor-top { padding-bottom:2px; }
+.studio #back-to-list { font-size:13px; }
+.studio #back-to-list:hover { background:transparent;color:var(--st-ink); }
+.studio #save-state::before { content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--st-accent);opacity:.55;margin-right:7px;vertical-align:1px; }
+/* 标题：衬线中号大字，紧凑留白，发丝线只在聚焦时浮现 */
+.studio .title-label { display:block;border-bottom:1px solid transparent;transition:border-color .25s ease;margin-bottom:8px; }
+.studio .title-label:focus-within { border-color:var(--st-line); }
+.studio .title-label input { font-family:var(--st-serif);font-size:26px;font-weight:600;line-height:1.35;padding:12px 0 10px;caret-color:var(--st-accent); }
+.studio .title-label input::placeholder { color:var(--st-line);font-weight:500; }
+.studio .title-label input:focus-visible { outline:0; }
+/* 元信息行：横排、幽灵化下拉、状态点 */
+.studio .metadata { flex-direction:row;align-items:center;gap:12px;padding:0 0 10px; }
+/* 摞叠 label 还原为横向排列（抵消 AccountShell 的 grid label） */
+.studio .metadata label { display:flex;flex-direction:row;align-items:center;gap:4px;flex:initial; }
+.studio .metadata select { border:0;background:transparent;padding:3px 6px;font-size:13px;color:var(--st-muted);max-width:160px; }
+.studio .metadata select:hover { color:var(--st-ink);background:var(--st-bg);border-radius:6px; }
+.studio #article-status { display:inline-flex;align-items:center;gap:6px; }
+.studio #article-status::before { content:'';width:6px;height:6px;border-radius:50%;background:var(--st-muted);opacity:.7; }
+/* 工具栏：去灰底浮框，仅留一条发丝线 */
+.studio .editor-toolbar { background:transparent;border:0;border-bottom:1px solid var(--st-line);border-radius:0;padding:0 0 6px; }
+.studio .format-tools button { border-radius:6px;color:var(--st-muted);font-size:13.5px; }
+.studio .format-tools button:hover { background:var(--st-bg);color:var(--st-ink); }
+.studio .view-tools { background:var(--st-bg);border:1px solid var(--st-line);border-radius:999px;padding:2px; }
+.studio .view-tools button { border:0;border-radius:999px;padding:3px 12px;color:var(--st-muted); }
+.studio .view-tools button[aria-pressed=true] { background:var(--st-card);color:var(--st-accent);box-shadow:0 1px 3px rgba(0,0,0,.07); }
+/* 稿纸：正文无侧边框、行距收敛 */
+.studio .editor-canvas { border-inline:0;min-height:380px; }
+.studio .body-label textarea { font-family:var(--st-serif);font-size:15px;line-height:1.9;padding:14px 0 18px;caret-color:var(--st-accent);letter-spacing:.01em; }
+.studio .body-label textarea::placeholder { color:var(--st-line);line-height:1.9; }
+.studio .body-label textarea::selection,.studio #markdown-preview ::selection { background:var(--st-soft); }
+.studio .body-label textarea:focus-visible { outline:0;outline-offset:0; }
+/* 预览与稿纸同栏 */
+.studio #markdown-preview { padding:14px 0 18px;max-height:none; }
+/* 预览正文与稿纸左缘对齐（覆盖 .prose 的自动居中） */
+.studio #preview-content.prose { max-width:none;margin:0; }
+/* 抵消 AccountShell 的全局 li 边框，还原 Markdown 列表本色 */
+.studio #preview-content :is(ul,ol) { list-style:revert;padding-left:1.6em;margin:.6em 0; }
+.studio #preview-content li { border:0;padding:0;border-radius:0;display:list-item;list-style:revert; }
+.studio #preview-content blockquote { margin:1em 0;padding:2px 0 2px 1em;border-left:3px solid var(--st-line);color:var(--st-muted); }
+.studio #preview-content h2,h3 { margin-top:1.4em; }
+.studio #preview-content h2 { font-family:var(--st-serif); }
+.studio #preview-content pre { overflow:auto; }
+.studio #preview-content table { display:block;overflow:auto; }
+/* 分栏视图：整条稿纸（含工具栏/底栏）同步放宽，中缝只留一条发丝线 */
+.studio .editor-card:has(.editor-canvas[data-view=split]) > * { max-width:1120px; }
+.studio .editor-canvas[data-view=split] #markdown-preview { border-left:1px solid var(--st-line); }
+/* 底部信息条与统计弱化为纸边小字 */
+.studio .editor-bottom { border:0;padding:8px 0 2px;font-size:12px;letter-spacing:.02em; }
+.dark .studio .view-tools button[aria-pressed=true] { box-shadow:0 1px 3px rgba(0,0,0,.4); }
+.dark .studio .title-label input::placeholder,.dark .studio .body-label textarea::placeholder { color:#3a4250; }
+.dark .studio .body-label textarea { caret-color:#3b82f6; }
+@media(max-width:767px) {
+  .studio .editor-card > * { max-width:100%; }
+  .studio .title-label input { font-size:22px;padding:10px 0 8px; }
+  .studio .body-label textarea { font-size:15px;padding-inline:0; }
+  .studio #markdown-preview { padding-inline:0; }
+}
+@media(max-width:520px) {
+  .studio .metadata { flex-wrap:wrap;justify-content:flex-start;gap:8px 18px; }
+  .studio .view-tools button { padding:3px 10px; }
+  .studio .editor-top { padding-bottom:6px; }
+}
+/* ===== 桌面端一屏布局：编辑器钉满视口，正文内部滚动 ===== */
+@media(min-width:1024px) {
+  .studio.editor-open .account-heading { margin:0; }
+  .studio.editor-open .account-heading h1 { display:none; }
+  .studio.editor-open #account-status { margin:0 0 8px; }
+  .studio.editor-open #writing-view { display:flex;flex-direction:column;gap:8px;height:calc(100vh - 132px);height:calc(100dvh - 132px);min-height:480px; }
+  .studio.editor-open #article-editor { max-width:980px;width:100%;margin-inline:auto;flex:1 1 auto;min-height:0;display:grid;column-gap:20px;row-gap:0;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr) auto auto auto;grid-template-areas:"title meta" "toolbar toolbar" "canvas canvas" "bottom bottom" "notice notice" "actions actions"; }
+  .studio.editor-open .editor-card > * { max-width:none;margin-inline:0;width:auto; }
+  .studio.editor-open .title-label { grid-area:title;margin:0;align-self:center;border-bottom:0; }
+  .studio.editor-open .title-label input { font-size:25px;padding:10px 0 8px; }
+  .studio.editor-open .metadata { grid-area:meta;align-self:center;justify-self:end;gap:10px;padding:0;white-space:nowrap; }
+  .studio.editor-open .editor-toolbar { grid-area:toolbar;align-self:end; }
+  .studio.editor-open .editor-canvas { display:flex;align-items:stretch;grid-area:canvas;min-height:0;overflow:hidden;border-inline:0; }
+  .studio.editor-open .body-label { display:flex;flex:1 1 50%;min-width:0;min-height:0; }
+  .studio.editor-open .body-label textarea { flex:1;height:auto;min-height:0;width:100%;resize:none;overflow-y:auto;padding:12px 0 16px; }
+  .studio.editor-open .editor-canvas #markdown-preview { flex:1 1 50%;min-width:0;height:auto;max-height:none;overflow-y:auto;padding:12px 0 16px; }
+  .studio.editor-open .editor-bottom { grid-area:bottom;padding:6px 0 2px; }
+  .studio.editor-open .editor-notice { grid-area:notice;margin:0;font-size:11.5px;line-height:1.5; }
+  .studio.editor-open .editor-actions { grid-area:actions;margin-top:0;padding:2px 0 0; }
+  .studio.editor-open .article-more { margin:0;padding:2px 0 0;border-top:0; }
+  .studio.editor-open .article-more>div { margin:8px 0; }
+  .studio.editor-open .access-card { margin:0;padding-top:8px;order:9; }
+}
+@media(max-width:1023px) {
+  .studio .editor-card { max-width:100%; }
+}
+/* ===== 全屏写作模式：无浏览器启动顶栏与站点导航，稿纸铺满整屏 ===== */
+@media(min-width:1024px) {
+  body.fullscreen-writing>header { display:none; }
+  body.fullscreen-writing>main { padding-top:8px;padding-bottom:8px; }
+  body.fullscreen-writing .studio .account-heading { display:none; }
+  body.fullscreen-writing .studio #writing-view { height:calc(100vh - 48px);height:calc(100dvh - 48px);gap:6px; }
+  body.fullscreen-writing .studio #article-editor { max-width:1080px; }
 }
 </style>
