@@ -5,7 +5,7 @@
 ## 1. 创建 Supabase 项目并应用数据库迁移
 
 1. 创建独立 Supabase 项目，保存数据库密码到密码管理器，不写入仓库。
-2. 在 SQL Editor 中，以项目数据库管理员按顺序运行 [基础迁移](../supabase/migrations/20260719000100_account_and_private_articles.sql) 和 [公开文章增量迁移](../supabase/migrations/20260719000200_public_article_visibility.sql)；已运行基础迁移的项目只运行第二份，不能重复建表。或者使用已安装的 Supabase CLI，把项目链接到正确的 staging / production 后运行 `supabase db push`。不要把测试辅助文件当作迁移运行。
+2. 在 SQL Editor 中，以项目数据库管理员按顺序运行 [基础迁移](../supabase/migrations/20260719000100_account_and_private_articles.sql)、[公开文章增量迁移](../supabase/migrations/20260719000200_public_article_visibility.sql) 和 [待办四象限同步迁移](../supabase/migrations/20261017000100_user_todos_quadrant_sync.sql)；已运行基础迁移的项目按顺序补齐后续两份，不能重复建表。或者使用已安装的 Supabase CLI，把项目链接到正确的 staging / production 后运行 `supabase db push`。不要把测试辅助文件当作迁移运行。
 3. 确认 6 张表均开启 RLS：`site_admins`、`articles`、`article_grants`、`bookmarks`、`reading_history`、`user_todos`。
 4. 在 Project Settings → API / API Keys 中取得项目 URL 与 **anon key 或 publishable key**。不同控制台版本入口名称可能略有不同。公开这两个值是正常设计；它们不是管理密钥。
 
@@ -71,7 +71,8 @@ RPC 先检查数据库管理员资格，然后仅在服务器内部按忽略大�
 
 ### 页面入口与内容限制
 
-- `/account/`：邮箱密码登录、备用邮件登录、忘记密码、通行密钥登录及退出。启用通行密钥后，登录卡片会显示“使用通行密钥登录”；个人中心“账号设置”内可为已登录账号添加、重命名、删除通行密钥。“账号设置”和“我的待办”默认收起，密码恢复回调会自动展开设置并聚焦新密码。加载及失败时仍提示状态。收藏与阅读记录入口及前端读写已移除；数据库中原有 bookmarks、reading_history 表和历史数据保留，不自动删除。
+- `/account/`：邮箱密码登录、备用邮件登录、忘记密码、通行密钥登录及退出。启用通行密钥后，登录卡片会显示“使用通行密钥登录”；个人中心“账号设置”内可为已登录账号添加、重命名、删除通行密钥。“账号设置”和“我的待办”默认收起，密码恢复回调会自动展开设置并聚焦新密码。加载及失败时仍提示状态。“我的待办”是四象限待办的快捷入口，与 `/todo/` 共用 `user_todos` 表；完整设计见 [待办云端同步](design/todo-cloud-sync.md)。收藏与阅读记录入口及前端读写已移除；数据库中原有 bookmarks、reading_history 表和历史数据保留，不自动删除。
+- `/todo/`：四象限待办清单。登录账号后数据以数据库为权威存储，浏览器 localStorage 仅作镜像（离线可用）；未登录时保持纯本地模式并提示登录。首次登录且云端为空时提供把本地历史数据一键导入数据库的入口。
 - `/members/`：旧列表页已移除，跳转首页；账号导航仅保留个人中心和文章管理。文章统一在首页按权限展示。
 - `/`：现有 Markdown 与云端已发布文章按日期混排，运行时仅查询标题、日期、可见范围，不拉取正文。游客仅看到公开文章；登录用户还看到登录可见及获授权的历史文章。草稿不会进入首页。
 - `/posts/read/?id=<article UUID>`：云端文章阅读页，使用博客标题、日期、阅读时间、目录与正文排版；数据库 RLS 决定是否返回整行。
@@ -104,18 +105,10 @@ pnpm dev
 
 Astro 的 `PUBLIC_*` 变量在 **构建时**嵌入脚本。GitHub Pages 没有运行时环境变量；只改仓库变量而不重新构建不会更新部署。
 
-目前 [部署工作流](../.github/workflows/deploy.yml) 的 Build 步骤仅显式注入日历代理地址，**尚未注入 Supabase 变量**。本次没有更改工作流。要启用生产账号功能，需要维护者完成以下操作：
+[部署工作流](../.github/workflows/deploy.yml) 的 Build 步骤已注入日历代理地址与 Supabase 变量（取自仓库 Secrets）。要启用生产账号功能，维护者完成以下操作：
 
-1. Repository Settings → Secrets and variables → Actions → Variables，创建 `PUBLIC_SUPABASE_URL` 和 `PUBLIC_SUPABASE_ANON_KEY`。也可用 Secrets 储存，但这不会使构建后的浏览器 key 保密。
-2. 经仓库维护者批准，在现有 Build 步骤的 `env` 中添加两项（保留现有日历变量和其他配置）：
-
-```yaml
-PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
-PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY }}
-```
-
-3. 若选用 GitHub Secrets 而非 Variables，上述表达式相应改为 `secrets.PUBLIC_SUPABASE_URL` 和 `secrets.PUBLIC_SUPABASE_ANON_KEY`。
-4. 重新运行部署，并在生产 `/account/` 验证真实邀请、登录、刷新与退出。缺少配置时账号功能不可用不代表生产已接通。
+1. Repository Settings → Secrets and variables → Actions → **Secrets**，创建 `PUBLIC_SUPABASE_URL` 和 `PUBLIC_SUPABASE_ANON_KEY`。公开这两个值是正常设计（anon key 只随 RLS 生效），以 Secrets 储存仅为配置习惯；显示在前端产物中不代表泄漏。
+2. 重新运行部署（后续 push 到 main 或手动 Dispatch 均会生效），并在生产 `/account/`、`/todo/` 验证真实登录、同步与退出。缺少配置时账号功能不可用不代表生产已接通。
 
 不要在工作流、前端环境或构建日志中放入数据库 URL/密码、SMTP 密钥或管理 key。迁移和邀请都不需要在 Pages 构建任务里执行。
 
@@ -148,6 +141,7 @@ psql -d account_permissions_scratch -X -v ON_ERROR_STOP=1 \
   -f supabase/tests/local-auth-shim.sql \
   -f supabase/migrations/20260719000100_account_and_private_articles.sql \
   -f supabase/migrations/20260719000200_public_article_visibility.sql \
+  -f supabase/migrations/20261017000100_user_todos_quadrant_sync.sql \
   -f supabase/tests/article-visibility.sql \
   -v admin_email='admin@example.test' -v reader_email='reader@example.test' \
   -f supabase/tests/permissions.sql

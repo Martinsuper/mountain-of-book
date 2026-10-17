@@ -38,12 +38,13 @@ const isPostsSection =
   ['/archive/', '/timeline/'].includes(currentPath) ||
   currentPath.startsWith('/categories') ||
   currentPath.startsWith('/tags') || currentPath.startsWith('/posts/');
-const isToolsSection = ['/tools/', '/todo/'].includes(currentPath);
+const isToolsSection = currentPath === '/tools/';
 const accountLinks = [
   { href: '/account/', label: '个人中心' },
+  { href: '/todo/', label: '待办' },
   { href: '/account/admin/', label: '文章管理' },
 ];
-const isAccountSection = currentPath.startsWith('/account/');
+const isAccountSection = currentPath.startsWith('/account/') || currentPath === '/todo/';
 ---
 
 <!doctype html>
@@ -177,7 +178,6 @@ const isAccountSection = currentPath.startsWith('/account/');
             </button>
             <div id="tools-menu" class="nav-dropdown" inert>
               <a href="/tools/" class={`nav-dropdown-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
-              <a href="/todo/" class={`nav-dropdown-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
             </div>
           </div>
           <div class="nav-group account-nav">
@@ -205,7 +205,6 @@ const isAccountSection = currentPath.startsWith('/account/');
         <a href="/tags/" class={`mobile-nav-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
         <div class="mobile-nav-group-label">小工具</div>
         <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
-        <a href="/todo/" class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
         <div class="mobile-nav-group-label">账号</div>
         {accountLinks.map(link => <a href={link.href} class={`mobile-nav-link ${currentPath === link.href ? 'active' : ''}`} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>)}
       </div>

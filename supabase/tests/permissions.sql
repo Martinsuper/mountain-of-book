@@ -95,14 +95,14 @@ declare t text; n integer;
 begin
   foreach t in array array['bookmarks', 'reading_history', 'user_todos'] loop
     if t = 'user_todos' then
-      execute 'insert into public.user_todos(text) values (''own todo'')';
-      perform pg_temp.expect_denied('insert into public.user_todos(user_id, text) values (current_setting(''test.admin'')::uuid, ''foreign'')');
+      execute 'insert into public.user_todos(title) values (''own todo'')';
+      perform pg_temp.expect_denied('insert into public.user_todos(user_id, title) values (current_setting(''test.admin'')::uuid, ''foreign'')');
     else
       execute format('insert into public.%I(article_path, title) values (current_setting(''test.path''), ''own'')', t);
       perform pg_temp.expect_denied(format('insert into public.%I(user_id, article_path, title) values (current_setting(''test.admin'')::uuid, current_setting(''test.path''), ''foreign'')', t));
     end if;
     perform pg_temp.expect_denied(format('update public.%I set user_id = current_setting(''test.admin'')::uuid where user_id = current_setting(''test.reader'')::uuid', t));
-    execute format('update public.%I set %I = $1 where user_id = current_setting(''test.reader'')::uuid', t, case when t = 'user_todos' then 'text' else 'title' end) using 'own updated';
+    execute format('update public.%I set title = $1 where user_id = current_setting(''test.reader'')::uuid', t) using 'own updated';
     get diagnostics n = row_count;
     perform pg_temp.assert_true(n >= 1, t || ' own update works');
   end loop;

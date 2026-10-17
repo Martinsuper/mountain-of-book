@@ -15,6 +15,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div></details>
       </div>
     </header>
+    <p class="sync-status" id="syncStatus" role="status"></p>
+    <div class="import-banner" id="importBanner" hidden>
+      <span class="import-text" id="importText"></span>
+      <span class="import-actions"><button id="importConfirmBtn">导入到账号</button><button id="importDismissBtn">暂不导入</button></span>
+    </div>
     <div class="stats-panel" aria-label="任务统计" aria-live="polite">
       <span><b id="stat-pending">0</b> 待办</span><span><b id="stat-today">0</b> 今天到期</span><span><b id="stat-completed">0</b> 已完成</span>
     </div>
@@ -251,53 +256,159 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 .modal-overlay{position:fixed;inset:0;background:#0f172a66;display:none;align-items:center;justify-content:center;z-index:1000}.modal-overlay.show{display:flex}.modal{background:#fff;border-radius:12px;width:calc(100% - 32px);max-width:480px;max-height:90vh;overflow:auto}.dark .modal{background:#1f2937}.modal-small{max-width:340px}.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e5e7eb}.dark .modal-header{border-color:#374151}.modal-header h3{font-size:1.05rem;font-weight:600;margin:0}.modal-close{font-size:1.5rem;color:#9ca3af}.modal-body{padding:20px 22px}.form-group{margin-bottom:16px}.form-group label,.detail-label{display:block;font-size:.75rem;color:#6b7280;margin-bottom:6px}.dark .form-group label,.dark .detail-label{color:#9ca3af}.form-group input,.form-group textarea{width:100%;padding:9px 11px;border:1px solid #e5e7eb;border-radius:7px;background:transparent;font-size:.875rem}.dark .form-group input,.dark .form-group textarea{border-color:#4b5563}.quadrant-selector,.priority-selector{display:flex;gap:6px;flex-wrap:wrap}.quadrant-btn,.priority-btn{border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;font-size:.75rem}.dark .quadrant-btn,.dark .priority-btn{border-color:#4b5563}.quadrant-btn.active,.priority-btn.active{background:#eff6ff;color:#2563eb;border-color:#93c5fd}.dark .quadrant-btn.active,.dark .priority-btn.active{background:#1e3a5f;color:#93c5fd}.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:15px 22px;border-top:1px solid #e5e7eb}.dark .modal-footer{border-color:#374151}.modal-footer button,.batch-actions-panel button{padding:8px 12px;border-radius:7px;font-size:.8rem;cursor:pointer}.btn-cancel{background:#f3f4f6;color:#374151}.dark .btn-cancel{background:#374151;color:#f3f4f6}.btn-submit,.btn-edit,.btn-batch-complete{background:#2563eb;color:#fff}.btn-delete,.btn-delete-confirm,.btn-batch-delete{background:#b45353;color:#fff}.detail-section{margin-bottom:16px}.detail-value{font-size:.875rem;margin:0;overflow-wrap:anywhere}.detail-desc-full{white-space:pre-wrap}.detail-meta-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-badge{font-size:.8rem}.batch-actions-panel{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;display:none;align-items:center;gap:10px;z-index:100;box-shadow:0 8px 30px #0001;font-size:.8rem}.batch-actions-panel.show{display:flex}.dark .batch-actions-panel{background:#1f2937;border-color:#374151}.undo-toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;border-radius:9px;padding:12px 20px;gap:16px;align-items:center;z-index:1100;font-size:.8rem}.undo-toast.show{display:flex}.undo-btn{color:#93c5fd}
 @media(max-width:760px){.todo-split{grid-template-columns:1fr}.todo-col-right{display:grid;grid-template-columns:1fr 1fr;gap:14px}.todo-progress{margin:0;align-self:start}.search-wrapper{flex-basis:100%}.search-input{width:100%}}@media(max-width:480px){.todo-header h1{font-size:1.5rem}.todo-subtitle{font-size:.75rem}.add-task-btn{padding:8px 10px;font-size:.75rem}.todo-more summary{font-size:.7rem;padding:8px}.todo-col-right{grid-template-columns:1fr}.task-item{padding:14px 12px;gap:8px;flex-wrap:wrap}.task-actions{margin-left:25px}.task-content{flex-basis:calc(100% - 35px)}.archive-item-time{display:none}.batch-actions-panel{width:calc(100% - 24px);flex-wrap:wrap;justify-content:center}.stats-panel{gap:16px}.task-meta{gap:5px}.todo-filter{padding:7px 6px}}
 .calendar-subscription{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem;color:var(--todo-muted)}.calendar-subscription summary{cursor:pointer;color:var(--todo-accent)}.calendar-subscription label{display:block;margin-top:10px}.calendar-subscription input[type=text]{width:100%;font-size:.65rem;padding:7px;border:1px solid var(--todo-line);border-radius:5px;background:var(--todo-bg);color:var(--todo-text);margin:5px 0}.calendar-subscription button,.calendar-day-details button{padding:5px 7px;border:1px solid var(--todo-line);border-radius:5px;font-size:.65rem;margin:4px 0;color:var(--todo-accent)}.subscription-toggle{display:flex!important;gap:7px;align-items:center}.subscription-actions{display:flex;gap:7px}.calendar-subscription p{font-size:.6rem;margin-top:7px;overflow-wrap:anywhere}.calendar-day-details{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem}.calendar-day-details h3{font-weight:600;margin:0 0 7px}.calendar-day-details p{font-size:.65rem;color:var(--todo-muted);margin:4px 0}.cal-cell{position:relative;min-height:42px}.holiday-marker{font-size:8px;line-height:10px;border-radius:2px;padding:0 2px}.holiday-marker.holiday{color:#348365;background:#e8f5ed}.holiday-marker.workday{color:#9c711f;background:#fff4dd}.holiday-marker.event{color:var(--todo-accent)}.dark .holiday-marker.holiday{background:#1d3b32;color:#93d1b4}.dark .holiday-marker.workday{background:#3b3020;color:#e1c081}
+.sync-status{font-size:.75rem;color:var(--todo-muted);margin:12px 0 -6px}#syncStatus:empty{display:none}.sync-status a{color:var(--todo-accent);text-decoration:underline}.import-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0;padding:10px 14px;border:1px solid var(--todo-accent);border-radius:9px;background:var(--todo-tint);font-size:.85rem;color:var(--todo-text)}.import-banner[hidden]{display:none}.import-banner button{padding:6px 10px;border-radius:7px;font-size:.75rem}.import-banner .import-actions{display:flex;gap:8px}#importConfirmBtn{background:var(--todo-accent);border:0;color:#fff}.dark #importConfirmBtn{background:#3b82f6}
 </style>
 
 <script>
 import { initCalendarSubscription } from '../lib/calendar-subscription';
+import {
+  TODO_IMPORT_FLAG_KEY, TODO_SKIP_IMPORT_KEY, TODO_STORAGE_VERSION,
+  cloneTodoItems, diffTodoItems, isUuid, newTodoId, readLocalTodos, remoteTodoSync,
+  todoItemToInsertRow, writeLocalTodos,
+  type TodoItem, type TodoStorage,
+} from '../lib/todo-store';
+import { supabase } from '../lib/supabase';
+
 let subscription: ReturnType<typeof initCalendarSubscription> | undefined;
-// 数据存储
-const STORAGE_KEY = 'todo_quadrant_data';
-const STORAGE_VERSION = 1;
 
-interface TodoItem {
-  id: string;
-  title: string;
-  description?: string;
-  quadrant: 1 | 2 | 3 | 4;
-  createdAt: number;
-  updatedAt: number;
-  dueDate?: number;
-  completed: boolean;
-  completedAt?: number;
-  priority: 'high' | 'medium' | 'low';
+// ============ 存储层：账号云端（Supabase user_todos）+ 本地镜像 ============
+// 已登录时以数据库为权威存储，localStorage 全程保留镜像；未登录、云端
+// 暂不可用或登出后无缝退回本地模式。数据模型与行转换见 src/lib/todo-store.ts。
+type Backend = 'local' | 'remote';
+type SyncStatusKind = 'unconfigured' | 'loading' | 'signed-out' | 'idle' | 'syncing' | 'error' | 'offline';
+let backend: Backend = 'local';
+let userId: string | null = null;
+let state: TodoStorage = readLocalTodos();
+let confirmedServer: TodoItem[] = []; // 服务端已确认的条目快照，同步差异以它为基准
+let syncing = false;
+let retryTimer: number | null = null;
+let refreshBusy = false;
+// 切换到云端模式前捕获的本地数据快照，供「云端为空时导入本地历史」使用；
+// 不能直接读镜像，因为云端加载完成后镜像会被云端数据覆盖。
+let importCandidate: TodoItem[] = [];
+
+function getStorage(): TodoStorage { return state; }
+
+function saveStorage(): void {
+  writeLocalTodos(state);
+  if (backend === 'remote') void pumpRemoteSync();
 }
 
-interface TodoStorage {
-  items: TodoItem[];
-  version: number;
-  lastUpdated: number;
-}
-
-// 工具函数
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function getStorage(): TodoStorage {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return { items: [], version: STORAGE_VERSION, lastUpdated: Date.now() };
-    const parsed = JSON.parse(data);
-    return parsed.version === STORAGE_VERSION ? parsed : { items: [], version: STORAGE_VERSION, lastUpdated: Date.now() };
-  } catch {
-    return { items: [], version: STORAGE_VERSION, lastUpdated: Date.now() };
+function setSyncStatus(kind: SyncStatusKind): void {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  switch (kind) {
+    case 'unconfigured': el.replaceChildren(); break;
+    case 'loading': el.textContent = '正在加载账号待办…'; break;
+    case 'signed-out': {
+      const link = document.createElement('a');
+      link.href = '/account/';
+      link.textContent = '登录账号';
+      el.replaceChildren(document.createTextNode('待办数据目前仅保存在此浏览器，'), link, document.createTextNode('后可云端同步。'));
+      break;
+    }
+    case 'idle': el.textContent = '已同步到账号云端'; break;
+    case 'syncing': el.textContent = '正在同步云端数据…'; break;
+    case 'error': el.textContent = '云端同步失败，15 秒后自动重试；期间修改仍保存在本浏览器。'; break;
+    case 'offline': el.textContent = '云端暂时不可用，当前显示和保存的是本地缓存。'; break;
   }
 }
 
-function saveStorage(data: TodoStorage): void {
-  data.lastUpdated = Date.now();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+// 云端写入泵：以「服务端已确认快照 → 当前状态」的内容差异驱动，
+// 发送后重算差异，失败保留基准 15 秒后自动重试，快速连续编辑也只会推送最终结果。
+async function pumpRemoteSync(): Promise<void> {
+  if (!remoteTodoSync || !userId || syncing) return;
+  syncing = true;
+  try {
+    while (true) {
+      const target = cloneTodoItems(state.items);
+      const diff = diffTodoItems(confirmedServer, target);
+      if (!diff.inserts.length && !diff.updates.length && !diff.deletes.length) { setSyncStatus('idle'); return; }
+      setSyncStatus('syncing');
+      try {
+        await remoteTodoSync.push(userId, diff);
+        confirmedServer = target;
+      } catch {
+        setSyncStatus('error');
+        if (retryTimer) clearTimeout(retryTimer);
+        retryTimer = window.setTimeout(() => { retryTimer = null; void pumpRemoteSync(); }, 15_000);
+        return;
+      }
+    }
+  } finally { syncing = false; }
+}
+
+// 启动：确认登录态后选择本地 / 云端模式并加载/重绘
+async function initStorage(): Promise<void> {
+  if (!supabase) { backend = 'local'; state = readLocalTodos(); setSyncStatus('unconfigured'); return; }
+  setSyncStatus('loading');
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { backend = 'local'; state = readLocalTodos(); setSyncStatus('signed-out'); renderTasks(searchInput.value); return; }
+    userId = user.id;
+    const localSnapshot = backend === 'local' ? cloneTodoItems(state.items) : [];
+    const remote = await remoteTodoSync!.fetch(userId);
+    if (!remote) { backend = 'local'; state = readLocalTodos(); setSyncStatus('offline'); renderTasks(searchInput.value); return; }
+    backend = 'remote';
+    confirmedServer = cloneTodoItems(remote);
+    state = { items: cloneTodoItems(remote), version: TODO_STORAGE_VERSION, lastUpdated: Date.now() };
+    writeLocalTodos(state);
+    importCandidate = remote.length ? [] : localSnapshot.filter(item => item.title.trim());
+    setSyncStatus('idle');
+    renderTasks(searchInput.value);
+    offerLocalImport();
+  } catch {
+    backend = 'local';
+    state = readLocalTodos();
+    setSyncStatus('offline');
+    renderTasks(searchInput.value);
+  }
+}
+
+// 云端为空且切换前有本地历史数据时，提供一次性导入入口
+function offerLocalImport(): void {
+  const banner = document.getElementById('importBanner');
+  if (!banner || !userId) return;
+  if (localStorage.getItem(TODO_IMPORT_FLAG_KEY) || sessionStorage.getItem(TODO_SKIP_IMPORT_KEY)) return;
+  if (!importCandidate.length || state.items.length) { importCandidate = []; return; }
+  document.getElementById('importText')!.textContent = `检测到此浏览器保存的 ${importCandidate.length} 条待办尚未同步，可一键导入到账号。`;
+  banner.hidden = false;
+}
+
+async function importLocalTodos(): Promise<void> {
+  const banner = document.getElementById('importBanner');
+  if (!supabase || !userId || backend !== 'remote' || !importCandidate.length) return;
+  const uid = userId; // 守卫后捕获具体类型，消除回调中的可空性
+  const items = importCandidate.map(item => ({ ...item, id: isUuid(item.id) ? item.id : newTodoId() }));
+  if (!items.length) return;
+  const confirmBtn = document.getElementById('importConfirmBtn') as HTMLButtonElement;
+  confirmBtn.disabled = true;
+  try {
+    const { error } = await supabase.from('user_todos').insert(items.map(item => todoItemToInsertRow(item, uid)));
+    if (error) throw error;
+    localStorage.setItem(TODO_IMPORT_FLAG_KEY, '1');
+    state = { items, version: TODO_STORAGE_VERSION, lastUpdated: Date.now() };
+    confirmedServer = cloneTodoItems(items);
+    writeLocalTodos(state);
+    if (banner) banner.hidden = true;
+    setSyncStatus('idle');
+    renderTasks(searchInput.value);
+  } catch {
+    document.getElementById('importText')!.textContent = '导入失败，请检查网络后重试。';
+  } finally { confirmBtn.disabled = false; }
+}
+
+// 其他标签页登录 / 登出时跟随切换模式
+supabase?.auth.onAuthStateChange(event => {
+  if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
+  void refreshAccountState();
+});
+
+async function refreshAccountState(): Promise<void> {
+  if (refreshBusy) return;
+  refreshBusy = true;
+  try { await initStorage(); renderTasks(searchInput.value); }
+  finally { refreshBusy = false; }
 }
 
 function formatDate(timestamp: number): string {
@@ -852,7 +963,7 @@ function addTask() {
 
   const storage = getStorage();
   const task: TodoItem = {
-    id: generateId(),
+    id: newTodoId(),
     title,
     description: taskDesc.value.trim() || undefined,
     quadrant: currentQuadrant,
@@ -864,7 +975,7 @@ function addTask() {
   };
 
   storage.items.push(task);
-  saveStorage(storage);
+  saveStorage();
 
   // 重置表单
   taskTitle.value = '';
@@ -915,7 +1026,7 @@ function saveEdit() {
   task.dueDate = dateToDeadline(editTaskDue.value);
   task.updatedAt = Date.now();
 
-  saveStorage(storage);
+  saveStorage();
   hideModal(editModal!);
   editingTaskId = null;
   renderTasks(searchInput.value);
@@ -937,7 +1048,7 @@ function confirmDelete() {
     // 保存已删除的任务用于撤销
     lastDeletedTask = taskToDelete;
     storage.items = storage.items.filter(i => i.id !== deletingTaskId);
-    saveStorage(storage);
+    saveStorage();
 
     // 显示撤销提示
     showUndoToast(taskToDelete);
@@ -958,7 +1069,7 @@ function toggleComplete(taskId: string) {
   task.completedAt = task.completed ? Date.now() : undefined;
   task.updatedAt = Date.now();
 
-  saveStorage(storage);
+  saveStorage();
 
   if (task.completed) {
     createCompletionParticles(taskId);
@@ -977,7 +1088,7 @@ function restoreTask(taskId: string) {
   task.completedAt = undefined;
   task.updatedAt = Date.now();
 
-  saveStorage(storage);
+  saveStorage();
   renderTasks(searchInput.value);
 }
 
@@ -1040,7 +1151,7 @@ function batchComplete() {
       item.updatedAt = Date.now();
     }
   });
-  saveStorage(storage);
+  saveStorage();
   selectedTaskIds.clear();
   updateSelectedCount();
   renderTasks(searchInput.value);
@@ -1050,7 +1161,7 @@ function batchDelete() {
   if (selectedTaskIds.size === 0) return;
   const storage = getStorage();
   storage.items = storage.items.filter(i => !selectedTaskIds.has(i.id));
-  saveStorage(storage);
+  saveStorage();
   selectedTaskIds.clear();
   updateSelectedCount();
   renderTasks(searchInput.value);
@@ -1061,7 +1172,7 @@ function clearCompletedTasks() {
   const completedCount = storage.items.filter(i => i.completed).length;
   if (completedCount === 0) return;
   storage.items = storage.items.filter(i => !i.completed);
-  saveStorage(storage);
+  saveStorage();
   renderTasks(searchInput.value);
 }
 
@@ -1145,7 +1256,7 @@ function undoDelete() {
 
   const storage = getStorage();
   storage.items.push(lastDeletedTask);
-  saveStorage(storage);
+  saveStorage();
   hideUndoToast();
   lastDeletedTask = null;
   renderTasks(searchInput.value);
@@ -1330,7 +1441,7 @@ function handleDrop(e: DragEvent) {
         });
       }
 
-      saveStorage(storage);
+      saveStorage();
       renderTasks(searchInput.value);
     }
   }
@@ -1339,8 +1450,8 @@ function handleDrop(e: DragEvent) {
   handleDragEnd(e);
 }
 
-function getDragAfterElement(container: Element, y: number): Element | null {
-  const draggableElements = [...container.querySelectorAll('.task-item:not(.dragging), .drag-placeholder')];
+function getDragAfterElement(container: Element, y: number): HTMLElement | null {
+  const draggableElements = [...container.querySelectorAll<HTMLElement>('.task-item:not(.dragging), .drag-placeholder')];
 
   return draggableElements.reduce((closest, child) => {
     const box = child.getBoundingClientRect();
@@ -1351,7 +1462,7 @@ function getDragAfterElement(container: Element, y: number): Element | null {
     } else {
       return closest;
     }
-  }, { offset: Number.NEGATIVE_INFINITY, element: null as Element | null }).element;
+  }, { offset: Number.NEGATIVE_INFINITY, element: null as HTMLElement | null }).element;
 }
 
 // ============ 日历视图交互 ============
@@ -1407,7 +1518,7 @@ function handleCalDrop(e: DragEvent) {
     // 截止日期按当天结束处理，不保留具体时分
     task.dueDate = new Date(y, m - 1, dd, 23, 59, 59, 999).getTime();
     task.updatedAt = Date.now();
-    saveStorage(storage);
+    saveStorage();
     renderTasks(searchInput.value);
   }
   calDraggedId = null;
@@ -1536,13 +1647,13 @@ function initEvents() {
   });
 
   // 拖拽事件
-  document.querySelectorAll('.quadrant-card').forEach(card => {
+  document.querySelectorAll<HTMLElement>('.quadrant-card').forEach(card => {
     card.addEventListener('dragover', handleDragOver);
     card.addEventListener('drop', handleDrop);
   });
 
   // 任务项事件（使用事件委托）
-  document.querySelectorAll('.task-list').forEach(list => {
+  document.querySelectorAll<HTMLElement>('.task-list').forEach(list => {
     list.addEventListener('click', (e: Event) => {
       const target = e.target as HTMLElement;
 
@@ -1568,19 +1679,19 @@ function initEvents() {
 
       // 点击编辑按钮
       if (target.classList.contains('edit') || target.closest('.edit')) {
-        const taskId = target.dataset.id || target.closest('.edit')?.dataset.id;
+        const taskId = target.dataset.id || target.closest<HTMLElement>('.edit')?.dataset.id;
         if (taskId) openEditModal(taskId);
       }
 
       // 点击删除按钮
       if (target.classList.contains('delete') || target.closest('.delete')) {
-        const taskId = target.dataset.id || target.closest('.delete')?.dataset.id;
+        const taskId = target.dataset.id || target.closest<HTMLElement>('.delete')?.dataset.id;
         if (taskId) openDeleteModal(taskId);
       }
 
       // 点击任务标题查看详情
       if (target.classList.contains('task-title')) {
-        const taskItem = target.closest('.task-item');
+        const taskItem = target.closest<HTMLElement>('.task-item');
         const taskId = taskItem?.dataset.id;
         if (taskId && !batchModeActive) openDetailModal(taskId);
       }
@@ -1692,5 +1803,13 @@ function initEvents() {
 initEvents();
 subscription = initCalendarSubscription(() => { renderCalendar(searchInput.value); subscription?.refreshDetails(); });
 document.getElementById('calendarSubscription')?.addEventListener('calendar-add-date', (event) => openAddForDate((event as CustomEvent<string>).detail));
-renderTasks(); // 末尾会同步渲染日历（renderCalendar）
+renderTasks(); // 先以本地镜像渲染，云端数据加载完成后重绘
+// 同步入口：导入横幅按钮 + 登录态初始化
+document.getElementById('importConfirmBtn')?.addEventListener('click', () => void importLocalTodos());
+document.getElementById('importDismissBtn')?.addEventListener('click', () => {
+  sessionStorage.setItem(TODO_SKIP_IMPORT_KEY, '1');
+  const banner = document.getElementById('importBanner');
+  if (banner) banner.hidden = true;
+});
+void initStorage();
 </script>

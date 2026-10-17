@@ -137,3 +137,122 @@ test.describe('Todo Page - 专注清单', () => {
     }
   });
 });
+
+// ============ 账号云端同步（模拟 Supabase，无需真实凭据） ============
+// 与 tests/account.spec.ts 相同的环境约定：
+// PUBLIC_SUPABASE_URL=https://account-test.supabase.co PUBLIC_SUPABASE_ANON_KEY=public-test-key pnpm test tests/todo.spec.ts
+const mockURL = 'https://account-test.supabase.co';
+const todoMockMode = process.env.PUBLIC_SUPABASE_URL?.replace(/\/$/, '') === mockURL && Boolean(process.env.PUBLIC_SUPABASE_ANON_KEY);
+const todoUserID = '33333333-3333-4333-8333-333333333333';
+
+interface TodoFlow {
+  rows: Array<Record<string, unknown>>;
+  posts: Array<Record<string, unknown>>;
+  patches: Array<Record<string, unknown>>;
+  deletes: number;
+}
+
+async function mockTodoSupabase(page: Page, seedRows: Array<Record<string, unknown>> = [], signedIn = true) {
+  const flow: TodoFlow = { rows: [...seedRows], posts: [], patches: [], deletes: 0 };
+  const rowID = (prefix: number) => `22224444-44${String(prefix).padStart(4, '0')}-4444-8444-44${String(prefix).padStart(8, '0')}`;
+  if (signedIn) {
+    const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const expires = Math.floor(Date.now() / 1000) + 3600;
+    const token = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: todoUserID, exp: expires, role: 'authenticated' })}.synthetic-signature`;
+    const user = { id: todoUserID, aud: 'authenticated', role: 'authenticated', email: 'reader@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
+    await page.addInitScript(({ token, user }: { token: string; user: Record<string, unknown> }) => {
+      localStorage.setItem('sb-account-test-auth-token', JSON.stringify({ access_token: token, refresh_token: 'synthetic-refresh-token', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user }));
+    }, { token, user });
+  }
+  await page.route(`${mockURL}/**`, async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS', 'content-type': 'application/json' };
+    const respond = (body: unknown, status = 200) => route.fulfill({ status, headers, body: JSON.stringify(body) });
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+    if (path === '/auth/v1/user') return respond(signedIn ? { id: todoUserID, aud: 'authenticated', role: 'authenticated', email: 'reader@example.invalid' } : { message: 'no session' }, signedIn ? 200 : 401);
+    if (path === '/auth/v1/logout') return respond({});
+    if (path === '/rest/v1/user_todos') {
+      if (request.method() === 'GET') return respond(flow.rows);
+      if (request.method() === 'POST') {
+        const payload = request.postDataJSON();
+        const list = Array.isArray(payload) ? payload : [payload];
+        list.forEach((row, index) => flow.rows.push({ completed: false, quadrant: 1, priority: 'medium', ...row, id: row.id ?? rowID(flow.rows.length + index + 1), updated_at: new Date().toISOString() }));
+        flow.posts.push(payload);
+        return respond(null, 201);
+      }
+      if (request.method() === 'PATCH') {
+        const id = url.searchParams.get('id')?.replace(/^eq\./, '');
+        const patch = request.postDataJSON();
+        flow.patches.push(patch);
+        flow.rows = flow.rows.map(row => row.id === id ? { ...row, ...patch } : row);
+        return respond(null);
+      }
+      if (request.method() === 'DELETE') { flow.deletes += 1; const ids = (url.searchParams.get('id') || url.searchParams.get('in') || '').replace(/^eq\./, '').replace(/^\(|\)$/g, '').split(','); flow.rows = flow.rows.filter(row => !ids.includes(String(row.id))); return respond(null); }
+    }
+    return respond({});
+  });
+  return flow;
+}
+
+test.describe('待办页面：账号云端同步（模拟 Supabase HTTP）', () => {
+  test.skip(!todoMockMode, `Start with PUBLIC_SUPABASE_URL=${mockURL} PUBLIC_SUPABASE_ANON_KEY=public-test-key.`);
+
+  test('登录后以云端数据渲染并写入本地镜像', async ({ page }) => {
+    const flow = await mockTodoSupabase(page, [{ id: '22224444-4401-4444-8444-440000000001', user_id: todoUserID, title: '云端任务', description: null, quadrant: 2, priority: 'high', due_date: null, completed: false, completed_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }]);
+    await page.goto('/todo/');
+    await expect(page.locator('.focus-list .task-title')).toHaveText('云端任务');
+    await expect(page.locator('#stat-total')).toHaveText('1');
+    await expect(page.locator('#syncStatus')).toContainText('已同步到账号云端');
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('todo_quadrant_data') || '{}').items?.[0]?.title)).toBe('云端任务');
+    expect(flow.posts).toEqual([]);
+  });
+
+  test('新增、完成改期写入云端；本地旧数据一键导入', async ({ page }) => {
+    const flow = await mockTodoSupabase(page);
+    await page.goto('/todo/');
+    await page.locator('#addTaskBtn').click();
+    await page.locator('#taskTitle').fill('云端新增');
+    await page.locator('#addModal .quadrant-btn[data-quadrant="3"]').click();
+    await page.locator('#btnSubmit').click();
+    await expect(page.locator('#addModal')).not.toBeVisible();
+    await expect.poll(() => flow.rows.map(row => row.title)).toEqual(expect.arrayContaining(['云端新增']));
+    // 完成切换 → PATCH
+    await page.locator('.focus-list .task-checkbox').click();
+    await expect(page.locator('#stat-rate')).toHaveText('100%');
+    await expect.poll(() => flow.rows.some(row => row.title === '云端新增' && row.completed === true)).toBe(true);
+    expect(flow.patches.some(patch => patch.completed === true)).toBe(true);
+  });
+
+  test('未登录保持本地模式并提示登录', async ({ page }) => {
+    await mockTodoSupabase(page, [], false);
+    await page.goto('/todo/');
+    await page.evaluate(() => localStorage.removeItem('todo_quadrant_data'));
+    await page.reload();
+    await add(page, '本地任务', 2);
+    await expect(page.locator('.focus-list .task-title')).toHaveText('本地任务');
+    const sync = page.locator('#syncStatus');
+    await expect(sync.locator('a')).toHaveAttribute('href', '/account/');
+    await expect(sync).toContainText('登录账号');
+  });
+
+  test('云端为空时提示导入本地历史数据，导入后不再询问', async ({ page }) => {
+    const flow = await mockTodoSupabase(page);
+    await page.addInitScript(() => {
+      const now = Date.now();
+      const legacy = [{ id: `${now}-legacy1500`, title: '旧任务一', quadrant: 2, createdAt: now, updatedAt: now, completed: false, priority: 'medium' }, { id: `${now}-legacy1501`, title: '旧任务二', quadrant: 1, createdAt: now, updatedAt: now, completed: false, priority: 'low' }];
+      localStorage.setItem('todo_quadrant_data', JSON.stringify({ version: 1, lastUpdated: now, items: legacy }));
+    });
+    await page.goto('/todo/');
+    const banner = page.locator('#importBanner');
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText('2 条');
+    await page.locator('#importConfirmBtn').click();
+    await expect(page.locator('.focus-list .task-title')).toHaveText(['旧任务一', '旧任务二']);
+    await expect(flow.rows.map(row => row.title)).toEqual(expect.arrayContaining(['旧任务一', '旧任务二']));
+    await page.reload();
+    await expect(page.locator('.focus-list .task-title')).toHaveText(['旧任务一', '旧任务二']);
+    await expect(banner).toBeHidden();
+  });
+});

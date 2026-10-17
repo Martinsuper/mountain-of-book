@@ -42,6 +42,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
       <summary>我的待办</summary>
       <form id="todo-form"><label>新待办<input name="text" placeholder="记下一件要做的事" required maxlength="500" /></label><button>添加待办</button></form>
       <ul id="user-todos"></ul>
+      <p class="todo-entry hint">这里的待办与 <a href="/todo/">待办清单页</a> 是同一份数据；象限、日历与进度视图在该页维护。</p>
     </details>
   </div>
 </AccountShell><ConfirmDialog /></BaseLayout>
@@ -65,6 +66,8 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
   .account-shell #password-form { max-width:420px; }
   .account-shell #password-status { font-size:14px; }
   .account-shell #password-status:empty { display:none; }
+  .account-shell .todo-entry { margin-top:12px; }
+  .account-shell .todo-entry a { color:var(--link-color); }
   .account-shell .todo-settings { border-top:1px solid var(--account-rule);margin-top:32px;padding-top:8px; }
   .account-shell #todo-form { grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px; }
   .account-shell #user-todos li { border-color:var(--account-rule);line-height:1.8; }
@@ -197,7 +200,7 @@ async function render() {
   result.data?.forEach(row => {
     const item = document.createElement('li');
     const toggle = document.createElement('button'); toggle.textContent = row.completed ? '标记未完成' : '标记完成';
-    item.append(document.createTextNode((row.completed ? '已完成：' : '') + row.text), toggle);
+    item.append(document.createTextNode((row.completed ? '已完成：' : '') + row.title), toggle);
     toggle.onclick = () => mutate(() => supabase!.from('user_todos').update({ completed: !row.completed }).eq('id', row.id).eq('user_id', user.id));
     const remove = document.createElement('button'); remove.textContent = '删除';
     remove.onclick = () => mutate(() => supabase!.from('user_todos').delete().eq('user_id', user.id).eq('id', row.id));
@@ -351,7 +354,7 @@ document.getElementById('todo-form')!.addEventListener('submit', event => {
   void mutate(async () => {
     const { data: { user } } = await supabase!.auth.getUser();
     if (!user) throw new Error('请登录');
-    const result = await supabase!.from('user_todos').insert({ user_id: user.id, text });
+    const result = await supabase!.from('user_todos').insert({ user_id: user.id, title: text });
     if (!result.error) form.reset(); return result;
   });
 });

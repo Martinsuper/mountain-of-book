@@ -111,7 +111,7 @@ type MockOptions = { signedIn?: boolean; admin?: boolean; denied?: boolean; visi
 async function mockSupabase(page: Page, options: MockOptions = {}) {
   const requests: Request[] = [];
   const unexpected: string[] = [];
-  let todos = [{ id: 'synthetic-todo', text: 'Synthetic personal task', completed: false }];
+  let todos = [{ id: 'synthetic-todo', title: 'Synthetic personal task', completed: false, quadrant: 1, priority: 'medium' }];
   let grants: { user_id: string }[] = [];
   let articles = [{ id: articleID, title: privateTitle, status: options.draft ? 'draft' : 'published', visibility: options.visibility || 'restricted', created_at: '2099-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', body: `## Test section\n\n${privateText}\n\n<script>window.__privateXss = true</script>\n\n<img src="https://private-image.invalid/secret.png" onerror="window.__privateXss = true">\n\n[unsafe](javascript:alert(1))\n\n[safe](https://example.invalid/reference)` }];
   const user = { id: userID, aud: 'authenticated', role: 'authenticated', email: 'reader@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
@@ -356,7 +356,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expect(page.locator('#user-todos')).toContainText('Synthetic personal task');
     const writes = mock.requests.filter(request => new URL(request.url()).pathname === '/rest/v1/user_todos' && request.method() !== 'GET' && request.method() !== 'OPTIONS');
     expect(writes.map(request => request.method())).toEqual(['POST', 'PATCH', 'PATCH', 'DELETE']);
-    expect(writes[0].postDataJSON()).toMatchObject({ user_id: userID, text: 'Added synthetic task' });
+    expect(writes[0].postDataJSON()).toMatchObject({ user_id: userID, title: 'Added synthetic task' });
     for (const request of writes.slice(1)) {
       const url = new URL(request.url());
       expect(url.searchParams.get('user_id')).toBe(`eq.${userID}`);
