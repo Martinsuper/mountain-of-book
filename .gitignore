@@ -40,3 +40,6 @@ bin/*.jar
 # drawio 设计草稿（二进制）
 docs/diagrams/
 
+# 本地 agent 生成物
+.commandcode/
+
