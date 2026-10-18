@@ -15,6 +15,8 @@ interface Props {
   type?: 'website' | 'article';
   publishedTime?: string;
   fullWidth?: boolean;
+  /** 比默认 max-w-4xl 更宽的版心（max-w-5xl），供带侧边目录的文章页使用 */
+  wide?: boolean;
   hideHeader?: boolean;
 }
 
@@ -26,6 +28,7 @@ const {
   type = 'website',
   publishedTime,
   fullWidth = false,
+  wide = false,
   hideHeader = false
 } = Astro.props;
 
@@ -193,7 +196,7 @@ const isAccountSection = currentPath.startsWith('/account/') || currentPath === 
         {accountLinks.map(link => <a href={link.href} class={`mobile-nav-link ${currentPath === link.href ? 'active' : ''}`} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>)}
       </div>
     </header>}
-    <main class={fullWidth ? '' : 'max-w-4xl mx-auto px-4 py-8'}>
+    <main class={fullWidth ? '' : wide ? 'max-w-5xl mx-auto px-4 py-8' : 'max-w-4xl mx-auto px-4 py-8'}>
       <slot />
     </main>
     <Mermaid />
