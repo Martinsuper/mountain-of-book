@@ -21,7 +21,9 @@
     "fetch-plantuml": "node scripts/fetch-plantuml.mjs",
     "inline-plantuml": "node scripts/inline-plantuml.mjs",
     "build:full": "astro build && node scripts/inline-plantuml.mjs",
-    "trending": "node scripts/fetch-github-trending.mjs"
+    "trending": "node scripts/fetch-github-trending.mjs",
+    "mcp:build": "cd mcp && npm install && npm run build",
+    "mcp:smoke": "node mcp/test/smoke.mjs"
   },
   "dependencies": {
     "@astrojs/tailwind": "^6.0.0",

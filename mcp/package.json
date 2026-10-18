@@ -1,0 +1,28 @@
+{
+  "name": "book-blog-mcp",
+  "version": "1.0.0",
+  "description": "书山有路博客 MCP server——供任意 agent 读写/检索博客文章",
+  "type": "module",
+  "bin": {
+    "book-blog-mcp": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "smoke": "node test/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3"
+  }
+}
