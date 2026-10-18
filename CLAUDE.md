@@ -22,7 +22,7 @@
 - PlantUML 图表渲染（远程 SVG，plantuml-encoder）
 - Mermaid 图表渲染（客户端，支持点击放大）
 - 暗色模式（class 切换）
-- 分类归档系统（AI 工程 / 工具教程 / 前端开发 / 后端开发）
+- 分类归档系统（AI 工程 / 开发工具 / 软件工程 / 应用开发，见 `src/lib/categories.ts`）
 - 标签归档系统
 - 阅读时间计算
 - 目录自动生成（TableOfContents）
@@ -46,13 +46,13 @@
 │   │   ├── tags/[tag].astro         # 标签归档页
 │   │   ├── archive.astro       # 归档页
 │   │   ├── timeline.astro      # 时间线
-│   │   ├── tools.astro         # 工具页
 │   │   ├── todo.astro          # 待办页
 │   │   ├── dev/                # 开发模式页面
 │   │   └── api/                # API 路由（搜索索引等）
 │   ├── components/        # Astro 组件
-│   ├── lib/               # 工具函数和 remark 插件
+│   ├── lib/               # 工具函数和 remark 插件（/categories.ts 为分类事实来源）
 │   └── styles/            # 全局样式
+├── mcp/                   # book-blog MCP server（agent 通过 MCP 读写文章，见 mcp/INSTALL.md）
 ├── public/
 │   ├── admin/             # Decap CMS 后台（如使用）
 │   ├── CNAME              # 自定义域名
@@ -121,21 +121,27 @@ pnpm test
 title: "文章标题"                    # 必填，字符串
 description: "文章描述/摘要"          # 可选，建议填写（用于 SEO 和列表展示）
 date: 2026-04-23                    # 必填，ISO 日期格式 YYYY-MM-DD
-category: "工具教程"                 # 可选，文章所属分类（见下方合法值）
+category: "AI 工程"                  # 可选，文章所属分类（见下方合法值）
+subcategory: "Agent 与 AI 编程"      # 设置 category 时必填，须属于该分类的子分类树
 tags: ["tag1", "tag2"]              # 可选，字符串数组
 draft: false                        # 必填，布尔值（默认 false）
 ---
 ```
 
 **规则**：
-- `title`：使用双引号包裹，标题应简洁明确，不超过 50 字
+- `title`：使用双引号包裹，标题应简洁明确，建议不超过 50 字（构建不强制，MCP 工具会提示）
 - `description`：使用双引号包裹，100-200 字为宜，用于 SEO `<meta name="description">` 和社交分享
 - `date`：纯日期格式 `YYYY-MM-DD`，不加引号
-- `category`：文章分类，从以下 4 个合法值中选择（一篇一个分类）：
-  - `AI 工程` — AI Agent、LLM、RAG、MCP 相关的工程实践
-  - `工具教程` — 各类开发/效率工具的使用指南
-  - `前端开发` — 前端框架、样式、静态站点相关
-  - `后端开发` — Java、Maven、后端架构相关
+- `category`：文章分类，一篇一个。**唯一事实来源是 `src/lib/categories.ts`**（zod schema 构建时会校验），当前合法值为 4 个：
+  - `AI 工程` — Agent、LLM、RAG 与 AI 应用实践
+  - `开发工具` — 开发环境、自动化与文档工具
+  - `软件工程` — 架构、代码质量、测试与协作方法
+  - `应用开发` — Web、后端、数据与运行环境
+- `subcategory`：设置 `category` 时**必填**，且必须属于该分类的子分类树（`CATEGORY_TREE`），否则构建失败：
+  - `AI 工程` → Agent 与 AI 编程 / Skills 与工作流 / RAG 与知识库 / LLM 与模型推理 / AI 内容与研究
+  - `开发工具` → CLI 与开发环境 / 浏览器自动化 / 文档与图表
+  - `软件工程` → 架构与代码质量 / 测试与协作
+  - `应用开发` → Web 与客户端 / Java 与数据 / 部署与运行环境
 - `tags`：使用小写英文或拼音，用连字符 `-` 连接多词标签（如 `sequence-diagram`），不使用中文
 - `draft`：新文章默认 `true`，发布时改为 `false`
 
@@ -472,6 +478,16 @@ Astro 开发服务器默认绑定 localhost，只接受本机连接，导致通�
 - 全文控制在合理长度内，读者 3-5 分钟内能获取核心信息
 - 知识总结型长文（如版本特性、语法大全）可以更长，但应有清晰的章节结构和目录，便于跳读
 
+### 2.13 通过 book-blog MCP 写作（agent 可选）
+
+仓库自带 `mcp/` 目录（stdio MCP server），任何支持 MCP 的 agent 接入后可直接读写/检索博客文章。安装说明见 `mcp/INSTALL.md`。
+
+- 工具：`list_posts` / `search_posts` / `read_post` / `create_post` / `update_post` / `set_draft` / `delete_post` / `check_plantuml` / `get_style_guide` / `site_stats`
+- `create_post` 会自动校验 frontmatter（含分类树）并生成合规文件；接入 MCP 的 agent 建议优先用它，而不是手写文件
+- `get_style_guide` 返回本规范的速查版（含 5 类骨架），其他会话/项目里的 agent 先调它再动笔
+- MCP 只改本地文件；发布仍由 agent 自行 `git commit` + push 到 main
+- 文章发布到线上后，远程 agent 只读内容可直接 fetch `https://fblog.younote.top/api/search-index.json` 与 `/posts/{slug}/`，无需 MCP
+
 ---
 
 
@@ -594,6 +610,7 @@ git push origin main → GitHub Actions 自动触发 → 构建 → 部署到 Gi
     - 涉及流程/架构/调用关系的地方，是否用 PlantUML 图替代了大段文字？项目评介型/原理解析型至少有一张架构或流程图？
     - 是否有图文重复（图已表达又用文字复述一遍）？有则删文字。
     - 段落是否过长（超过 4-5 行）？能用列表/图/代码块的不要堆文字。
+12. 优先使用 book-blog MCP 的 `create_post`/`update_post` 创建和保存文章（自动校验 frontmatter 与分类树，见 §2.13）；手写文件后务必逐项核对本节清单。
 
 ### 修改代码时
 

@@ -128,16 +128,17 @@ title: "{项目名}：{一句话定位}"
 description: "{2-3 句话描述，含星标数和核心能力，用于 SEO}"
 date: {YYYY-MM-DD，今天日期}
 category: "{从以下 4 个中选 1 个}"
+subcategory: "{与 category 配套的子分类，见下方分类树}"
 tags: ["{tag1}", "{tag2}", "{tag3}", "{tag4}", "{tag5}"]
 draft: true
 ---
 ```
 
-**category 合法值**（必须选其一）：
-- `AI 工程` — AI Agent、LLM、RAG、MCP 相关
-- `工具教程` — 开发/效率工具（大多数 GitHub 项目归此类）
-- `前端开发` — 前端框架、样式、静态站点
-- `后端开发` — Java、Maven、后端架构
+**category 合法值**（必须选其一，设置 category 时 subcategory 必填，来源：`src/lib/categories.ts`）：
+- `AI 工程` — AI Agent、LLM、RAG、模型相关（子分类：Agent 与 AI 编程 / Skills 与工作流 / RAG 与知识库 / LLM 与模型推理 / AI 内容与研究）
+- `开发工具` — 开发环境、自动化与文档工具（子分类：CLI 与开发环境 / 浏览器自动化 / 文档与图表；大多数 GitHub 项目归此类）
+- `软件工程` — 架构、代码质量、测试与协作（子分类：架构与代码质量 / 测试与协作）
+- `应用开发` — Web、后端、数据与运行环境（子分类：Web 与客户端 / Java 与数据 / 部署与运行环境）
 
 **tags 规则**：
 - 小写英文，连字符分隔
