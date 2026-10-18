@@ -5,7 +5,7 @@ test('桌面导航顺序、胶囊尺寸及下拉交互统一', async ({ page }) 
   await page.goto('/');
   const navigation = page.locator('#desktop-navigation');
   await expect(navigation).toBeVisible();
-  await expect(navigation.locator(':scope > a, :scope > .nav-group > button')).toHaveText(['首页', '文章', '小工具', '账号']);
+  await expect(navigation.locator(':scope > a, :scope > .nav-group > button')).toHaveText(['首页', '文章', '账号']);
   const boxes = await navigation.locator(':scope > a, :scope > .nav-group > button').evaluateAll(items => items.map(item => ({
     height: item.getBoundingClientRect().height,
     radius: getComputedStyle(item).borderRadius,

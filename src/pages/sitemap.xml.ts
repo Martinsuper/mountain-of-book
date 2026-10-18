@@ -8,7 +8,7 @@ export async function GET({ site }: APIContext) {
   // 不用每次构建时间冒充内容更新时间；只有文章输出已知发布日期。
   const paths = new Map<string, string | undefined>([
     ['/', undefined], ['/archive/', undefined], ['/timeline/', undefined],
-    ['/tags/', undefined], ['/categories/', undefined], ['/tools/', undefined], ['/todo/', undefined]
+    ['/tags/', undefined], ['/categories/', undefined], ['/todo/', undefined]
   ]);
   for (const post of posts) {
     paths.set(`/posts/${encodeURIComponent(post.id)}/`, post.data.date.toISOString());

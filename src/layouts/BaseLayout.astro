@@ -38,7 +38,6 @@ const isPostsSection =
   ['/archive/', '/timeline/'].includes(currentPath) ||
   currentPath.startsWith('/categories') ||
   currentPath.startsWith('/tags') || currentPath.startsWith('/posts/');
-const isToolsSection = currentPath === '/tools/';
 const accountLinks = [
   { href: '/account/', label: '个人中心' },
   { href: '/todo/', label: '待办' },
@@ -167,19 +166,6 @@ const isAccountSection = currentPath.startsWith('/account/') || currentPath === 
             </div>
           </div>
 
-          <!-- 小工具分组 -->
-          <div class="nav-group">
-            <button
-              class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isToolsSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-              aria-expanded="false" aria-controls="tools-menu"
-            >
-              小工具
-              <svg class="nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div id="tools-menu" class="nav-dropdown" inert>
-              <a href="/tools/" class={`nav-dropdown-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
-            </div>
-          </div>
           <div class="nav-group account-nav">
             <button class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isAccountSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`} aria-label="账号与个人中心" aria-expanded="false" aria-controls="account-menu">
               账号
@@ -203,8 +189,6 @@ const isAccountSection = currentPath.startsWith('/account/') || currentPath === 
         <a href="/timeline/" class={`mobile-nav-link ${currentPath === '/timeline/' ? 'active' : ''}`}>时间轴</a>
         <a href="/categories/" class={`mobile-nav-link ${currentPath.startsWith('/categories') ? 'active' : ''}`}>分类</a>
         <a href="/tags/" class={`mobile-nav-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
-        <div class="mobile-nav-group-label">小工具</div>
-        <a href="/tools/" class={`mobile-nav-link ${currentPath === '/tools/' ? 'active' : ''}`}>工具</a>
         <div class="mobile-nav-group-label">账号</div>
         {accountLinks.map(link => <a href={link.href} class={`mobile-nav-link ${currentPath === link.href ? 'active' : ''}`} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>)}
       </div>
