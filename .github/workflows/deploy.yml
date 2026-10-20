@@ -14,6 +14,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,14 +56,14 @@ jobs:
       # 双部署到腾讯 EdgeOne Pages（中国大陆外全球加速节点，免费）。
       # 未配置 EDGEONE_API_TOKEN 时自动跳过，不影响 GitHub Pages 部署。
       - name: Deploy to EdgeOne Pages
-        if: ${{ secrets.EDGEONE_API_TOKEN != '' }}
-        run: npx edgeone pages deploy ./dist -n mountain-of-book -t ${{ secrets.EDGEONE_API_TOKEN }}
+        if: ${{ env.EDGEONE_API_TOKEN != '' }}
+        run: npx edgeone pages deploy ./dist -n mountain-of-book -t "$EDGEONE_API_TOKEN"
 
       # 同步到自托管服务器（Caddy 静态托管）。
       # 需要两个仓库 Secret：SERVER_HOST（如 deploy@1.2.3.4）与 SERVER_SSH_KEY（deploy 用户私钥）。
       # 未配置时自动跳过，不影响其他部署。
       - name: Deploy to self-hosted server
-        if: ${{ secrets.SERVER_HOST != '' && secrets.SERVER_SSH_KEY != '' }}
+        if: ${{ env.SERVER_HOST != '' && env.SERVER_SSH_KEY != '' }}
         env:
           SSH_HOST: ${{ secrets.SERVER_HOST }}
           SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
