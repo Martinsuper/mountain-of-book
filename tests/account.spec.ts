@@ -660,6 +660,96 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(errors).toEqual([]);
   });
 
+  test('桌面写作操作栏贴近视口底部，正文占满剩余空间', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true, visibility: 'authenticated', draft: true });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    for (const height of [900, 720, 600]) {
+      await page.setViewportSize({ width: 1440, height });
+      for (const view of ['编辑', '分栏', '预览']) {
+        await page.locator('.view-tools').getByRole('button', { name: view, exact: true }).click();
+        await expect.poll(async () => {
+          const box = await page.locator('.editor-actions').boundingBox();
+          return Math.abs(height - box!.y - box!.height - 16);
+        }).toBeLessThanOrEqual(3);
+        await expect(page.locator('#save-article')).toBeInViewport();
+        await expect(page.locator('#publish-article')).toBeInViewport();
+      }
+    }
+  });
+
+  test('更多操作向上展开不挤压底栏，全屏独立于编辑视图', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true, visibility: 'authenticated', draft: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    await expect(page.locator('.view-tools button')).toHaveCount(3);
+    await expect(page.locator('.view-tools #fullscreen-editor')).toHaveCount(0);
+    await expect(page.locator('#fullscreen-editor')).toBeVisible();
+    await expect.poll(async () => { const box = await page.locator('.editor-actions').boundingBox(); return Math.abs(900 - box!.y - box!.height - 16); }).toBeLessThanOrEqual(3);
+    const before = await page.locator('#save-article').boundingBox();
+    await page.locator('#article-more summary').click();
+    await expect(page.locator('#article-more-panel')).toBeVisible();
+    const after = await page.locator('#save-article').boundingBox();
+    expect(after!.y).toBeCloseTo(before!.y, 0);
+    const menu = await page.locator('#article-more-panel').boundingBox();
+    expect(menu!.y + menu!.height).toBeLessThan(before!.y);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#article-more')).not.toHaveAttribute('open');
+    await expect(page.locator('#article-more summary')).toBeFocused();
+    await page.locator('[name="body"]').fill('Unsaved styling');
+    await expect(page.locator('#save-state')).toHaveAttribute('data-state', 'unsaved');
+    await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+    await expect(page.locator('#save-state')).toHaveAttribute('data-state', 'saved');
+    for (const width of [320, 390, 768]) {
+      await page.setViewportSize({ width, height: 844 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  });
+
+  test('保存保持分栏、选区和正文，窄屏自动降级编辑', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    await page.getByRole('button', { name: '分栏', exact: true }).click();
+    const body = page.getByRole('textbox', { name: 'Markdown 正文', exact: true });
+    await body.fill('## Keep view\n\nSaved content');
+    await body.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(3, 7));
+    await body.press('Control+s');
+    await expect(page.locator('#save-state')).toHaveText('已保存至云端');
+    await expect(page.locator('.editor-canvas')).toHaveAttribute('data-view', 'split');
+    await expect(body).toBeFocused();
+    expect(await body.evaluate((field: HTMLTextAreaElement) => [field.selectionStart, field.selectionEnd])).toEqual([3, 7]);
+    await body.fill('Second save');
+    await body.press('Control+s');
+    await expect(page.locator('#save-state')).toHaveText('已保存至云端');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('.editor-canvas')).toHaveAttribute('data-view', 'write');
+    await expect(body).toBeVisible();
+  });
+
+  test('预览空正文校验可定位，刷新后可恢复本机草稿', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '新建文章', exact: true }).click();
+    await page.getByRole('textbox', { name: '标题', exact: true }).fill('Recover title');
+    await page.getByRole('button', { name: '预览', exact: true }).click();
+    await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+    const body = page.getByRole('textbox', { name: 'Markdown 正文', exact: true });
+    await expect(body).toBeFocused();
+    await expect(page.locator('#save-feedback')).toContainText('请填写正文');
+    await body.fill('Local recovery content');
+    page.once('dialog', dialog => dialog.accept());
+    await page.reload();
+    await page.getByRole('button', { name: '新建文章', exact: true }).click();
+    await expect(page.locator('#draft-recovery')).toBeVisible();
+    await page.getByRole('button', { name: '恢复草稿', exact: true }).click();
+    await expect(body).toHaveValue('Local recovery content');
+    await expect(page.getByRole('textbox', { name: '标题', exact: true })).toHaveValue('Recover title');
+    await expect(page.locator('#save-state')).toHaveText('有未保存的修改');
+  });
+
   test('无授权文章不显示正文，个人中心退出后清空记录', async ({ page }) => {
     const mock = await mockSupabase(page, { signedIn: true, denied: true });
     await page.goto(`/members/read/?id=${articleID}`);

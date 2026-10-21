@@ -18,14 +18,29 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
       </section>
       <div id="writing-view" class="writing-column" hidden>
         <div class="editor-top"><button id="back-to-list" type="button">← 返回文章列表</button><span id="save-state" role="status">尚未保存</span></div>
-        <form id="article-editor" class="card editor-card">
-          <label class="title-label"><span class="sr-only">标题</span><input name="title" required maxlength="200" placeholder="给这篇文章起个标题" /></label>
+        <div id="draft-recovery" role="status" hidden><span>发现此文章的本机未保存草稿。</span><button id="restore-draft" type="button">恢复草稿</button><button id="discard-draft" type="button">丢弃草稿</button></div>
+        <form id="article-editor" class="card editor-card" novalidate>
+          <label class="title-label"><span class="sr-only">标题</span><textarea name="title" rows="1" required maxlength="200" placeholder="给这篇文章起个标题"></textarea></label>
           <div class="metadata"><label>可见范围<select name="visibility"><option value="authenticated">登录可见</option><option value="public">公开</option></select></label><input name="status" type="hidden" value="draft" /><span id="article-status" class="muted">草稿</span></div>
           <div class="editor-toolbar"><div class="format-tools" role="group" aria-label="Markdown 格式"><button type="button" data-format="heading" title="插入二级标题" aria-label="插入二级标题">H₂</button><button type="button" data-format="bold" title="加粗" aria-label="加粗"><b>B</b></button><button type="button" data-format="italic" title="斜体" aria-label="斜体"><i>I</i></button><button type="button" data-format="list" title="插入列表" aria-label="插入列表">≡</button><button type="button" data-format="code" title="插入代码块" aria-label="插入代码块">&lt;/&gt;</button></div><div class="view-tools" role="group" aria-label="编辑视图"><button type="button" data-view="write" aria-pressed="true">编辑</button><button type="button" data-view="split" aria-pressed="false">分栏</button><button type="button" data-view="preview" aria-pressed="false">预览</button><button type="button" id="fullscreen-editor" title="全屏写作（Esc 退出）" aria-label="全屏写作" aria-pressed="false">全屏</button></div></div>
           <div class="editor-canvas" data-view="write"><label class="body-label"><span class="sr-only">Markdown 正文</span><textarea name="body" rows="20" required maxlength="200000" placeholder="从这里开始写作…&#10;&#10;支持 Markdown 标题、列表、引用与代码块。"></textarea></label><section id="markdown-preview" aria-label="Markdown 预览" hidden><div id="preview-content" class="prose dark:prose-invert max-w-none"></div></section></div>
           <div class="editor-bottom"><span id="word-count">0 字 · 约 1 分钟阅读</span><span>Markdown <span class="keyboard-hint">· ⌘ / Ctrl + S 保存</span></span></div>
           <p class="editor-notice" id="visibility-notice">发布后登录用户可在首页查看并阅读。未登录访客看不到标题和正文。草稿仅站长可见。</p>
-          <div class="editor-actions"><a id="view-article" hidden target="_blank" rel="noopener">查看文章 ↗</a><div class="save-group"><button id="save-article" type="submit">保存草稿</button><button id="publish-article" class="primary" type="submit" value="published">发布文章</button></div></div>
+          <div class="editor-actions">
+            <div class="editor-auxiliary">
+              <details id="article-more" class="article-more" hidden>
+                <summary aria-controls="article-more-panel">更多操作</summary>
+                <div id="article-more-panel" class="article-more-panel">
+                  <button id="unpublish-article" type="button">取消发布</button>
+                  <button id="delete-article" type="button">删除文章</button>
+                  <p class="muted">删除会永久移除正文及授权，无法撤销。</p>
+                </div>
+              </details>
+              <a id="view-article" hidden target="_blank" rel="noopener">查看文章 ↗</a>
+            </div>
+            <span id="save-feedback" role="status" aria-live="polite"></span>
+            <div class="save-group"><button id="save-article" type="submit">保存草稿</button><button id="publish-article" class="primary" type="submit" value="published">发布文章</button></div>
+          </div>
         </form>
         <details id="grant-panel" class="access-card" hidden><summary>历史文章阅读授权</summary>
           <div class="section-heading"><h2>阅读授权</h2><span class="muted">按账号授权</span></div>
@@ -33,7 +48,6 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
           <form id="grant-form"><label>授权邮箱<input name="email" type="email" placeholder="reader@example.com" required /></label><button type="submit">授权此账号</button></form>
           <ul id="article-grants"></ul><p id="grants-empty" class="muted" hidden>暂未单独授权任何账号。</p>
         </details>
-        <details id="article-more" class="article-more" hidden><summary>更多操作</summary><div><button id="unpublish-article" type="button">取消发布</button><button id="delete-article" type="button">删除文章</button></div><p class="muted">删除会永久移除正文及授权，无法撤销。</p></details>
       </div>
     </div>
   </div>
@@ -51,20 +65,46 @@ const grantPanel = document.getElementById('grant-panel')!;
 const editor = document.getElementById('article-editor') as HTMLFormElement;
 const grantForm = document.getElementById('grant-form') as HTMLFormElement;
 const bodyInput = editor.elements.namedItem('body') as HTMLTextAreaElement;
-const titleInput = editor.elements.namedItem('title') as HTMLInputElement;
+const titleInput = editor.elements.namedItem('title') as HTMLTextAreaElement;
 const canvas = document.querySelector<HTMLElement>('.editor-canvas')!;
+// Fullscreen is independent of the mutually exclusive writing views.
+const fullscreenButton = document.getElementById('fullscreen-editor')!;
+const workspaceTools = document.createElement('div'); workspaceTools.className = 'workspace-tools';
+const viewTools = document.querySelector('.view-tools')!;
+viewTools.parentElement!.append(workspaceTools); workspaceTools.append(viewTools, fullscreenButton);
+const articleMore = document.getElementById('article-more') as HTMLDetailsElement;
+/** Close secondary actions without moving the writing canvas or save buttons. */
+function closeMoreActions(restoreFocus = false) { articleMore.open = false; if (restoreFocus) articleMore.querySelector('summary')!.focus(); }
+document.addEventListener('click', event => { if (!articleMore.contains(event.target as Node)) closeMoreActions(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && articleMore.open) { event.preventDefault(); closeMoreActions(true); } });
+articleMore.querySelectorAll('button').forEach(button => button.addEventListener('click', () => closeMoreActions(true)));
+// Extend the compact toolbar without changing the existing accessible controls.
+for (const [format, label, icon] of [['link', '插入链接', '↗'], ['quote', '插入引用', '❝'], ['ordered', '插入有序列表', '1.']]) {
+  const button = document.createElement('button'); button.type = 'button'; button.dataset.format = format; button.title = label; button.setAttribute('aria-label', label); button.textContent = icon;
+  document.querySelector('.format-tools')!.append(button);
+}
 const saveState = document.getElementById('save-state')!;
 const library = document.getElementById('article-library')!;
 const writing = document.getElementById('writing-view')!;
 const studioRoot = document.querySelector('.studio')!;
 let editing = false;
 function showEditor(open: boolean) {
+  closeMoreActions();
   editing = open; library.hidden = open; writing.hidden = !open;
   newArticle.hidden = panel.hidden || open;
   studioRoot.classList.toggle('editor-open', open);
+  if (open) requestAnimationFrame(updateWritingHeight);
   const doc = document as Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> | void };
   if (!open && (doc.fullscreenElement ?? doc.webkitFullscreenElement)) void (doc.exitFullscreen ?? doc.webkitExitFullscreen)!.call(doc);
 }
+/** Size the writing workspace from its actual position, not a fixed header estimate. */
+function updateWritingHeight() {
+  if (writing.hidden) return;
+  writing.style.setProperty('--writing-top', `${Math.max(0, writing.getBoundingClientRect().top)}px`);
+}
+window.addEventListener('resize', updateWritingHeight);
+for (const event of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(event, () => requestAnimationFrame(updateWritingHeight));
+new ResizeObserver(() => requestAnimationFrame(updateWritingHeight)).observe(document.querySelector('body > header') ?? document.body);
 function updateActions() {
   const published = (editor.elements.namedItem('status') as HTMLInputElement).value === 'published';
   document.getElementById('save-article')!.textContent = published ? '保存修改' : '保存草稿';
@@ -85,6 +125,52 @@ let activeUser: string | null = null;
 let dirty = false;
 let filter = 'all';
 let previewTimer: ReturnType<typeof setTimeout>;
+const recovery = document.getElementById('draft-recovery')!;
+/** Mirror save state visually without relying on color alone. */
+function updateSaveAppearance() {
+  const text = saveState.textContent || '';
+  const state = /失败|未完成/.test(text) ? 'error' : /保存中/.test(text) ? 'saving' : /未保存/.test(text) ? 'unsaved' : 'saved';
+  saveState.dataset.state = state;
+  document.getElementById('save-feedback')!.dataset.state = state;
+}
+new MutationObserver(updateSaveAppearance).observe(saveState, { childList: true, characterData: true, subtree: true });
+updateSaveAppearance();
+let pendingDraft: { title: string; body: string; visibility: string } | null = null;
+/** Keep private recovery drafts scoped to the current account and article. */
+function draftKey() { return activeUser ? `article-draft:${activeUser}:${selected ?? 'new'}` : null; }
+function removeDraft() { const key = draftKey(); if (key) { try { localStorage.removeItem(key); } catch { /* Storage may be unavailable. */ } } recovery.hidden = true; pendingDraft = null; }
+function persistDraft() {
+  const key = draftKey(); if (!key || !dirty) return;
+  try { localStorage.setItem(key, JSON.stringify({ title: titleInput.value, body: bodyInput.value, visibility: (editor.elements.namedItem('visibility') as HTMLSelectElement).value })); }
+  catch { document.getElementById('save-feedback')!.textContent = '本机草稿备份不可用，请及时保存到云端。'; }
+}
+function checkDraft() {
+  pendingDraft = null; recovery.hidden = true;
+  try { const key = draftKey(); const raw = key && localStorage.getItem(key); if (!raw) return; const draft = JSON.parse(raw);
+    if (typeof draft.title !== 'string' || typeof draft.body !== 'string' || !['public','authenticated','restricted'].includes(draft.visibility)) return;
+    if (draft.title === titleInput.value && draft.body === bodyInput.value && draft.visibility === (editor.elements.namedItem('visibility') as HTMLSelectElement).value) { removeDraft(); return; }
+    pendingDraft = draft; recovery.hidden = false;
+  } catch { /* Ignore malformed or inaccessible local drafts. */ }
+}
+function resizeTitle() { titleInput.style.height = 'auto'; titleInput.style.height = `${titleInput.scrollHeight}px`; }
+function setView(view: string) {
+  if (view === 'split' && matchMedia('(max-width:767px)').matches) view = 'write';
+  canvas.dataset.view = view;
+  document.getElementById('markdown-preview')!.hidden = view === 'write';
+  document.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(tab => tab.setAttribute('aria-pressed', String(tab.dataset.view === view)));
+  document.querySelectorAll<HTMLButtonElement>('[data-format]').forEach(button => button.disabled = view === 'preview');
+  updatePreview();
+}
+document.getElementById('restore-draft')!.onclick = () => {
+  if (!pendingDraft || busy) return;
+  titleInput.value = pendingDraft.title; bodyInput.value = pendingDraft.body;
+  const visibility = editor.elements.namedItem('visibility') as HTMLSelectElement;
+  if ([...visibility.options].some(option => option.value === pendingDraft!.visibility)) visibility.value = pendingDraft.visibility;
+  recovery.hidden = true; pendingDraft = null; editor.dispatchEvent(new Event('input', { bubbles: true })); resizeTitle(); updatePreview();
+};
+document.getElementById('discard-draft')!.onclick = removeDraft;
+matchMedia('(max-width:767px)').addEventListener('change', event => { if (event.matches && canvas.dataset.view === 'split') setView('write'); });
+window.addEventListener('resize', resizeTitle);
 // Preview is optional: a failed/stale Vite dependency must not prevent auth or editing.
 let previewModules: Promise<[typeof import('marked'), typeof import('dompurify')]> | undefined;
 let previewSequence = 0;
@@ -107,17 +193,19 @@ function updatePreview() {
   const sequence = ++previewSequence;
   document.getElementById('preview-content')!.replaceChildren();
   if (canvas.dataset.view !== 'write') void renderPreview(text, sequence);
-  document.getElementById('word-count')!.textContent = `${text.replace(/\s/g, '').length.toLocaleString()} 字 · 约 ${Math.max(1, Math.ceil(text.length / 500))} 分钟阅读`;
+  const readable = text.replace(/```[\s\S]*?```/g, '').replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/<[^>]*>/g, '').replace(/[#*~`>_|-]/g, '');
+  const words = (readable.match(/\p{Script=Han}|[\p{L}\p{N}]+/gu) || []).length;
+  document.getElementById('word-count')!.textContent = `${words.toLocaleString()} 阅读字数 · 约 ${Math.max(1, Math.ceil(words / 400))} 分钟阅读`;
   const visibility = (editor.elements.namedItem('visibility') as HTMLSelectElement).value;
   document.getElementById('visibility-notice')!.textContent = visibility === 'restricted' ? '历史指定账号文章：保留原授权范围，草稿仅站长可见。' : visibility === 'public' ? '发布后任何访客均可在首页查看并阅读。草稿仅站长可见。' : '发布后登录用户可在首页查看并阅读。未登录访客看不到标题和正文。草稿仅站长可见。';
 }
-async function mayLeave() { return !dirty || confirmDialog({ title: '放弃未保存的修改', message: '有尚未保存的修改，离开后这些修改将丢失。', confirmText: '放弃修改' }); }
+async function mayLeave() { if (!dirty) return true; const leave = await confirmDialog({ title: '放弃未保存的修改', message: '有尚未保存的修改，确定放弃吗？', confirmText: '放弃修改' }); if (leave) removeDraft(); return leave; }
 function resetEditor() {
   selected = null; version = null; dirty = false; editor.querySelector('option[value="restricted"]')?.remove(); editor.reset(); (editor.elements.namedItem('status') as HTMLInputElement).value = 'draft'; grantPanel.hidden = true; grants.replaceChildren();
-  saveState.textContent = '尚未保存'; canvas.dataset.view = 'write';
+  saveState.textContent = '尚未保存'; document.getElementById('save-feedback')!.textContent = ''; recovery.hidden = true; pendingDraft = null; canvas.dataset.view = 'write';
   document.getElementById('markdown-preview')!.hidden = true;
   document.querySelectorAll('button[data-view]').forEach(tab => tab.setAttribute('aria-pressed', String((tab as HTMLElement).dataset.view === 'write')));
-  updateActions(); updatePreview(); renderList();
+  updateActions(); setView('write'); resizeTitle(); renderList();
 }
 async function selectArticle(row: Article) {
   if (busy || !(await mayLeave())) return;
@@ -126,7 +214,7 @@ async function selectArticle(row: Article) {
   visibility.querySelector('option[value="restricted"]')?.remove();
   if (row.visibility === 'restricted') visibility.add(new Option('指定账号可见（历史文章）', 'restricted'));
   for (const field of ['title','body','visibility','status'] as const) (editor.elements.namedItem(field) as HTMLInputElement).value = row[field];
-  showEditor(true); updateActions(); saveState.textContent = '已保存至云端';
+  showEditor(true); updateActions(); saveState.textContent = '已保存至云端'; resizeTitle(); checkDraft();
   grantPanel.hidden = row.visibility !== 'restricted'; grantForm.hidden = row.visibility !== 'restricted'; updatePreview(); renderList();
   if (row.visibility === 'restricted') void loadGrants(row.id); else grants.replaceChildren();
   if (matchMedia('(max-width: 900px)').matches) editor.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -187,30 +275,41 @@ async function loadGrants(id: string) {
 }
 async function run(action: () => Promise<void>) {
   if (busy) return; busy = true; newArticle.disabled = true;
+  const focused = document.activeElement as HTMLElement | null;
+  const selection = [bodyInput.selectionStart, bodyInput.selectionEnd] as const;
+  const scroll = bodyInput.scrollTop;
   panel.querySelectorAll<HTMLButtonElement>('button').forEach(button => button.disabled = true);
   editor.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input,textarea,select').forEach(field => field.disabled = true);
   try { await action(); status.hidden = false; status.textContent = '操作成功。'; }
-  catch (error) { status.hidden = false; status.textContent = error instanceof Error && error.message === 'conflict' ? '文章已被其他窗口修改或权限已变化，请重新加载后编辑。' : '操作失败，请检查网络、权限或授权邮箱。'; saveState.textContent = dirty ? '保存失败 · 修改仍保留' : '操作未完成'; }
-  finally { busy = false; newArticle.disabled = false; panel.querySelectorAll<HTMLButtonElement>('button').forEach(button => button.disabled = false); editor.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input,textarea,select').forEach(field => field.disabled = false); }
+  catch (error) { status.hidden = false; status.textContent = error instanceof Error && error.message === 'conflict' ? '文章已被其他窗口修改或权限已变化。当前内容已保留，请先复制正文备份，再重新加载。' : '操作失败，请检查网络、权限或授权邮箱。'; saveState.textContent = dirty ? '保存失败 · 修改仍保留' : '操作未完成'; document.getElementById('save-feedback')!.textContent = status.textContent; persistDraft(); }
+  finally { busy = false; newArticle.disabled = false; panel.querySelectorAll<HTMLButtonElement>('button').forEach(button => button.disabled = false); editor.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input,textarea,select').forEach(field => field.disabled = false); document.querySelectorAll<HTMLButtonElement>('[data-format]').forEach(button => button.disabled = canvas.dataset.view === 'preview'); if (focused && editing && !writing.hidden) { focused.focus({ preventScroll: true }); if (focused === bodyInput) { bodyInput.setSelectionRange(...selection); bodyInput.scrollTop = scroll; } } }
 }
-document.getElementById('new-article')!.onclick = async () => { if (!busy && await mayLeave()) { resetEditor(); showEditor(true); titleInput.focus(); } };
-editor.addEventListener('input', () => { dirty = true; saveState.textContent = '有未保存的修改'; clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 180); });
+document.getElementById('new-article')!.onclick = async () => { if (!busy && await mayLeave()) { resetEditor(); showEditor(true); resizeTitle(); checkDraft(); titleInput.focus(); } };
+editor.addEventListener('input', () => { dirty = true; saveState.textContent = '有未保存的修改'; document.getElementById('save-feedback')!.textContent = '有未保存的修改'; persistDraft(); resizeTitle(); clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 180); });
 editor.addEventListener('change', updatePreview);
 document.getElementById('back-to-list')!.onclick = async () => { if (!busy && await mayLeave()) { resetEditor(); showEditor(false); } };
 editor.onsubmit = async event => {
   event.preventDefault();
+  if (busy) return;
+  const invalid = !titleInput.value.trim() ? titleInput : !bodyInput.value.trim() ? bodyInput : !titleInput.validity.valid ? titleInput : !bodyInput.validity.valid ? bodyInput : null;
+  if (invalid) { setView('write'); invalid.setAttribute('aria-invalid', 'true'); invalid.focus(); document.getElementById('save-feedback')!.textContent = invalid === titleInput ? '请填写标题（最多 200 字）。' : '请填写正文（最多 200000 字符）。'; return; }
+  titleInput.removeAttribute('aria-invalid'); bodyInput.removeAttribute('aria-invalid');
   // Snapshot before fields are disabled by the operation guard.
   const form = new FormData(editor);
   const row = { title: String(form.get('title')).trim(), body: String(form.get('body')), visibility: String(form.get('visibility')), status: (event as SubmitEvent).submitter?.id === 'publish-article' ? 'published' : String(form.get('status')) };
   const original = articles.find(article => article.id === selected);
   if (row.visibility === 'public' && row.status === 'published' && (original?.visibility !== 'public' || original?.status !== 'published') && !(await confirmDialog({ title: '公开发布文章', message: '公开发布后，任何访客均可阅读此文章。确定要发布吗？', confirmText: '公开发布', variant: 'info' }))) return;
   void run(async () => {
-    if (!row.title || !row.body.trim()) throw new Error('invalid'); saveState.textContent = '正在保存…';
+    if (!row.title || !row.body.trim()) throw new Error('invalid'); saveState.textContent = '正在保存…'; document.getElementById('save-feedback')!.textContent = '正在保存…';
     const current = generation;
-    const result = selected ? await supabase!.from('articles').update(row).eq('id', selected).eq('updated_at', version).select('id') : await supabase!.from('articles').insert(row).select('id');
+    const result = selected ? await supabase!.from('articles').update(row).eq('id', selected).eq('updated_at', version).select('id,updated_at') : await supabase!.from('articles').insert(row).select('id,updated_at');
     if (current !== generation) return;
     if (result.error) throw result.error; if (!result.data?.length) throw new Error('conflict');
-    dirty = false; const id = result.data[0].id; await load(); const saved = articles.find(article => article.id === id); if (saved) { busy = false; selectArticle(saved); busy = true; }
+    removeDraft(); dirty = false; const saved = result.data[0]; selected = saved.id; version = saved.updated_at;
+    const article = { ...row, id: saved.id, updated_at: saved.updated_at };
+    const index = articles.findIndex(item => item.id === saved.id); if (index < 0) articles.unshift(article); else articles[index] = article;
+    (editor.elements.namedItem('status') as HTMLInputElement).value = row.status;
+    updateActions(); renderList(); saveState.textContent = '已保存至云端'; document.getElementById('save-feedback')!.textContent = `已保存于 ${new Date().toLocaleTimeString('zh-CN')}`;
   });
 };
 grantForm.onsubmit = event => { event.preventDefault(); const id = selected; if (!id) return; const email = String(new FormData(grantForm).get('email')).trim(); void run(async () => { const { error } = await supabase!.rpc('admin_grant_article', { article: id, email }); if (error) throw error; grantForm.reset(); await loadGrants(id); }); };
@@ -250,8 +349,8 @@ function refreshFullscreenButton() {
 }
 document.getElementById('fullscreen-editor')!.onclick = toggleFullscreen;
 for (const event of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(event, refreshFullscreenButton);
-document.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(button => { button.onclick = () => { const view = button.dataset.view!; canvas.dataset.view = view; document.getElementById('markdown-preview')!.hidden = view === 'write'; document.querySelectorAll('button[data-view]').forEach(tab => tab.setAttribute('aria-pressed', String(tab === button))); updatePreview(); }; });
-document.querySelectorAll<HTMLButtonElement>('[data-format]').forEach(button => { button.onclick = () => { const start = bodyInput.selectionStart, end = bodyInput.selectionEnd; const text = bodyInput.value.slice(start, end); const formats: Record<string, string> = { heading: `\n## ${text || '章节标题'}\n`, bold: `**${text || '加粗文字'}**`, italic: `*${text || '斜体文字'}*`, list: `\n- ${text || '列表项'}\n`, code: `\n\`\`\`text\n${text || '代码内容'}\n\`\`\`\n` }; bodyInput.setRangeText(formats[button.dataset.format!], start, end, 'select'); bodyInput.dispatchEvent(new Event('input', { bubbles: true })); bodyInput.focus(); }; });
+document.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(button => { button.onclick = () => setView(button.dataset.view!); });
+document.querySelectorAll<HTMLButtonElement>('[data-format]').forEach(button => { button.onclick = () => { const start = bodyInput.selectionStart, end = bodyInput.selectionEnd; const text = bodyInput.value.slice(start, end); const formats: Record<string, string> = { heading: `\n## ${text || '章节标题'}\n`, bold: `**${text || '加粗文字'}**`, italic: `*${text || '斜体文字'}*`, list: `\n- ${text || '列表项'}\n`, ordered: `\n1. ${text || '列表项'}\n`, quote: `\n> ${(text || '引用内容').replace(/\n/g, '\n> ')}\n`, link: `[${text || '链接文字'}](https://example.com)`, code: `\n\`\`\`text\n${text || '代码内容'}\n\`\`\`\n` }; bodyInput.setRangeText(formats[button.dataset.format!], start, end, 'select'); bodyInput.dispatchEvent(new Event('input', { bubbles: true })); bodyInput.focus(); }; });
 document.addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's' && !panel.hidden && editing) { event.preventDefault(); if (!busy) editor.requestSubmit(); } });
 window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
 supabase?.auth.onAuthStateChange((event, session) => { if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session?.user.id === activeUser) return; generation++; activeUser = session?.user.id || null; setPanelVisible(false); articles = []; resetEditor(); list.replaceChildren(); setTimeout(() => void load(), 0); });
@@ -272,8 +371,6 @@ void load();
 .studio :is(button,input,select,textarea):focus-visible { outline:2px solid var(--st-accent);outline-offset:3px; }
 .studio button.primary { background:var(--st-accent);border-color:var(--st-accent);color:white; }
 .studio button.primary:hover { filter:brightness(.92); }
-.studio .studio-grid { display:grid;grid-template-columns:216px minmax(0,1fr);gap:28px;align-items:start; }
-.studio .library { position:sticky;top:90px;padding-right:24px;border-right:1px solid var(--st-line); }
 .studio h2 { margin:0;font-size:16px;font-weight:600; }
 .studio .library-heading,.studio .section-heading { display:flex;align-items:center;justify-content:space-between;gap:12px; }
 .studio .muted { font-size:13px;color:var(--st-muted);line-height:1.7; }
@@ -282,7 +379,7 @@ void load();
 .studio .filters { display:flex;gap:4px;padding-bottom:12px;border-bottom:1px solid var(--st-line); }
 .studio .filters button { flex:1;border:0;padding:6px 8px;color:var(--st-muted); }
 .studio .filters button[aria-pressed=true] { background:var(--st-soft);color:var(--st-accent); }
-.studio #admin-articles { gap:0;max-height:560px;overflow-y:auto; }
+.studio #admin-articles { gap:0; }
 .studio #admin-articles li { padding:16px 8px;border:0;border-bottom:1px solid var(--st-line);border-radius:0;min-width:0; }
 .studio #admin-articles li.selected { background:var(--st-soft);border-radius:6px; }
 .studio #admin-articles strong { display:block;font-size:14px;line-height:1.7;font-weight:600;overflow-wrap:anywhere; }
@@ -295,14 +392,12 @@ void load();
 .studio .article-actions a:hover { color:var(--st-accent); }
 .studio .library-note { font-size:12px;color:var(--st-muted);line-height:1.8;margin-top:20px; }
 .studio .empty { font-size:14px;line-height:1.8;color:var(--st-muted);padding:24px 8px; }
-.studio .writing-column { min-width:0;display:grid;gap:32px; }
+.studio .writing-column { min-width:0;display:grid;gap:24px;padding-bottom:80px; }
 .studio #article-editor { display:block;margin:0;min-width:0;scroll-margin-top:90px; }
-.studio .editor-top { display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:20px; }
+.studio .editor-top { display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:2px; }
 .studio .save-group { display:flex;align-items:center;gap:10px; }
 .studio #save-state { font-size:12px;color:var(--st-muted); }
 .studio .title-label { margin-bottom:20px; }
-.studio .title-label input { font-size:24px;font-weight:600;border:0;padding:8px 0;border-radius:0;background:transparent;min-width:0; }
-.studio .title-label input::placeholder { color:var(--st-muted);font-weight:400; }
 .studio .metadata { display:flex;gap:16px;margin-bottom:24px; }
 .studio .metadata label { font-size:13px;color:var(--st-muted);gap:6px;flex:1;min-width:0; }
 .studio .metadata select { padding:8px;font-size:13px; }
@@ -318,17 +413,10 @@ void load();
 .studio .editor-canvas[data-view=split] #markdown-preview { border-left:1px solid var(--st-line); }
 .studio #markdown-preview { padding:20px;min-width:0;overflow-wrap:anywhere;max-height:700px;overflow-y:auto; }
 .studio #preview-content:empty:before { content:'预览将在这里呈现';font-size:14px;color:var(--st-muted); }
-/* 抵消 AccountShell 的全局 li 边框，还原 Markdown 列表本色 */
-.studio #preview-content :is(ul,ol) { list-style:revert;padding-left:1.6em;margin:.6em 0; }
-.studio #preview-content li { border:0;padding:0;border-radius:0;display:list-item;list-style:revert; }
-.studio #preview-content blockquote { margin:1em 0;padding:2px 0 2px 1em;border-left:3px solid var(--st-line);color:var(--st-muted); }
-.studio #preview-content h2,h3 { margin-top:1.4em; }
-.studio #preview-content h2 { font-family:var(--st-serif); }
-.studio #preview-content pre { overflow:auto; }
-.studio #preview-content table { display:block;overflow:auto; }
 .studio .editor-bottom { display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--st-muted);padding:10px 14px;border:1px solid var(--st-line);border-radius:0 0 6px 6px; }
 .studio .editor-notice { font-size:12px;color:var(--st-muted);margin-top:12px;line-height:1.8; }
 .studio .access-card { padding-top:24px;border-top:1px solid var(--st-line); }
+.studio .access-card > summary { width:fit-content;padding:8px 0; }
 .studio .access-card>.muted { margin:12px 0; }
 .studio #grant-form { grid-template-columns:minmax(0,1fr) auto;align-items:end;margin:16px 0; }
 .studio #grant-form label { font-size:13px;color:var(--st-muted); }
@@ -342,9 +430,6 @@ void load();
 
 @media(max-width:767px) {
   .studio .account-heading h1 { font-size:1.5rem; }
-  .studio .studio-grid { grid-template-columns:1fr;gap:28px; }
-  .studio .library { position:static;padding:0 0 24px;border-right:0;border-bottom:1px solid var(--st-line); }
-  .studio #admin-articles { max-height:260px; }
   .studio .library-note { margin-top:12px; }
   .studio .editor-canvas[data-view=split] { grid-template-columns:1fr; }
   .studio .editor-canvas[data-view=split] #markdown-preview { border-left:0;border-top:1px solid var(--st-line); }
@@ -352,7 +437,6 @@ void load();
 @media(max-width:520px) {
   .studio-summary { gap:14px; }
   .studio .save-group { align-items:flex-end;flex-direction:column;gap:4px; }
-  .studio .title-label input { font-size:22px; }
   .studio .body-label textarea,.studio #markdown-preview { padding:16px; }
   .studio .keyboard-hint { display:none; }
   .studio #grant-form { grid-template-columns:1fr; }
@@ -373,18 +457,22 @@ void load();
 .studio button.article-title:hover { background:none;color:var(--st-accent); }
 .studio .article-meta { margin:0;flex-wrap:wrap; }
 .studio .updated-date { color:var(--st-muted);font-size:12px; }
-.studio .writing-column { gap:24px;padding-bottom:80px; }
-.studio .editor-top { padding-bottom:24px; }
 .studio #back-to-list { border:0;padding:0;color:var(--st-muted); }
-.studio .title-label input { font-size:28px;padding:12px 0; }
 .studio .metadata { align-items:center;justify-content:space-between; }
 .studio .metadata label { flex:initial; }
-.studio .editor-actions { display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:24px; }
-.studio .editor-actions .save-group { margin-left:auto;flex-direction:row;align-items:center; }
+.studio .editor-actions { display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;margin-top:20px;padding-top:12px;border-top:1px solid var(--st-line); }
+.studio .editor-actions .save-group { flex-direction:row;align-items:center;justify-content:flex-end; }
+.studio .editor-auxiliary { display:flex;align-items:center;gap:14px; }
 .studio .editor-actions a { font-size:13px; }
 .studio .access-card summary,.studio .article-more summary { cursor:pointer;font-size:14px;color:var(--st-muted); }
-.studio .article-more { padding-top:20px;border-top:1px solid var(--st-line); }
-.studio .article-more>div { display:flex;gap:12px;margin:16px 0; }
+.studio .article-more { position:relative; }
+.studio .article-more summary { padding:8px 0;list-style:none;border-radius:4px; }
+.studio .article-more summary::-webkit-details-marker { display:none; }
+.studio .article-more summary::after { content:' ▴'; }
+.studio .article-more-panel { position:absolute;bottom:calc(100% + 8px);left:0;z-index:20;width:240px;max-width:calc(100vw - 48px);padding:12px;display:grid;gap:8px;background:var(--st-card);border:1px solid var(--st-line);border-radius:8px;box-shadow:0 8px 24px rgb(0 0 0 / .12); }
+.studio .article-more-panel button { width:100%;text-align:left; }
+.studio .article-more-panel p { margin:0; }
+.studio summary:focus-visible { outline:2px solid var(--st-accent);outline-offset:3px; }
 @media(max-width:767px) {
   .studio #admin-articles li { grid-template-columns:minmax(0,1fr) auto;gap:10px; }
   .studio .article-title { grid-column:1/-1; }
@@ -393,8 +481,7 @@ void load();
   .studio .article-meta { grid-column:1; }
   .studio .library-toolbar { flex-wrap:wrap;gap:16px; }
   .studio .search-label { max-width:none;width:100%; }
-  .studio [data-view=split] { display:none; }
-  .studio .title-label input { font-size:24px; }
+   .studio button[data-view=split] { display:none; }
 }
 /* ===== 沉浸写作模式（紧凑版）：纸面质感 · 高密度排版 ===== */
 .studio { --st-serif:"Noto Serif SC","Songti SC","STSong",Georgia,serif; }
@@ -402,16 +489,12 @@ void load();
 /* 收进一条居中稍宽的稿纸栏，减少纵向空耗 */
 .studio .editor-card > * { max-width:880px;margin-inline:auto;width:100%; }
 /* 顶部：返回 + 状态，全部弱化为灰色小字 */
-.studio .editor-top { padding-bottom:2px; }
 .studio #back-to-list { font-size:13px; }
 .studio #back-to-list:hover { background:transparent;color:var(--st-ink); }
 .studio #save-state::before { content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--st-accent);opacity:.55;margin-right:7px;vertical-align:1px; }
 /* 标题：衬线中号大字，紧凑留白，发丝线只在聚焦时浮现 */
 .studio .title-label { display:block;border-bottom:1px solid transparent;transition:border-color .25s ease;margin-bottom:8px; }
 .studio .title-label:focus-within { border-color:var(--st-line); }
-.studio .title-label input { font-family:var(--st-serif);font-size:26px;font-weight:600;line-height:1.35;padding:12px 0 10px;caret-color:var(--st-accent); }
-.studio .title-label input::placeholder { color:var(--st-line);font-weight:500; }
-.studio .title-label input:focus-visible { outline:0; }
 /* 元信息行：横排、幽灵化下拉、状态点 */
 .studio .metadata { flex-direction:row;align-items:center;gap:12px;padding:0 0 10px; }
 /* 摞叠 label 还原为横向排列（抵消 AccountShell 的 grid label） */
@@ -441,7 +524,7 @@ void load();
 .studio #preview-content :is(ul,ol) { list-style:revert;padding-left:1.6em;margin:.6em 0; }
 .studio #preview-content li { border:0;padding:0;border-radius:0;display:list-item;list-style:revert; }
 .studio #preview-content blockquote { margin:1em 0;padding:2px 0 2px 1em;border-left:3px solid var(--st-line);color:var(--st-muted); }
-.studio #preview-content h2,h3 { margin-top:1.4em; }
+.studio #preview-content :is(h2,h3) { margin-top:1.4em; }
 .studio #preview-content h2 { font-family:var(--st-serif); }
 .studio #preview-content pre { overflow:auto; }
 .studio #preview-content table { display:block;overflow:auto; }
@@ -451,11 +534,9 @@ void load();
 /* 底部信息条与统计弱化为纸边小字 */
 .studio .editor-bottom { border:0;padding:8px 0 2px;font-size:12px;letter-spacing:.02em; }
 .dark .studio .view-tools button[aria-pressed=true] { box-shadow:0 1px 3px rgba(0,0,0,.4); }
-.dark .studio .title-label input::placeholder,.dark .studio .body-label textarea::placeholder { color:#3a4250; }
 .dark .studio .body-label textarea { caret-color:#3b82f6; }
 @media(max-width:767px) {
   .studio .editor-card > * { max-width:100%; }
-  .studio .title-label input { font-size:22px;padding:10px 0 8px; }
   .studio .body-label textarea { font-size:15px;padding-inline:0; }
   .studio #markdown-preview { padding-inline:0; }
 }
@@ -469,11 +550,10 @@ void load();
   .studio.editor-open .account-heading { margin:0; }
   .studio.editor-open .account-heading h1 { display:none; }
   .studio.editor-open #account-status { margin:0 0 8px; }
-  .studio.editor-open #writing-view { display:flex;flex-direction:column;gap:8px;height:calc(100vh - 132px);height:calc(100dvh - 132px);min-height:480px; }
-  .studio.editor-open #article-editor { max-width:980px;width:100%;margin-inline:auto;flex:1 1 auto;min-height:0;display:grid;column-gap:20px;row-gap:0;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr) auto auto auto;grid-template-areas:"title meta" "toolbar toolbar" "canvas canvas" "bottom bottom" "notice notice" "actions actions"; }
+  .studio.editor-open #writing-view { display:flex;flex-direction:column;gap:8px;height:calc(100dvh - var(--writing-top, 132px) - 16px);min-height:0;padding-bottom:0; }
+  .studio.editor-open #article-editor { max-width:980px;width:100%;margin-inline:auto;flex:1 1 0;min-height:0;display:grid;column-gap:20px;row-gap:0;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr) auto auto auto;grid-template-areas:"title meta" "toolbar toolbar" "canvas canvas" "bottom bottom" "notice notice" "actions actions"; }
   .studio.editor-open .editor-card > * { max-width:none;margin-inline:0;width:auto; }
   .studio.editor-open .title-label { grid-area:title;margin:0;align-self:center;border-bottom:0; }
-  .studio.editor-open .title-label input { font-size:25px;padding:10px 0 8px; }
   .studio.editor-open .metadata { grid-area:meta;align-self:center;justify-self:end;gap:10px;padding:0;white-space:nowrap; }
   .studio.editor-open .editor-toolbar { grid-area:toolbar;align-self:end; }
   .studio.editor-open .editor-canvas { display:flex;align-items:stretch;grid-area:canvas;min-height:0;overflow:hidden;border-inline:0; }
@@ -482,9 +562,7 @@ void load();
   .studio.editor-open .editor-canvas #markdown-preview { flex:1 1 50%;min-width:0;height:auto;max-height:none;overflow-y:auto;padding:12px 0 16px; }
   .studio.editor-open .editor-bottom { grid-area:bottom;padding:6px 0 2px; }
   .studio.editor-open .editor-notice { grid-area:notice;margin:0;font-size:11.5px;line-height:1.5; }
-  .studio.editor-open .editor-actions { grid-area:actions;margin-top:0;padding:2px 0 0; }
-  .studio.editor-open .article-more { margin:0;padding:2px 0 0;border-top:0; }
-  .studio.editor-open .article-more>div { margin:8px 0; }
+  .studio.editor-open .editor-actions { grid-area:actions;margin-top:8px;padding-top:8px; }
   .studio.editor-open .access-card { margin:0;padding-top:8px;order:9; }
 }
 @media(max-width:1023px) {
@@ -495,7 +573,44 @@ void load();
   body.fullscreen-writing>header { display:none; }
   body.fullscreen-writing>main { padding-top:8px;padding-bottom:8px; }
   body.fullscreen-writing .studio .account-heading { display:none; }
-  body.fullscreen-writing .studio #writing-view { height:calc(100vh - 48px);height:calc(100dvh - 48px);gap:6px; }
+  body.fullscreen-writing .studio #writing-view { height:calc(100dvh - var(--writing-top, 32px) - 16px);gap:6px; }
   body.fullscreen-writing .studio #article-editor { max-width:1080px; }
+}
+/* Shared title rules apply to the auto-growing multiline field. */
+.studio .title-label textarea { display:block;width:100%;min-height:54px;resize:none;overflow:hidden;border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;color:var(--st-ink);font-family:var(--st-serif);font-size:26px;font-weight:600;line-height:1.35;padding:12px 0 10px; }
+.studio .title-label textarea::placeholder,.studio .body-label textarea::placeholder { color:var(--st-muted);opacity:1; }
+.studio .title-label textarea:focus-visible { outline:0;border-bottom-color:var(--st-accent); }
+.studio .body-label textarea:focus-visible { outline:2px solid var(--st-accent);outline-offset:-2px; }
+.studio button:disabled { opacity:.5;cursor:not-allowed; }
+.studio #save-feedback { min-width:0;font-size:12px;color:var(--st-muted);overflow-wrap:anywhere; }
+.studio #save-state::before { background:currentColor;opacity:1; }
+.studio #save-state[data-state=unsaved] { color:#946200; }
+.dark .studio #save-state[data-state=unsaved] { color:#e9b949; }
+.studio :is(#save-state,#save-feedback)[data-state=error] { color:#b91c1c; }
+.dark .studio :is(#save-state,#save-feedback)[data-state=error] { color:#f87171; }
+.studio #save-state[data-state=saving] { color:var(--st-accent); }
+.studio .workspace-tools { display:flex;align-items:center;gap:12px; }
+.studio #fullscreen-editor { padding:6px 10px;border:0;color:var(--st-muted);font-size:13px; }
+.studio #fullscreen-editor[aria-pressed=true] { color:var(--st-accent);background:var(--st-soft); }
+.studio #draft-recovery { padding:12px;border:1px solid var(--st-line);border-radius:6px;background:var(--st-soft);font-size:13px; }
+.studio #draft-recovery button { margin:4px; }
+.studio .editor-canvas[data-view=split] .body-label textarea { padding-right:22px; }
+.studio .editor-canvas[data-view=split] #markdown-preview { padding-left:22px; }
+.studio #preview-content h3 { margin-top:1.4em; }
+@media(min-width:1024px) {
+  .studio.editor-open .title-label textarea { font-size:25px;max-height:120px;overflow-y:auto; }
+  .studio.editor-open #writing-view,
+  body.fullscreen-writing .studio #writing-view { min-height:0;height:calc(100dvh - var(--writing-top, 132px) - 16px);padding-bottom:0; }
+  .studio.editor-open #article-editor,
+  body.fullscreen-writing .studio #article-editor { min-height:0;height:auto;flex:1 1 0; }
+  .studio.editor-open #writing-view > :not(#article-editor) { flex-shrink:0; }
+}
+@media(max-width:767px) {
+  .studio .editor-canvas[data-view=split] { display:grid; }
+  .studio .title-label textarea { font-size:22px; }
+  .studio .editor-actions { grid-template-columns:minmax(0,1fr) auto;gap:10px; }
+  .studio #save-feedback { grid-column:1/-1;grid-row:1; }
+  .studio .editor-auxiliary { flex-wrap:wrap;gap:4px 12px; }
+  .studio .workspace-tools { margin-left:auto;gap:6px; }
 }
 </style>
