@@ -678,6 +678,26 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     }
   });
 
+  test('全屏模式正文实际扩大，退出后恢复普通版心', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true, visibility: 'authenticated', draft: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    await expect.poll(async () => { const box = await page.locator('.editor-actions').boundingBox(); return Math.abs(900 - box!.y - box!.height - 16); }).toBeLessThanOrEqual(3);
+    const canvas = page.locator('.editor-canvas');
+    const normal = (await canvas.boundingBox())!;
+    await page.evaluate(() => { Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: document.documentElement }); document.dispatchEvent(new Event('fullscreenchange')); });
+    await expect.poll(async () => (await canvas.boundingBox())!.width).toBeGreaterThan(normal.width + 300);
+    await expect.poll(async () => (await canvas.boundingBox())!.height).toBeGreaterThan(normal.height + 40);
+    for (const view of ['分栏', '预览']) {
+      await page.locator('.view-tools').getByRole('button', { name: view, exact: true }).click();
+      expect((await canvas.boundingBox())!.width).toBeGreaterThan(1300);
+      await expect(page.locator('#save-article')).toBeInViewport();
+    }
+    await page.evaluate(() => { Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null }); document.dispatchEvent(new Event('fullscreenchange')); });
+    await expect.poll(async () => (await canvas.boundingBox())!.width).toBe(normal.width);
+  });
+
   test('全屏按钮尺寸稳定，状态切换保留图标且窄屏不溢出', async ({ page }) => {
     await mockSupabase(page, { signedIn: true, admin: true });
     await page.setViewportSize({ width: 1440, height: 900 });

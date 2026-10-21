@@ -584,10 +584,11 @@ void load();
 /* ===== 全屏写作模式：无浏览器启动顶栏与站点导航，稿纸铺满整屏 ===== */
 @media(min-width:1024px) {
   body.fullscreen-writing>header { display:none; }
-  body.fullscreen-writing>main { padding-top:8px;padding-bottom:8px; }
+   body.fullscreen-writing>main { width:100%;max-width:none;margin:0;padding:12px 32px 16px; }
   body.fullscreen-writing .studio .account-heading { display:none; }
   body.fullscreen-writing .studio #writing-view { height:calc(100dvh - var(--writing-top, 32px) - 16px);gap:6px; }
-  body.fullscreen-writing .studio #article-editor { max-width:1080px; }
+   body.fullscreen-writing .studio.editor-open #article-editor { max-width:none; }
+   body.fullscreen-writing .studio.editor-open #article-editor > * { max-width:none; }
 }
 /* Shared title rules apply to the auto-growing multiline field. */
 .studio .title-label textarea { display:block;width:100%;min-height:54px;resize:none;overflow:hidden;border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;color:var(--st-ink);font-family:var(--st-serif);font-size:26px;font-weight:600;line-height:1.35;padding:12px 0 10px; }
