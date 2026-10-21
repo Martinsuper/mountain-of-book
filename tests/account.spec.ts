@@ -660,6 +660,28 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(errors).toEqual([]);
   });
 
+  test('待办游客直链跳转登录，不显示本机任务或请求私有数据', async ({ page }) => {
+    const mock = await mockSupabase(page, { signedIn: false });
+    await page.goto('/todo/');
+    await expect(page).toHaveURL(/\/account\/$/);
+    expect(mock.requests.filter(request => new URL(request.url()).pathname === '/rest/v1/user_todos')).toHaveLength(0);
+  });
+
+  test('待办仅登录可见，另一标签页退出后立即回到登录页', async ({ page }) => {
+    const mock = await mockSupabase(page, { signedIn: true });
+    await page.goto('/todo/');
+    await expect(page.locator('#todo-private')).toBeVisible();
+    await expect(page.locator('#todo-private')).not.toHaveAttribute('inert');
+    const otherTab = await page.context().newPage();
+    await mockSupabase(otherTab, { signedIn: true });
+    await otherTab.goto('/account/');
+    await expect(otherTab.locator('#account-email')).toHaveText('reader@example.invalid');
+    await otherTab.getByRole('button', { name: '退出登录' }).click();
+    await expect(page).toHaveURL(/\/account\/$/);
+    await otherTab.close();
+    expect(mock.unexpected).toEqual([]);
+  });
+
   test('文章列表草稿操作文字不折行且窄屏不溢出', async ({ page }) => {
     await mockSupabase(page, { signedIn: true, admin: true, draft: true });
     await page.goto('/account/admin/');

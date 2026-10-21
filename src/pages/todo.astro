@@ -4,6 +4,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="待办清单" description="基于四象限理论的任务管理">
+  <p id="todo-auth-status" role="status">正在检查登录状态…</p>
+  <div id="todo-private" hidden inert>
   <div class="todo-page">
     <header class="todo-header">
       <div><h1>待办清单</h1><p class="todo-subtitle">按轻重缓急管理任务。</p></div>
@@ -246,9 +248,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <span class="undo-message">任务已删除</span>
     <button class="undo-btn" id="undoBtn">撤销</button>
   </div>
+  </div>
 </BaseLayout>
 
 <style is:inline>
+ #todo-private[hidden]{display:none!important}
 
 .todo-page{--todo-bg:#fff;--todo-text:#111827;--todo-muted:#6b7280;--todo-line:#e5e7eb;--todo-soft:#f9fafb;--todo-accent:#2563eb;--todo-tint:#eff6ff;color:var(--todo-text)}
 .dark .todo-page{--todo-bg:#111827;--todo-text:#f3f4f6;--todo-muted:#9ca3af;--todo-line:#374151;--todo-soft:#1f2937;--todo-accent:#60a5fa;--todo-tint:#1e293b}
@@ -267,18 +271,33 @@ import {
   todoItemToInsertRow, writeLocalTodos,
   type TodoItem, type TodoStorage,
 } from '../lib/todo-store';
-import { supabase } from '../lib/supabase';
+import { supabase, configurationMessage } from '../lib/supabase';
 
 let subscription: ReturnType<typeof initCalendarSubscription> | undefined;
 
 // ============ 存储层：账号云端（Supabase user_todos）+ 本地镜像 ============
-// 已登录时以数据库为权威存储，localStorage 全程保留镜像；未登录、云端
-// 暂不可用或登出后无缝退回本地模式。数据模型与行转换见 src/lib/todo-store.ts。
+// 登录验证通过后才加载待办；游客、未配置及验证失败时关闭界面，禁止本地模式绕过。
+// 数据模型与行转换见 src/lib/todo-store.ts。
 type Backend = 'local' | 'remote';
 type SyncStatusKind = 'unconfigured' | 'loading' | 'signed-out' | 'idle' | 'syncing' | 'error' | 'offline';
 let backend: Backend = 'local';
 let userId: string | null = null;
-let state: TodoStorage = readLocalTodos();
+let state: TodoStorage = { items: [], version: TODO_STORAGE_VERSION, lastUpdated: Date.now() };
+let authGeneration = 0;
+const privatePanel = document.getElementById('todo-private')!;
+const authStatus = document.getElementById('todo-auth-status')!;
+/** Revoke access immediately, including dialogs and stale asynchronous loads. */
+function lockTodoPage(message = '请先登录账号后使用待办。'): void {
+  authGeneration++; userId = null; privatePanel.hidden = true; privatePanel.inert = true;
+  authStatus.hidden = false; authStatus.textContent = message;
+  if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+  state = { items: [], version: TODO_STORAGE_VERSION, lastUpdated: Date.now() }; confirmedServer = []; importCandidate = [];
+  privatePanel.querySelectorAll('.modal-overlay.show,.batch-actions-panel.show,.undo-toast.show').forEach(el => el.classList.remove('show'));
+  privatePanel.querySelectorAll('.task-list,#archiveList,#calGrid,#calUnscheduled,#calendarDayEvents').forEach(el => el.replaceChildren());
+  privatePanel.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input,textarea').forEach(el => el.value = '');
+}
+/** Reveal controls only after the account has been verified. */
+function unlockTodoPage(): void { privatePanel.hidden = false; privatePanel.inert = false; authStatus.hidden = true; }
 let confirmedServer: TodoItem[] = []; // 服务端已确认的条目快照，同步差异以它为基准
 let syncing = false;
 let retryTimer: number | null = null;
@@ -290,6 +309,7 @@ let importCandidate: TodoItem[] = [];
 function getStorage(): TodoStorage { return state; }
 
 function saveStorage(): void {
+  if (!userId || privatePanel.hidden) return;
   writeLocalTodos(state);
   if (backend === 'remote') void pumpRemoteSync();
 }
@@ -318,17 +338,22 @@ function setSyncStatus(kind: SyncStatusKind): void {
 // 发送后重算差异，失败保留基准 15 秒后自动重试，快速连续编辑也只会推送最终结果。
 async function pumpRemoteSync(): Promise<void> {
   if (!remoteTodoSync || !userId || syncing) return;
+  const generation = authGeneration;
+  const uid = userId;
   syncing = true;
   try {
     while (true) {
+      if (generation !== authGeneration || uid !== userId) return;
       const target = cloneTodoItems(state.items);
       const diff = diffTodoItems(confirmedServer, target);
       if (!diff.inserts.length && !diff.updates.length && !diff.deletes.length) { setSyncStatus('idle'); return; }
       setSyncStatus('syncing');
       try {
-        await remoteTodoSync.push(userId, diff);
+        await remoteTodoSync.push(uid, diff);
+        if (generation !== authGeneration) return;
         confirmedServer = target;
       } catch {
+        if (generation !== authGeneration) return;
         setSyncStatus('error');
         if (retryTimer) clearTimeout(retryTimer);
         retryTimer = window.setTimeout(() => { retryTimer = null; void pumpRemoteSync(); }, 15_000);
@@ -340,15 +365,21 @@ async function pumpRemoteSync(): Promise<void> {
 
 // 启动：确认登录态后选择本地 / 云端模式并加载/重绘
 async function initStorage(): Promise<void> {
-  if (!supabase) { backend = 'local'; state = readLocalTodos(); setSyncStatus('unconfigured'); return; }
+  const current = ++authGeneration;
+  if (!supabase) { lockTodoPage(configurationMessage); return; }
   setSyncStatus('loading');
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { backend = 'local'; state = readLocalTodos(); setSyncStatus('signed-out'); renderTasks(searchInput.value); return; }
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (current !== authGeneration) return;
+    if (error || !user) { lockTodoPage(); window.location.replace('/account/'); return; }
     userId = user.id;
+    state = readLocalTodos();
     const localSnapshot = backend === 'local' ? cloneTodoItems(state.items) : [];
     const remote = await remoteTodoSync!.fetch(userId);
-    if (!remote) { backend = 'local'; state = readLocalTodos(); setSyncStatus('offline'); renderTasks(searchInput.value); return; }
+    if (current !== authGeneration) return;
+    unlockTodoPage();
+    if (!subscription) subscription = initCalendarSubscription(() => { if (userId) { renderCalendar(searchInput.value); subscription?.refreshDetails(); } });
+    if (!remote) { backend = 'local'; state = { items: [], version: TODO_STORAGE_VERSION, lastUpdated: Date.now() }; setSyncStatus('offline'); renderTasks(searchInput.value); return; }
     backend = 'remote';
     confirmedServer = cloneTodoItems(remote);
     state = { items: cloneTodoItems(remote), version: TODO_STORAGE_VERSION, lastUpdated: Date.now() };
@@ -358,10 +389,8 @@ async function initStorage(): Promise<void> {
     renderTasks(searchInput.value);
     offerLocalImport();
   } catch {
-    backend = 'local';
-    state = readLocalTodos();
-    setSyncStatus('offline');
-    renderTasks(searchInput.value);
+    if (current !== authGeneration) return;
+    lockTodoPage('登录验证或待办加载失败，请刷新重试。');
   }
 }
 
@@ -400,6 +429,7 @@ async function importLocalTodos(): Promise<void> {
 
 // 其他标签页登录 / 登出时跟随切换模式
 supabase?.auth.onAuthStateChange(event => {
+  if (event === 'SIGNED_OUT') { lockTodoPage(); window.location.replace('/account/'); return; }
   if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
   void refreshAccountState();
 });
@@ -407,7 +437,7 @@ supabase?.auth.onAuthStateChange(event => {
 async function refreshAccountState(): Promise<void> {
   if (refreshBusy) return;
   refreshBusy = true;
-  try { await initStorage(); renderTasks(searchInput.value); }
+  try { await initStorage(); if (userId) renderTasks(searchInput.value); }
   finally { refreshBusy = false; }
 }
 
@@ -1301,12 +1331,13 @@ function exportToCsv() {
 
 // 浏览器通知功能
 function requestNotificationPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
+  if (userId && !privatePanel.hidden && 'Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
 }
 
 function checkDeadlineNotifications() {
+  if (!userId || privatePanel.hidden) return;
   if ('Notification' in window && Notification.permission === 'granted') {
     const storage = getStorage();
     storage.items.forEach(item => {
@@ -1801,9 +1832,7 @@ function initEvents() {
 
 // 初始化
 initEvents();
-subscription = initCalendarSubscription(() => { renderCalendar(searchInput.value); subscription?.refreshDetails(); });
 document.getElementById('calendarSubscription')?.addEventListener('calendar-add-date', (event) => openAddForDate((event as CustomEvent<string>).detail));
-renderTasks(); // 先以本地镜像渲染，云端数据加载完成后重绘
 // 同步入口：导入横幅按钮 + 登录态初始化
 document.getElementById('importConfirmBtn')?.addEventListener('click', () => void importLocalTodos());
 document.getElementById('importDismissBtn')?.addEventListener('click', () => {
@@ -1812,4 +1841,6 @@ document.getElementById('importDismissBtn')?.addEventListener('click', () => {
   if (banner) banner.hidden = true;
 });
 void initStorage();
+window.addEventListener('pagehide', () => lockTodoPage());
+window.addEventListener('pageshow', event => { if (event.persisted) void initStorage(); });
 </script>
