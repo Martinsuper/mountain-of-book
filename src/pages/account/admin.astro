@@ -399,7 +399,8 @@ void load();
 .studio .article-meta { display:flex;gap:8px;align-items:center;font-size:12px;color:var(--st-muted);margin:8px 0; }
 .studio .badge { font-size:12px;border-radius:4px;background:var(--st-bg);color:var(--st-muted);padding:2px 6px;white-space:nowrap; }
 .studio .badge.published { background:var(--st-soft);color:var(--st-accent); }
-.studio .article-actions { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+.studio .article-actions { display:flex;align-items:center;justify-content:flex-end;gap:16px;white-space:nowrap; }
+.studio .article-actions > * { flex-shrink:0;white-space:nowrap; }
 .studio .article-actions button { padding:4px 0;border:0;color:var(--st-accent);margin:0;font-size:12px; }
 .studio .article-actions a { font-size:12px;color:var(--st-muted);text-decoration:none; }
 .studio .article-actions a:hover { color:var(--st-accent); }
@@ -465,7 +466,7 @@ void load();
 .studio .search-label { margin:0;max-width:240px; }
 .studio .library-heading { padding-bottom:12px;border-bottom:1px solid var(--st-line); }
 .studio #admin-articles { max-height:none;overflow:visible; }
-.studio #admin-articles li { display:grid;grid-template-columns:minmax(0,1fr) 140px 100px 110px;align-items:center;gap:16px;padding:20px 0; }
+.studio #admin-articles li { display:grid;grid-template-columns:minmax(0,1fr) 140px 100px max-content;align-items:center;gap:16px;padding:20px 0; }
 .studio button.article-title { border:0;padding:0;text-align:left;white-space:normal;overflow-wrap:anywhere;font-size:16px;font-weight:600; }
 .studio button.article-title:hover { background:none;color:var(--st-accent); }
 .studio .article-meta { margin:0;flex-wrap:wrap; }
@@ -490,7 +491,7 @@ void load();
   .studio #admin-articles li { grid-template-columns:minmax(0,1fr) auto;gap:10px; }
   .studio .article-title { grid-column:1/-1; }
   .studio .updated-date { grid-column:1; }
-  .studio .article-actions { grid-column:2;grid-row:2/4;gap:20px; }
+  .studio .article-actions { grid-column:1/-1;grid-row:4;gap:20px;justify-content:flex-start; }
   .studio .article-meta { grid-column:1; }
   .studio .library-toolbar { flex-wrap:wrap;gap:16px; }
   .studio .search-label { max-width:none;width:100%; }

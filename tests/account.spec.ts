@@ -660,6 +660,23 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(errors).toEqual([]);
   });
 
+  test('文章列表草稿操作文字不折行且窄屏不溢出', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true, draft: true });
+    await page.goto('/account/admin/');
+    await expect(page.locator('.article-actions')).toBeVisible();
+    for (const width of [1440, 900, 768, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      const actions = page.locator('.article-actions');
+      await expect(actions.getByRole('link', { name: '预览草稿 ↗' })).toBeVisible();
+      const geometry = await actions.evaluate(element => [...element.children].map(child => {
+        const range = document.createRange(); range.selectNodeContents(child);
+        return { lines: range.getClientRects().length, left: child.getBoundingClientRect().left, right: child.getBoundingClientRect().right };
+      }));
+      for (const item of geometry) { expect(item.lines).toBe(1); expect(item.left).toBeGreaterThanOrEqual(0); expect(item.right).toBeLessThanOrEqual(width); }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  });
+
   test('桌面写作操作栏贴近视口底部，正文占满剩余空间', async ({ page }) => {
     await mockSupabase(page, { signedIn: true, admin: true, visibility: 'authenticated', draft: true });
     await page.goto('/account/admin/');
