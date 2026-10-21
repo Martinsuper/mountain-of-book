@@ -700,6 +700,19 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 
+  test('正文聚焦时不显示蓝色轮廓，工具栏保留键盘焦点提示', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    const body = page.getByRole('textbox', { name: 'Markdown 正文', exact: true });
+    await body.focus();
+    await body.press('ArrowRight');
+    expect(await body.evaluate(element => getComputedStyle(element).outlineWidth)).toBe('0px');
+    const bold = page.getByRole('button', { name: '加粗', exact: true });
+    await bold.focus();
+    expect(await bold.evaluate(element => getComputedStyle(element).outlineWidth)).toBe('2px');
+  });
+
   test('长标题自动增高，缩放后无内部滚动条或裁切', async ({ page }) => {
     await mockSupabase(page, { signedIn: true, admin: true, visibility: 'authenticated', draft: true });
     await page.goto('/account/admin/');
