@@ -69,6 +69,7 @@ const titleInput = editor.elements.namedItem('title') as HTMLTextAreaElement;
 const canvas = document.querySelector<HTMLElement>('.editor-canvas')!;
 // Fullscreen is independent of the mutually exclusive writing views.
 const fullscreenButton = document.getElementById('fullscreen-editor')!;
+fullscreenButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fullscreen-expand" d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><path class="fullscreen-collapse" d="M3 8h5V3m13 5h-5V3M8 21v-5H3m13 5v-5h5"/></svg><span>全屏</span>';
 const workspaceTools = document.createElement('div'); workspaceTools.className = 'workspace-tools';
 const viewTools = document.querySelector('.view-tools')!;
 viewTools.parentElement!.append(workspaceTools); workspaceTools.append(viewTools, fullscreenButton);
@@ -152,7 +153,19 @@ function checkDraft() {
     pendingDraft = draft; recovery.hidden = false;
   } catch { /* Ignore malformed or inaccessible local drafts. */ }
 }
-function resizeTitle() { titleInput.style.height = 'auto'; titleInput.style.height = `${titleInput.scrollHeight}px`; }
+/** Fit the entire title, including borders, without an internal scroll area. */
+function resizeTitle() {
+  if (writing.hidden) return;
+  titleInput.style.height = 'auto';
+  const style = getComputedStyle(titleInput);
+  titleInput.style.height = `${Math.ceil(titleInput.scrollHeight + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth))}px`;
+}
+let titleWidth = 0;
+new ResizeObserver(([entry]) => {
+  if (entry.contentRect.width === titleWidth) return;
+  titleWidth = entry.contentRect.width; resizeTitle();
+}).observe(titleInput);
+void document.fonts.ready.then(resizeTitle);
 function setView(view: string) {
   if (view === 'split' && matchMedia('(max-width:767px)').matches) view = 'write';
   canvas.dataset.view = view;
@@ -342,7 +355,7 @@ function refreshFullscreenButton() {
   const active = Boolean(document.fullscreenElement) || Boolean((document as Document & { webkitFullscreenElement?: Element | null }).webkitFullscreenElement);
   const button = document.getElementById('fullscreen-editor')!;
   button.setAttribute('aria-pressed', String(active));
-  button.textContent = active ? '退出全屏' : '全屏';
+  button.querySelector('span')!.textContent = active ? '退出全屏' : '全屏';
   button.title = active ? '退出全屏（Esc）' : '全屏写作（Esc 退出）';
   button.setAttribute('aria-label', button.title);
   document.body.classList.toggle('fullscreen-writing', active);
@@ -589,16 +602,22 @@ void load();
 .studio :is(#save-state,#save-feedback)[data-state=error] { color:#b91c1c; }
 .dark .studio :is(#save-state,#save-feedback)[data-state=error] { color:#f87171; }
 .studio #save-state[data-state=saving] { color:var(--st-accent); }
-.studio .workspace-tools { display:flex;align-items:center;gap:12px; }
-.studio #fullscreen-editor { padding:6px 10px;border:0;color:var(--st-muted);font-size:13px; }
-.studio #fullscreen-editor[aria-pressed=true] { color:var(--st-accent);background:var(--st-soft); }
+.studio .workspace-tools { display:flex;align-items:center;gap:12px;flex-shrink:0; }
+.studio .view-tools { align-items:center;min-height:34px; }
+.studio #fullscreen-editor { display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100px;height:34px;padding:0 10px;border:1px solid var(--st-line);border-radius:6px;background:transparent;color:var(--st-muted);font-size:13px;line-height:1;flex-shrink:0; }
+.studio #fullscreen-editor:hover { background:var(--st-bg);color:var(--st-ink); }
+.studio #fullscreen-editor[aria-pressed=true] { color:var(--st-accent);background:var(--st-soft);border-color:var(--st-accent); }
+.studio #fullscreen-editor svg { flex-shrink:0; }
+.studio #fullscreen-editor .fullscreen-collapse,
+.studio #fullscreen-editor[aria-pressed=true] .fullscreen-expand { display:none; }
+.studio #fullscreen-editor[aria-pressed=true] .fullscreen-collapse { display:block; }
 .studio #draft-recovery { padding:12px;border:1px solid var(--st-line);border-radius:6px;background:var(--st-soft);font-size:13px; }
 .studio #draft-recovery button { margin:4px; }
 .studio .editor-canvas[data-view=split] .body-label textarea { padding-right:22px; }
 .studio .editor-canvas[data-view=split] #markdown-preview { padding-left:22px; }
 .studio #preview-content h3 { margin-top:1.4em; }
 @media(min-width:1024px) {
-  .studio.editor-open .title-label textarea { font-size:25px;max-height:120px;overflow-y:auto; }
+  .studio.editor-open .title-label textarea { font-size:25px; }
   .studio.editor-open #writing-view,
   body.fullscreen-writing .studio #writing-view { min-height:0;height:calc(100dvh - var(--writing-top, 132px) - 16px);padding-bottom:0; }
   .studio.editor-open #article-editor,
@@ -612,5 +631,7 @@ void load();
   .studio #save-feedback { grid-column:1/-1;grid-row:1; }
   .studio .editor-auxiliary { flex-wrap:wrap;gap:4px 12px; }
   .studio .workspace-tools { margin-left:auto;gap:6px; }
+  .studio #fullscreen-editor { width:34px;padding:0; }
+  .studio #fullscreen-editor span { display:none; }
 }
 </style>

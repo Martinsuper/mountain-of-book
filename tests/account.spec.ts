@@ -678,6 +678,46 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     }
   });
 
+  test('全屏按钮尺寸稳定，状态切换保留图标且窄屏不溢出', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    const button = page.locator('#fullscreen-editor');
+    const before = await button.boundingBox();
+    expect(before!.width).toBe(100); expect(before!.height).toBe(34);
+    // Simulate browser fullscreen notifications without requiring OS window control.
+    await page.evaluate(() => { Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: document.documentElement }); document.dispatchEvent(new Event('fullscreenchange')); });
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await expect(button.locator('.fullscreen-collapse')).toBeVisible();
+    await expect(button.locator('span')).toHaveText('退出全屏');
+    expect((await button.boundingBox())!.width).toBe(before!.width);
+    await page.evaluate(() => { Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null }); document.dispatchEvent(new Event('fullscreenchange')); });
+    await expect(button.locator('.fullscreen-expand')).toBeVisible();
+    await page.setViewportSize({ width: 320, height: 844 });
+    await expect(button).toHaveAccessibleName('全屏写作（Esc 退出）');
+    expect((await button.boundingBox())!.width).toBe(34);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+
+  test('长标题自动增高，缩放后无内部滚动条或裁切', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true, visibility: 'authenticated', draft: true });
+    await page.goto('/account/admin/');
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    const title = page.getByRole('textbox', { name: '标题', exact: true });
+    await title.fill('这是用于验证标题自动换行与高度适配的长标题'.repeat(9));
+    for (const width of [1440, 1024, 390, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect.poll(() => title.evaluate((element: HTMLTextAreaElement) => ({
+        fits: element.scrollHeight <= element.clientHeight + 1,
+        overflow: getComputedStyle(element).overflowY,
+        resize: getComputedStyle(element).resize,
+      }))).toEqual({ fits: true, overflow: 'hidden', resize: 'none' });
+    }
+    await title.fill('短标题');
+    await expect.poll(async () => (await title.boundingBox())!.height).toBeLessThan(80);
+  });
+
   test('更多操作向上展开不挤压底栏，全屏独立于编辑视图', async ({ page }) => {
     await mockSupabase(page, { signedIn: true, admin: true, visibility: 'authenticated', draft: true });
     await page.setViewportSize({ width: 1440, height: 900 });
