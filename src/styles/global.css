@@ -29,7 +29,7 @@ body {
 
 a {
   color: var(--link-color);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .prose {
@@ -85,3 +85,11 @@ a {
    否则同权重的工具类（如 .prose 上的 max-w-none）会被 .prose{max-width:720px} 反超，
    导致文章溢出双栏布局的侧边目录列。 */
 @tailwind utilities;
+
+/* 链接列表保持清爽，正文链接仍以明确的下划线区分。 */
+.prose a { text-decoration: underline; text-underline-offset: 3px; }
+a:hover { text-underline-offset: 3px; }
+:where(a, button, summary, select):focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+.dark :where(a, button, summary, select):focus-visible { outline-color: #93c5fd; }
+mark { background: #fef08a; color: #1f2937; border-radius: 2px; }
+.dark mark { background: #854d0e; color: #fef9c3; }

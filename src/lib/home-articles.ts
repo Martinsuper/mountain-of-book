@@ -4,6 +4,32 @@ const status = document.getElementById('cloud-feed-status')!;
 const empty = document.getElementById('home-empty')!;
 const feed = document.getElementById('home-feed')!;
 const retry = document.getElementById('home-feed-retry')!;
+const categoryFilter = document.getElementById('home-category') as HTMLSelectElement;
+const count = document.getElementById('home-count')!;
+const pagination = document.getElementById('home-pagination')!;
+const more = document.getElementById('home-more') as HTMLButtonElement;
+const pageStatus = document.getElementById('home-page-status')!;
+let visibleLimit = 12;
+function updateList() {
+  const rows = [...list.children] as HTMLElement[];
+  const matches = rows.filter(row => !categoryFilter.value || row.dataset.category === categoryFilter.value);
+  rows.forEach(row => { row.hidden = true; });
+  matches.slice(0, visibleLimit).forEach(row => { row.hidden = false; });
+  count.textContent = categoryFilter.value ? `${categoryFilter.value} · ${matches.length} 篇文章` : `共 ${rows.length} 篇文章`;
+  empty.textContent = categoryFilter.value ? '这个分类还没有文章。' : '还没有文章，快去写一篇吧！';
+  empty.hidden = matches.length > 0;
+  document.getElementById('home-filter')!.hidden = false;
+  pagination.hidden = matches.length === 0;
+  more.hidden = visibleLimit >= matches.length;
+  pageStatus.textContent = `已显示 ${Math.min(visibleLimit, matches.length)} / ${matches.length} 篇文章`;
+}
+categoryFilter.addEventListener('change', () => { visibleLimit = 12; updateList(); });
+more.addEventListener('click', () => {
+  visibleLimit += 12;
+  const firstNew = [...list.children].filter(row => (row as HTMLElement).hidden && (!categoryFilter.value || (row as HTMLElement).dataset.category === categoryFilter.value))[0] as HTMLElement | undefined;
+  updateList();
+  firstNew?.querySelector<HTMLAnchorElement>('h2 a')?.focus({ preventScroll: true });
+});
 let generation = 0;
 let cancelPending: (() => void) | undefined;
 let userID: string | null | undefined;
@@ -16,7 +42,7 @@ function clear() {
   empty.hidden = list.children.length > 0;
 }
 function reveal() {
-  empty.hidden = list.children.length > 0;
+  updateList();
   feed.removeAttribute('data-loading');
   feed.setAttribute('aria-busy', 'false');
 }
@@ -61,7 +87,7 @@ async function load() {
       heading.append(link); article.append(meta, heading); item.append(article); list.append(item);
     }
     [...list.children].sort((a, b) => Date.parse((b as HTMLElement).dataset.date!) - Date.parse((a as HTMLElement).dataset.date!)).forEach(row => list.append(row));
-    status.textContent = '';
+    status.textContent = data?.length === 100 ? '当前展示最新 100 篇云端文章及全部本地文章。' : '';
   } catch {
     if (current === generation) {
       status.textContent = '云端文章暂时无法加载，已展示本地文章。';

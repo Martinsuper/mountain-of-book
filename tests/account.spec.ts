@@ -69,15 +69,13 @@ test.describe('账号页面：未配置时安全降级', () => {
 
   test('主页可进入个人中心，账号导航可达且不会暴露管理表单', async ({ page }) => {
     await page.goto('/');
-    await page.locator('header button[aria-controls="account-menu"]').click();
-    await page.locator('#account-menu a[href="/account/"]').click();
+    await page.locator('#header-user [data-user-guest]').click();
     await expect(page).toHaveURL(/\/account\/$/);
     for (const route of [routes.find(route => route.path === '/account/admin/')!, routes[0]]) {
-      await page.locator('header button[aria-controls="account-menu"]').click();
-      await page.locator(`#account-menu a[href="${route.path}"]`).click();
-      await expect(page).toHaveURL(new RegExp(`${route.path}$`));
+      await page.goto(route.path);
       await expect(page.locator('#account-status')).toHaveText(configurationMessage);
       await expectNoPrivateUI(page);
+      await expect(page.getByRole('button', { name: '用户菜单' })).not.toBeVisible();
     }
   });
 });
@@ -196,6 +194,69 @@ async function mockSupabase(page: Page, options: MockOptions = {}) {
 
 test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）', () => {
   test.skip(!mockMode, `Start a fresh server with PUBLIC_SUPABASE_URL=${mockURL} and PUBLIC_SUPABASE_ANON_KEY=public-test-key.`);
+
+  test('普通用户头像菜单隐藏管理入口，待办为独立导航且退出后恢复登录入口', async ({ page }) => {
+    const mock = await mockSupabase(page, { signedIn: true });
+    await page.goto('/');
+    await expect(page.locator('#desktop-navigation')).toContainText('待办');
+    const avatar = page.getByRole('button', { name: '用户菜单' });
+    await avatar.click();
+    await expect(page.locator('#account-menu a[href="/account/"]')).toBeVisible();
+    await expect(page.locator('#account-menu [data-user-admin]')).not.toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('#account-menu a[href="/account/"]')).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('#account-menu [data-user-signout]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(avatar).toBeFocused();
+    await avatar.click();
+    await page.locator('#account-menu [data-user-signout]').click();
+    await expect(page.locator('#header-user [data-user-guest]')).toBeVisible();
+    await expect(avatar).toBeHidden();
+    await expect(page.locator('#account-menu')).toHaveJSProperty('inert', true);
+    expect(mock.unexpected).toEqual([]);
+  });
+
+  test('管理员头像菜单包含管理入口，移动端个人操作置底', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true, admin: true });
+    await page.goto('/');
+    await page.getByRole('button', { name: '用户菜单' }).click();
+    await expect(page.locator('#account-menu [data-user-admin]')).toBeVisible();
+    await page.screenshot({ path: 'test-results/navigation-admin-desktop.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: '菜单', exact: true }).click();
+    await expect(page.locator('#mobile-menu a[href="/todo/"]')).toBeVisible();
+    await expect(page.locator('#mobile-menu [data-user-admin]')).toBeVisible();
+    await expect(page.locator('#mobile-menu [data-user-signout]')).toBeVisible();
+    await expect(page.locator('#mobile-menu [data-user-guest]')).toBeHidden();
+    await expect.poll(() => page.locator('#mobile-menu').evaluate(el => el.getAnimations().length)).toBe(0);
+    await page.screenshot({ path: 'test-results/navigation-admin-mobile.png' });
+    await page.locator('#mobile-menu [data-user-signout]').click();
+    await page.getByRole('button', { name: '菜单', exact: true }).click();
+    await expect(page.locator('#mobile-menu [data-user-guest]')).toBeVisible();
+    await expect(page.locator('#mobile-menu [data-user-admin]')).toBeHidden();
+  });
+
+  test('待办入口保留登录上下文，密码登录后返回待办', async ({ page }) => {
+    await mockSupabase(page);
+    await page.goto('/todo/');
+    await expect(page).toHaveURL(/returnTo=%2Ftodo%2F/);
+    await expect(page.locator('#login-context')).toHaveText('登录后，继续管理你的待办。');
+    await page.getByLabel('邮箱', { exact: true }).fill('reader@example.invalid');
+    await page.getByLabel('密码', { exact: true }).fill('Test-password-123!');
+    await page.getByRole('button', { name: '登录', exact: true }).click();
+    await expect(page).toHaveURL(/\/todo\/$/);
+    await expect(page.locator('#todo-private')).toBeVisible();
+  });
+
+  test('登录返回目标拒绝外站和协议相对地址', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true });
+    for (const target of ['https://example.invalid/', '//example.invalid/', '/account/admin/']) {
+      await page.goto('/account/?returnTo=' + encodeURIComponent(target));
+      await expect(page.locator('#account-private')).toBeVisible();
+      expect(new URL(page.url()).pathname).toBe('/account/');
+    }
+  });
 
   test('个人中心不再展示最近阅读，设置和待办按需展开且移动端不溢出', async ({ page }) => {
     await mockSupabase(page, { signedIn: true });
@@ -572,7 +633,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expect(page.locator('.account-heading h1')).toHaveText('文章管理');
     await expect(page.locator('.account-heading #new-article')).toBeVisible();
     await expect(page.locator('#account-status')).not.toBeVisible();
-    await page.locator('button[aria-controls="account-menu"]').click();
+    await page.getByRole('button', { name: '用户菜单' }).click();
     await expect(page.locator('#account-menu a[aria-current="page"]')).toHaveText('文章管理');
     await expect(page.locator('#account-menu a[href="/members/"]')).toHaveCount(0);
     await page.locator('#account-menu a[href="/account/"]').click();
@@ -580,7 +641,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: '菜单', exact: true }).click();
     for (const path of ['/account/', '/account/admin/']) {
-      await expect(page.locator(`#mobile-menu a[href="${path}"]`)).toBeVisible();
+      await expect(page.locator(`#mobile-menu a[href="${path}"]:not([hidden])`)).toBeVisible();
     }
     await page.locator('#mobile-menu a[href="/account/admin/"]').click();
     await expect(page.locator('.account-heading #new-article')).toBeVisible();
@@ -663,7 +724,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
   test('待办游客直链跳转登录，不显示本机任务或请求私有数据', async ({ page }) => {
     const mock = await mockSupabase(page, { signedIn: false });
     await page.goto('/todo/');
-    await expect(page).toHaveURL(/\/account\/$/);
+    await expect(page).toHaveURL(/\/account\/\?returnTo=%2Ftodo%2F$/);
     expect(mock.requests.filter(request => new URL(request.url()).pathname === '/rest/v1/user_todos')).toHaveLength(0);
   });
 
@@ -705,7 +766,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await otherTab.goto('/account/');
     await expect(otherTab.locator('#account-email')).toHaveText('reader@example.invalid');
     await otherTab.getByRole('button', { name: '退出登录' }).click();
-    await expect(page).toHaveURL(/\/account\/$/);
+    await expect(page).toHaveURL(/\/account\/\?returnTo=%2Ftodo%2F$/);
     await otherTab.close();
     expect(mock.unexpected).toEqual([]);
   });

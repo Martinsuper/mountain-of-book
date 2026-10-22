@@ -1,0 +1,111 @@
+---
+const currentPath = Astro.url.pathname;
+---
+<div id="header-user" class="hidden lg:block">
+  <a data-user-guest href="/account/" class="login-link">登录</a>
+  <div data-user-auth class="nav-group" hidden>
+    <button class="user-avatar" aria-label="用户菜单" aria-expanded="false" aria-controls="account-menu" type="button"><span id="user-initial" aria-hidden="true"></span></button>
+    <div id="account-menu" class="nav-dropdown" inert>
+      <a href="/account/" class="user-action" aria-current={currentPath === '/account/' ? 'page' : undefined}>个人中心</a>
+      <a data-user-admin href="/account/admin/" class="user-action" aria-current={currentPath === '/account/admin/' ? 'page' : undefined} hidden>文章管理</a>
+      <button data-user-signout class="user-action signout" type="button">退出登录</button>
+      <p data-user-status role="status" class="user-status" hidden></p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .login-link { display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border: 1px solid #d1d5db; border-radius: 999px; font-size: 14px; white-space: nowrap; }
+  .login-link:hover { background: #eff6ff; }
+  :global(.dark) .login-link { border-color: #4b5563; }
+  :global(.dark) .login-link:hover { background: #1f2937; }
+  .nav-group { position: relative; }
+  .user-avatar { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #bfdbfe; border-radius: 50%; background: #eff6ff; color: #1d4ed8; font-weight: 600; cursor: pointer; }
+  .user-avatar:hover, .user-avatar[aria-expanded="true"] { background: #dbeafe; }
+  :global(.dark) .user-avatar { background: #1e3a5f; color: #bfdbfe; border-color: #375c88; }
+  .nav-dropdown { position: absolute; right: 0; top: calc(100% + 8px); min-width: 160px; padding: 6px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 30px rgb(0 0 0 / 12%); visibility: hidden; opacity: 0; }
+  .nav-group.open .nav-dropdown { visibility: visible; opacity: 1; }
+  :global(.dark) .nav-dropdown { background: #1f2937; border-color: #374151; }
+  .user-action { display: block; width: 100%; padding: 10px 14px; text-align: left; color: #374151; border-radius: 8px; font-size: 14px; white-space: nowrap; }
+  .user-action:hover, .user-action[aria-current="page"] { background: #eff6ff; color: #1d4ed8; }
+  :global(.dark) .user-action { color: #d1d5db; }
+  :global(.dark) .user-action:hover, :global(.dark) .user-action[aria-current="page"] { background: #374151; color: #93c5fd; }
+  .signout { border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; margin-top: 4px; }
+  :global(.dark) .signout { border-color: #374151; }
+  .user-status { padding: 8px; font-size: 13px; color: #b91c1c; }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  function initializeUserMenu() {
+    if (!document.getElementById('header-user')) return;
+    const guest = document.querySelectorAll<HTMLElement>('[data-user-guest]');
+    const authenticated = document.querySelectorAll<HTMLElement>('[data-user-auth]');
+    const admin = document.querySelectorAll<HTMLElement>('[data-user-admin]');
+    const signout = document.querySelectorAll<HTMLButtonElement>('[data-user-signout]');
+    const messages = document.querySelectorAll<HTMLElement>('[data-user-status]');
+    let generation = 0;
+    let signingOut = false;
+    function clear() {
+      guest.forEach(element => { element.hidden = false; });
+      authenticated.forEach(element => { element.hidden = true; });
+      admin.forEach(element => { element.hidden = true; });
+      document.getElementById('user-initial')!.textContent = '';
+      const group = document.querySelector('#header-user .nav-group');
+      group?.classList.remove('open');
+      group?.querySelector('button')?.setAttribute('aria-expanded', 'false');
+      const dropdown = document.getElementById('account-menu')!;
+      dropdown.inert = true;
+    }
+    async function refresh() {
+      const current = ++generation;
+      clear();
+      if (!supabase) return;
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (current !== generation || error || !user) return;
+        guest.forEach(element => { element.hidden = true; });
+        authenticated.forEach(element => { element.hidden = false; });
+        const name = String(user.user_metadata?.full_name || user.user_metadata?.name || user.email || '我').trim();
+        document.getElementById('user-initial')!.textContent = Array.from(name)[0]?.toLocaleUpperCase() || '我';
+        const result = await supabase.rpc('is_site_admin');
+        if (current !== generation) return;
+        admin.forEach(element => { element.hidden = result.error !== null || result.data !== true; });
+      } catch {
+        // 验证失败时不展示管理入口；页面权限仍由服务端 RLS 校验。
+      }
+    }
+    signout.forEach(button => button.addEventListener('click', async () => {
+      if (!supabase || signingOut) return;
+      signingOut = true;
+      messages.forEach(message => { message.hidden = true; });
+      signout.forEach(item => { item.disabled = true; });
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        ++generation;
+        clear();
+        const focusTarget = window.matchMedia('(min-width: 1024px)').matches
+          ? document.querySelector<HTMLElement>('#header-user [data-user-guest]')
+          : document.getElementById('mobile-menu-btn');
+        focusTarget?.focus();
+      } catch {
+        messages.forEach(message => { message.textContent = '退出失败，请检查网络后重试。'; message.hidden = false; });
+      } finally {
+        signingOut = false;
+        signout.forEach(item => { item.disabled = false; });
+      }
+    }));
+    supabase?.auth.onAuthStateChange(() => {
+      ++generation;
+      clear();
+      // Supabase auth 回调内不等待另一个 auth 请求。
+      setTimeout(() => void refresh(), 0);
+    });
+    window.addEventListener('pagehide', () => { ++generation; clear(); });
+    window.addEventListener('pageshow', event => { if (event.persisted) void refresh(); });
+    void refresh();
+  }
+  initializeUserMenu();
+</script>

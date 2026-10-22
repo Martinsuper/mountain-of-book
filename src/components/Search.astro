@@ -24,19 +24,20 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
       <label for="search-input" class="sr-only">搜索标题、摘要或标签</label>
-      <input id="search-input" type="search" placeholder="搜索文章..." autocomplete="off" autofocus aria-controls="search-results" class="w-full min-w-0 px-4 py-3 bg-transparent outline-none text-gray-900 dark:text-gray-100" />
-      <button id="search-close" type="button" aria-label="关闭搜索" class="p-1 shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+      <input id="search-input" type="search" placeholder="搜索标题、摘要或标签" aria-describedby="search-help" autocomplete="off" autofocus aria-controls="search-results" class="w-full min-w-0 px-4 py-3 bg-transparent outline-none text-gray-900 dark:text-gray-100" />
+      <button id="search-close" type="button" aria-label="关闭搜索" class="p-2 shrink-0 text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
         <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
-    <p id="search-status" role="status" aria-live="polite" class="p-4 text-center text-gray-500" hidden></p>
+    <p id="search-help" class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">输入关键词查找文章 · Tab 选择结果 · Enter 打开 · Esc 关闭</p>
+    <p id="search-status" role="status" aria-live="polite" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400" hidden></p>
     <div id="search-error" class="p-4 text-center" hidden>
       <p role="alert" class="text-red-600 dark:text-red-400">搜索索引加载失败，请重试。</p>
       <button id="search-retry" type="button" class="mt-2 rounded px-3 py-2 text-blue-600 dark:text-blue-400 hover:underline">重新加载</button>
     </div>
-    <ul id="search-results" aria-label="搜索结果" class="max-h-80 overflow-y-auto p-2"></ul>
+    <ul id="search-results" aria-label="搜索结果" class="max-h-[55dvh] overflow-y-auto p-2 empty:hidden"></ul>
     <p id="search-empty" role="status" class="p-4 text-center text-gray-500" hidden>未找到相关文章</p>
   </div>
 </dialog>
@@ -89,6 +90,21 @@
   let indexPromise: Promise<void> | null = null;
   let state: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 
+  function highlight(element: HTMLElement, text: string, query: string) {
+    const lower = text.toLowerCase();
+    let start = 0;
+    let match = lower.indexOf(query);
+    while (match !== -1) {
+      element.append(document.createTextNode(text.slice(start, match)));
+      const mark = document.createElement('mark');
+      mark.textContent = text.slice(match, match + query.length);
+      element.append(mark);
+      start = match + query.length;
+      match = lower.indexOf(query, start);
+    }
+    element.append(document.createTextNode(text.slice(start)));
+  }
+
   function renderSearch() {
     results.replaceChildren();
     results.setAttribute('aria-busy', String(state === 'loading'));
@@ -103,20 +119,24 @@
       [post.title, post.description, ...post.tags].some(value => value.toLowerCase().includes(query))
     );
     empty.hidden = matched.length !== 0;
+    statusMessage.hidden = false;
+    statusMessage.textContent = `找到 ${matched.length} 篇相关文章`;
     const fragment = document.createDocumentFragment();
     for (const post of matched) {
       const item = document.createElement('li');
       const link = document.createElement('a');
       link.href = `/posts/${post.slug.split('/').map(segment => encodeURIComponent(segment)).join('/')}/`;
-      link.className = 'block min-w-0 break-words p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800';
+      link.className = 'group block min-w-0 break-words p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800';
       const title = document.createElement('h3');
-      title.className = 'font-medium';
-      title.textContent = post.title;
+      title.className = 'font-semibold text-blue-700 dark:text-blue-400 group-hover:underline group-focus-visible:underline';
+      highlight(title, post.title, query);
       link.append(title);
       if (post.description) {
         const description = document.createElement('p');
-        description.className = 'text-sm text-gray-500 mt-1';
-        description.textContent = post.description.slice(0, 80) + (post.description.length > 80 ? '...' : '');
+        description.className = 'text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2';
+        const start = Math.max(0, post.description.toLowerCase().indexOf(query) - 30);
+        const excerpt = (start ? '…' : '') + post.description.slice(start, start + 120) + (post.description.length > start + 120 ? '…' : '');
+        highlight(description, excerpt, query);
         link.append(description);
       }
       if (post.tags.length) {
@@ -124,8 +144,8 @@
         tags.className = 'flex flex-wrap gap-2 mt-2 min-w-0';
         for (const tag of post.tags) {
           const label = document.createElement('span');
-          label.className = 'text-xs text-gray-400 max-w-full whitespace-normal [overflow-wrap:anywhere]';
-          label.textContent = `#${tag}`;
+          label.className = 'text-xs text-gray-600 dark:text-gray-400 max-w-full whitespace-normal [overflow-wrap:anywhere]';
+          highlight(label, `#${tag}`, query);
           tags.append(label);
         }
         link.append(tags);

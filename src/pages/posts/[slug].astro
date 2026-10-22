@@ -24,11 +24,6 @@ const readingTime = calculateReadingTime(post.body || '');
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description || `${post.data.title}，书山有路技术笔记。`} publishedTime={post.data.date.toISOString()} type="article" wide>
-  <!-- 移动端：目录在文章上方 -->
-  <div class="lg:hidden mb-8">
-    <TableOfContents headings={headings} />
-  </div>
-
   <!-- 桌面端：双栏布局 -->
   <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-12 lg:max-w-5xl">
     <!-- mx-auto 保持窄屏居中；lg:mx-0 取消 auto 外边距，让 grid 项目重新拉伸到栏宽，
@@ -75,6 +70,9 @@ const readingTime = calculateReadingTime(post.body || '');
           )}
         </div>
       </header>
+      <div class="lg:hidden mb-8 not-prose">
+        <TableOfContents headings={headings} />
+      </div>
       <Content />
       <CodeCopy />
     </article>

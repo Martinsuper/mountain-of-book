@@ -3,6 +3,7 @@
 import '../styles/global.css';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Search from '../components/Search.astro';
+import UserMenu from '../components/UserMenu.astro';
 import BackToTop from '../components/BackToTop.astro';
 import Mermaid from '../components/Mermaid.astro';
 import ZoomModal from '../components/ZoomModal.astro';
@@ -41,12 +42,7 @@ const isPostsSection =
   ['/archive/', '/timeline/'].includes(currentPath) ||
   currentPath.startsWith('/categories') ||
   currentPath.startsWith('/tags') || currentPath.startsWith('/posts/');
-const accountLinks = [
-  { href: '/account/', label: '个人中心' },
-  { href: '/todo/', label: '待办' },
-  { href: '/account/admin/', label: '文章管理' },
-];
-const isAccountSection = currentPath.startsWith('/account/') || currentPath === '/todo/';
+
 ---
 
 <!doctype html>
@@ -169,31 +165,29 @@ const isAccountSection = currentPath.startsWith('/account/') || currentPath === 
             </div>
           </div>
 
-          <div class="nav-group account-nav">
-            <button class={`nav-group-btn px-4 py-2 rounded-full transition-all duration-200 ${isAccountSection ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`} aria-label="账号与个人中心" aria-expanded="false" aria-controls="account-menu">
-              账号
-              <svg class="nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div id="account-menu" class="nav-dropdown" inert>
-              {accountLinks.map(link => <a href={link.href} class={`nav-dropdown-link ${currentPath === link.href ? 'active' : ''}`} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>)}
-            </div>
-          </div>
+          <a href="/todo/" aria-current={currentPath === '/todo/' ? 'page' : undefined} class={`px-4 py-2 rounded-full transition-all duration-200 no-underline ${currentPath === '/todo/' ? 'bg-blue-600 dark:bg-blue-500 text-white font-medium' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>待办</a>
         </div>
         <div id="header-tools" class="flex items-center gap-2 shrink-0 lg:pl-3 lg:border-l lg:border-gray-200 lg:dark:border-gray-800">
           <Search />
           <ThemeToggle />
+          <UserMenu />
         </div>
       </nav>
       <!-- 移动端：下拉导航菜单 -->
-      <div id="mobile-menu" class="mobile-menu lg:hidden" inert>
-        <a href="/" class={`mobile-nav-link ${currentPath === '/' ? 'active' : ''}`}>首页</a>
+      <div id="mobile-menu" class="mobile-menu lg:hidden" aria-hidden="true" inert>
+        <a href="/" aria-current={currentPath === '/' ? 'page' : undefined} class={`mobile-nav-link ${currentPath === '/' ? 'active' : ''}`}>首页</a>
         <div class="mobile-nav-group-label">文章</div>
-        <a href="/archive/" class={`mobile-nav-link ${currentPath === '/archive/' ? 'active' : ''}`}>归档</a>
-        <a href="/timeline/" class={`mobile-nav-link ${currentPath === '/timeline/' ? 'active' : ''}`}>时间轴</a>
-        <a href="/categories/" class={`mobile-nav-link ${currentPath.startsWith('/categories') ? 'active' : ''}`}>分类</a>
-        <a href="/tags/" class={`mobile-nav-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
-        <div class="mobile-nav-group-label">账号</div>
-        {accountLinks.map(link => <a href={link.href} class={`mobile-nav-link ${currentPath === link.href ? 'active' : ''}`} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>)}
+        <a href="/archive/" aria-current={currentPath === '/archive/' ? 'page' : undefined} class={`mobile-nav-link ${currentPath === '/archive/' ? 'active' : ''}`}>归档</a>
+        <a href="/timeline/" aria-current={currentPath === '/timeline/' ? 'page' : undefined} class={`mobile-nav-link ${currentPath === '/timeline/' ? 'active' : ''}`}>时间轴</a>
+        <a href="/categories/" aria-current={currentPath.startsWith('/categories') ? 'page' : undefined} class={`mobile-nav-link ${currentPath.startsWith('/categories') ? 'active' : ''}`}>分类</a>
+        <a href="/tags/" aria-current={currentPath.startsWith('/tags') ? 'page' : undefined} class={`mobile-nav-link ${currentPath.startsWith('/tags') ? 'active' : ''}`}>标签</a>
+        <a href="/todo/" aria-current={currentPath === '/todo/' ? 'page' : undefined} class={`mobile-nav-link ${currentPath === '/todo/' ? 'active' : ''}`}>待办</a>
+        <div class="mobile-nav-group-label">个人</div>
+        <a data-user-guest href="/account/" class="mobile-nav-link">登录</a>
+        <a data-user-auth hidden href="/account/" aria-current={currentPath === '/account/' ? 'page' : undefined} class={`mobile-nav-link ${currentPath === '/account/' ? 'active' : ''}`}>个人中心</a>
+        <a data-user-admin hidden href="/account/admin/" aria-current={currentPath === '/account/admin/' ? 'page' : undefined} class={`mobile-nav-link ${currentPath === '/account/admin/' ? 'active' : ''}`}>文章管理</a>
+        <button data-user-auth data-user-signout hidden type="button" class="mobile-nav-link text-left">退出登录</button>
+        <p data-user-status role="status" hidden class="px-4 py-2 text-sm text-red-600 dark:text-red-400"></p>
       </div>
     </header>}
     <main class={fullWidth ? '' : wide ? 'max-w-5xl mx-auto px-4 py-8' : 'max-w-4xl mx-auto px-4 py-8'}>
@@ -206,6 +200,8 @@ const isAccountSection = currentPath.startsWith('/account/') || currentPath === 
 </html>
 
 <style>
+  :global(header [hidden]) { display: none !important; }
+
   /* Nav group dropdown (desktop) */
   .nav-group {
     position: relative;
@@ -325,21 +321,34 @@ const isAccountSection = currentPath.startsWith('/account/') || currentPath === 
 
   /* Mobile menu */
   .mobile-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    background: #fff;
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease;
     border-top: 1px solid transparent;
   }
 
+  @media (min-width: 1024px) { .mobile-menu { display: none; } }
+
   .mobile-menu.open {
     max-height: calc(100dvh - 70px);
     overflow-y: auto;
+    box-shadow: 0 12px 24px rgb(0 0 0 / 10%);
     border-top-color: #e5e7eb;
   }
 
   :global(.dark) .mobile-menu.open {
     border-top-color: #374151;
+    background: #111827;
   }
+  .mobile-nav-group-label { grid-column: 1 / -1; }
+  .mobile-nav-link:first-child { grid-column: 1 / -1; }
 
   .mobile-nav-link {
     display: block;
@@ -378,7 +387,7 @@ const isAccountSection = currentPath.startsWith('/account/') || currentPath === 
 </style>
 
 <script>
-const groups = [...document.querySelectorAll<HTMLElement>('#desktop-navigation .nav-group')];
+const groups = [...document.querySelectorAll<HTMLElement>('header .nav-group')];
 function setDropdown(group: HTMLElement, open: boolean) {
   group.classList.toggle('open', open);
   group.querySelector('button')?.setAttribute('aria-expanded', String(open));
@@ -398,8 +407,8 @@ groups.forEach(group => {
     if (event.key === 'Escape') { setDropdown(group, false); button.focus(); event.preventDefault(); return; }
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault(); closeDropdowns(group); setDropdown(group, true);
-    const links = [...group.querySelectorAll<HTMLAnchorElement>('.nav-dropdown a')];
-    const index = links.indexOf(document.activeElement as HTMLAnchorElement);
+    const links = [...group.querySelectorAll<HTMLElement>('.nav-dropdown a:not([hidden]), .nav-dropdown button:not([hidden])')];
+    const index = links.indexOf(document.activeElement as HTMLElement);
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? links.length - 1 : event.key === 'ArrowDown' ? (index + 1) % links.length : (index < 0 ? links.length - 1 : (index - 1 + links.length) % links.length);
     links[next]?.focus();
   });
@@ -417,9 +426,16 @@ function setMobileMenu(open: boolean) {
   if (!mobileMenu) return;
   mobileMenu.classList.toggle('open', open);
   mobileMenu.inert = !open;
+  mobileMenu.setAttribute('aria-hidden', String(!open));
   mobileMenuBtn?.setAttribute('aria-expanded', String(open));
 }
 mobileMenuBtn?.addEventListener('click', () => setMobileMenu(!mobileMenu?.classList.contains('open')));
+document.addEventListener('click', event => {
+  if (event.target instanceof Node && !mobileMenu?.contains(event.target) && !mobileMenuBtn?.contains(event.target)) setMobileMenu(false);
+});
+document.addEventListener('focusin', event => {
+  if (event.target instanceof Node && !mobileMenu?.contains(event.target) && !mobileMenuBtn?.contains(event.target)) setMobileMenu(false);
+});
 mobileMenu?.querySelectorAll('.mobile-nav-link').forEach(link => {
   link.addEventListener('click', () => setMobileMenu(false));
 });

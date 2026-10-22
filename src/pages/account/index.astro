@@ -8,7 +8,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
     <div class="login-welcome">
       <span class="login-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z"/><path d="M12 6v14"/></svg></span>
       <h2>欢迎回到书山有路</h2>
-      <p class="hint">登录账号，继续你的阅读与探索。</p>
+      <p id="login-context" class="hint">登录账号，继续你的阅读与探索。</p>
     </div>
     <label>邮箱<input name="email" type="email" autocomplete="email" placeholder="输入受邀邮箱" required maxlength="254" /></label>
     <label>密码<input name="password" type="password" autocomplete="current-password" placeholder="输入登录密码" required maxlength="128" /></label>
@@ -17,7 +17,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
     <div id="passkey-login-row" hidden>
       <div class="passkey-divider" aria-hidden="true"><span>或</span></div>
       <button type="button" id="passkey-login" class="login-secondary">使用通行密钥登录</button>
-      <p class="hint">通行密钥保存在 iCloud 钥匙串等位置，登录时通过面容 ID 确认，无需密码或邮件。</p>
+      <p class="hint">通过设备生物识别或设备密码确认，无需输入本站密码。</p>
     </div>
   </form>
   <div id="account-private" hidden>
@@ -80,8 +80,8 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
   /* Keep the signed-out experience focused without changing account tools. */
   .account-shell:has(#login-form:not([hidden])) {
     max-width: 460px;
-    margin: clamp(24px, 6vh, 72px) auto;
-    padding: 36px 36px 28px;
+    margin: clamp(12px, 3vh, 32px) auto;
+    padding: 28px;
     border: 1px solid #e5eaf2;
     border-radius: 24px;
     background: #fff;
@@ -94,11 +94,11 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
     margin: 0; font-size: 13px; color: var(--account-muted);
   }
   .account-shell:has(#login-form:not([hidden])) #account-status:has(+ noscript) { margin-bottom: 8px; }
-  .account-shell #login-form { max-width: none; margin: 0; gap: 20px; }
+  .account-shell #login-form { max-width: none; margin: 0; gap: 16px; }
   .account-shell .login-welcome { margin-bottom: 8px; }
   .account-shell .login-mark {
     display: grid; place-items: center; width: 48px; height: 48px;
-    margin-bottom: 20px; border-radius: 14px; background: #eff5ff; color: #2563eb;
+    margin-bottom: 12px; border-radius: 14px; background: #eff5ff; color: #2563eb;
   }
   .account-shell .login-mark svg { width: 27px; height: 27px; }
   .account-shell .login-welcome h2 { margin: 0 0 10px; font-size: 25px; line-height: 1.4; letter-spacing: -.5px; }
@@ -152,6 +152,17 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
 <script>
 import { supabase, configurationMessage } from '../../lib/supabase';
 const confirmDialog = (window as unknown as { confirmDialog: (o: { title?: string; message: string; confirmText?: string; cancelText?: string; variant?: 'danger' | 'info' }) => Promise<boolean> }).confirmDialog;
+const params = new URLSearchParams(location.search);
+// 只接受明确支持的站内目标，拒绝外站、协议相对地址和任意路径。
+const returnTo = params.get('returnTo') === '/todo/' ? '/todo/' : null;
+const resetFlow = params.get('reset') === '1';
+if (returnTo) document.getElementById('login-context')!.textContent = '登录后，继续管理你的待办。';
+function accountCallback(reset = false) {
+  const url = new URL('/account/', location.origin);
+  if (returnTo) url.searchParams.set('returnTo', returnTo);
+  if (reset) url.searchParams.set('reset', '1');
+  return url.href;
+}
 const status = document.getElementById('account-status')!;
 const login = document.getElementById('login-form') as HTMLFormElement;
 const panel = document.getElementById('account-private')!;
@@ -177,6 +188,7 @@ async function render() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (current !== generation) return;
   if (!user) { settings.open = false; todos.open = false; login.hidden = false; status.textContent = error && !error.message.includes('Auth session missing') ? '登录已失效，请重新登录。' : ''; return; }
+  if (returnTo && !resetFlow && !recoveryMode) { location.replace(returnTo); return; }
   login.hidden = true; passwordInput.value = ''; panel.hidden = false;
   if (recoveryMode) {
     settings.open = true;
@@ -270,10 +282,10 @@ async function authenticate(mode: 'password' | 'email' | 'recover') {
       if (error) { status.textContent = '邮箱或密码错误，或账号暂时无法登录。请重试，也可使用邮件登录。'; return; }
       await render();
     } else if (mode === 'recover') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.value.trim(), { redirectTo: new URL('/account/?reset=1', location.origin).href });
+      const { error } = await supabase.auth.resetPasswordForEmail(email.value.trim(), { redirectTo: accountCallback(true) });
       status.textContent = error ? '重置邮件发送失败，请稍后重试。' : '若该邮箱已获邀请，将收到重置密码邮件，请在当前浏览器打开链接。';
     } else {
-      const { error } = await supabase.auth.signInWithOtp({ email: email.value.trim(), options: { shouldCreateUser: false, emailRedirectTo: new URL('/account/', location.origin).href } });
+      const { error } = await supabase.auth.signInWithOtp({ email: email.value.trim(), options: { shouldCreateUser: false, emailRedirectTo: accountCallback() } });
       status.textContent = error ? '无法发送登录邮件，请确认已获邀请，或稍后重试。' : '登录邮件已发送，请在当前浏览器打开邮件中的链接。';
     }
   } catch { status.textContent = '网络异常，请稍后重试。'; }
@@ -340,6 +352,7 @@ passwordForm.addEventListener('submit', async event => {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) { passwordStatus.textContent = '密码更新失败，请检查密码强度；若需要重新验证身份，请重新登录后再试。'; return; }
     passwordForm.reset(); passwordStatus.textContent = '密码已更新，下次可使用邮箱和密码登录。';
+    if (returnTo) location.replace(returnTo);
   } catch { passwordStatus.textContent = '网络异常，密码未能更新，请重试。'; }
   finally { passwordBusy = false; button.disabled = false; }
 });

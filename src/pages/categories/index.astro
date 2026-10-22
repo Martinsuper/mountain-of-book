@@ -49,9 +49,9 @@ const categories = Array.from(categoryCounts.entries()).sort((a, b) => b[1] - a[
               return subcategoryCount > 0 && (
                 <a
                   href={`/categories/${category}/${subcategory}/`}
-                  class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
-                  {subcategory} <span class="text-gray-500">{subcategoryCount}</span>
+                  {subcategory} <span class="rounded-full bg-white dark:bg-gray-700 px-2 text-xs text-gray-600 dark:text-gray-300" aria-label={`${subcategoryCount} 篇文章`}>{subcategoryCount}</span>
                 </a>
               );
             })}

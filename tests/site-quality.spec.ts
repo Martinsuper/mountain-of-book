@@ -184,7 +184,7 @@ test('搜索首次打开才加载，加载中输入保留且重复打开不重�
     expect(requests).toBe(1);
     responseGate.release();
     await expect(page.locator('#search-results a')).toHaveText('gate result');
-    await expect(page.locator('#search-status')).toBeHidden();
+    await expect(page.locator('#search-status')).toHaveText('找到 1 篇相关文章');
     await page.keyboard.press('Escape');
     await page.locator('#search-btn').click();
     await expect(page.locator('#search-input')).toBeFocused();
@@ -328,4 +328,24 @@ test('可选：生产产物不输出草稿页面，RSS 和搜索索引不包含�
     expect(index.some(post => post.slug === slug), slug).toBe(false);
     expect(rss).not.toContain(`/posts/${encodeURIComponent(slug)}/`);
   }
+});
+
+
+test('首页分类筛选与加载更多保留全部文章入口', async ({ page }) => {
+  await page.route('**/rest/v1/articles?**', route => route.fulfill({ json: [] }));
+  await page.goto('/');
+  await expect(page.locator('#home-filter')).toBeVisible();
+  const rows = page.locator('#home-posts > li');
+  const total = await rows.count();
+  await expect(page.locator('#home-posts > li:visible')).toHaveCount(Math.min(total, 12));
+  if (total > 12) {
+    await page.getByRole('button', { name: '加载更多文章' }).click();
+    await expect(page.locator('#home-posts > li:visible')).toHaveCount(Math.min(total, 24));
+  }
+  await page.locator('#home-category').selectOption('开发工具');
+  const categoryTotal = await page.locator('#home-posts > li[data-category="开发工具"]').count();
+  await expect(page.locator('#home-posts > li:visible')).toHaveCount(Math.min(categoryTotal, 12));
+  await expect(page.locator('#home-count')).toContainText(`开发工具 · ${categoryTotal} 篇文章`);
+  await page.locator('#home-category').selectOption('');
+  await expect(page.locator('#home-posts > li:visible')).toHaveCount(Math.min(total, 12));
 });

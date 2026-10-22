@@ -13,7 +13,8 @@ const listId = `toc-list-${randomUUID()}`;
 {toc.length > 0 && (
   <nav class="toc">
     <button type="button" class="toc-toggle" aria-label="展开/收起目录" aria-expanded="true" aria-controls={listId}>
-      <span class="toc-toggle-title">目录</span>
+      <span class="toc-toggle-title">文章目录</span>
+      <span class="toc-toggle-hint">展开目录</span>
       <span class="toc-toggle-icon">▾</span>
     </button>
     <ul id={listId} class="space-y-2 toc-list">
@@ -51,8 +52,12 @@ const listId = `toc-list-${randomUUID()}`;
     border: none;
     cursor: pointer;
     padding: 0;
-    margin-bottom: 0.75rem;
+    min-height: 44px;
+    gap: 12px;
   }
+  .toc-toggle-hint { margin-left: auto; font-size: 0.875rem; color: #4b5563; }
+  :global(.dark) .toc-toggle-hint { color: #d1d5db; }
+  .toc:not(.collapsed) .toc-list { margin-top: 0.75rem; }
 
   .toc-toggle-title {
     font-size: 0.875rem;
@@ -97,7 +102,7 @@ const listId = `toc-list-${randomUUID()}`;
     }
 
     .toc-list {
-      max-height: none !important;
+      max-height: min(55dvh, 420px) !important;
     }
   }
 
@@ -132,6 +137,7 @@ const listId = `toc-list-${randomUUID()}`;
       const expanded = desktop.matches || mobileExpanded;
       toc.classList.toggle('collapsed', !expanded);
       toggle.setAttribute('aria-expanded', String(expanded));
+      toc.querySelector('.toc-toggle-hint')!.textContent = expanded ? '收起目录' : '展开目录';
     };
     syncExpanded();
     desktop.addEventListener('change', syncExpanded);

@@ -331,7 +331,7 @@ function setSyncStatus(kind: SyncStatusKind): void {
     case 'loading': el.textContent = '正在加载账号待办…'; break;
     case 'signed-out': {
       const link = document.createElement('a');
-      link.href = '/account/';
+      link.href = '/account/?returnTo=%2Ftodo%2F';
       link.textContent = '登录账号';
       el.replaceChildren(document.createTextNode('待办数据目前仅保存在此浏览器，'), link, document.createTextNode('后可云端同步。'));
       break;
@@ -380,7 +380,7 @@ async function initStorage(): Promise<void> {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (current !== authGeneration) return;
-    if (error || !user) { lockTodoPage(); window.location.replace('/account/'); return; }
+    if (error || !user) { lockTodoPage(); window.location.replace('/account/?returnTo=%2Ftodo%2F'); return; }
     userId = user.id;
     state = readLocalTodos();
     const localSnapshot = backend === 'local' ? cloneTodoItems(state.items) : [];
@@ -438,8 +438,8 @@ async function importLocalTodos(): Promise<void> {
 
 // 其他标签页登录 / 登出时跟随切换模式
 supabase?.auth.onAuthStateChange(event => {
-  if (event === 'SIGNED_OUT') { lockTodoPage(); window.location.replace('/account/'); return; }
-  if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
+  if (event === 'SIGNED_OUT') { lockTodoPage(); window.location.replace('/account/?returnTo=%2Ftodo%2F'); return; }
+  if (event !== 'SIGNED_IN') return;
   void refreshAccountState();
 });
 

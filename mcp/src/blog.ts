@@ -11,7 +11,7 @@ import { CATEGORIES } from './taxonomy.js';
 import {
   checkBodyStyle,
   frontmatterHints,
-  Frontmatter,
+  type Frontmatter,
   parseFrontmatter,
   stringifyFrontmatter,
   validateFrontmatter,

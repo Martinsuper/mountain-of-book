@@ -10,7 +10,15 @@ const cloudConfigured = Boolean(import.meta.env.PUBLIC_SUPABASE_URL?.trim() && i
 ---
 
 <BaseLayout>
-  <h1 class="text-2xl lg:text-3xl font-bold mb-8">最新文章</h1>
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+    <div><h1 class="text-2xl lg:text-3xl font-bold">最新文章</h1><p id="home-count" role="status" class="text-sm text-gray-600 dark:text-gray-400 mt-2">共 {posts.length} 篇文章</p></div>
+    <label id="home-filter" hidden class="text-sm text-gray-600 dark:text-gray-400">按分类浏览
+      <select id="home-category" class="ml-2 max-w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-gray-900 dark:text-gray-100">
+        <option value="">全部分类</option>
+        {[...new Set(posts.map(post => post.data.category).filter(Boolean))].map(category => <option value={category}>{category}</option>)}
+      </select>
+    </label>
+  </div>
 
   <section id="home-feed" aria-label="文章列表">
   <script is:inline define:vars={{ cloudConfigured }}>
@@ -36,7 +44,7 @@ const cloudConfigured = Boolean(import.meta.env.PUBLIC_SUPABASE_URL?.trim() && i
   <p id="home-empty" class="text-gray-500" hidden={posts.length > 0}>还没有文章，快去写一篇吧！</p>
     <ul id="home-posts" class="space-y-6">
       {posts.map((post) => (
-        <li data-date={post.data.date.toISOString()}>
+        <li data-category={post.data.category || ""} data-date={post.data.date.toISOString()}>
           <article class="border-b border-gray-200 dark:border-gray-800 pb-6">
             <div class="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
               <time datetime={post.data.date.toISOString()}>
@@ -69,13 +77,13 @@ const cloudConfigured = Boolean(import.meta.env.PUBLIC_SUPABASE_URL?.trim() && i
               </a>
             </h2>
             {post.data.description && (
-              <p class="text-gray-600 dark:text-gray-400 mt-2">
+              <p class="text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
                 {post.data.description}
               </p>
             )}
             {post.data.tags && (
               <div class="flex flex-wrap gap-2 mt-3">
-                {post.data.tags.map((tag) => (
+                {post.data.tags.slice(0, 3).map((tag) => (
                   <a
                     href={`/tags/${tag}/`}
                     class="max-w-full break-words [overflow-wrap:anywhere] px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -83,12 +91,20 @@ const cloudConfigured = Boolean(import.meta.env.PUBLIC_SUPABASE_URL?.trim() && i
                     #{tag}
                   </a>
                 ))}
+                {post.data.tags.length > 3 && <details class="home-more-tags text-sm">
+                  <summary class="cursor-pointer rounded bg-gray-100 dark:bg-gray-800 px-2 py-1 text-gray-600 dark:text-gray-300">另 {post.data.tags.length - 3} 个标签</summary>
+                  <div class="flex flex-wrap gap-2 mt-2">{post.data.tags.slice(3).map(tag => <a href={`/tags/${tag}/`} class="max-w-full break-words [overflow-wrap:anywhere] px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">#{tag}</a>)}</div>
+                </details>}
               </div>
             )}
           </article>
         </li>
       ))}
     </ul>
+    <div id="home-pagination" hidden class="mt-8 text-center">
+      <button id="home-more" type="button" class="rounded-lg border border-gray-300 dark:border-gray-600 px-6 py-3 hover:bg-gray-100 dark:hover:bg-gray-800">加载更多文章</button>
+      <p id="home-page-status" class="mt-3 text-sm text-gray-600 dark:text-gray-400"></p>
+    </div>
   </section>
 </BaseLayout>
 <style>
