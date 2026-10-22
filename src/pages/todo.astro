@@ -33,6 +33,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <button class="todo-filter quadrant-card" data-filter="3" data-quadrant="3" aria-pressed="false">委托简化 <span id="count-q3">0</span></button>
         <button class="todo-filter quadrant-card" data-filter="4" data-quadrant="4" aria-pressed="false">暂缓处理 <span id="count-q4">0</span></button>
       </div>
+      <label class="category-filter">分类 <select id="categoryFilter" aria-label="按分类筛选"><option value="">全部分类</option></select></label>
       <div class="search-wrapper"><input type="search" id="searchInput" placeholder="搜索任务…" aria-label="搜索任务" class="search-input" /><button id="searchClearBtn" class="search-clear-btn" aria-label="清除搜索">×</button></div>
     </div>
     <div class="todo-split">
@@ -80,7 +81,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <!-- 添加任务弹窗 -->
+  <datalist id="todoCategories"></datalist>
+<!-- 添加任务弹窗 -->
   <div class="modal-overlay" id="addModal">
     <div class="modal">
       <div class="modal-header">
@@ -96,7 +98,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <label for="taskDesc">描述（可选）</label>
           <textarea id="taskDesc" placeholder="输入任务描述" rows="3"></textarea>
         </div>
-        <div class="form-group">
+        <div class="form-group"><label for="taskCategory">分类（可选）</label><input id="taskCategory" type="text" list="todoCategories" maxlength="50" placeholder="例如：工作、生活、学习" /></div>
+          <div class="form-group">
           <label for="taskDue">截止日期</label>
           <input type="date" id="taskDue" min="" />
         </div>
@@ -142,7 +145,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <label for="editTaskDesc">描述（可选）</label>
           <textarea id="editTaskDesc" placeholder="输入任务描述" rows="3"></textarea>
         </div>
-        <div class="form-group">
+        <div class="form-group"><label for="editTaskCategory">分类（可选）</label><input id="editTaskCategory" type="text" list="todoCategories" maxlength="50" placeholder="例如：工作、生活、学习" /></div>
+          <div class="form-group">
           <label for="editTaskDue">截止日期</label>
           <input type="date" id="editTaskDue" />
         </div>
@@ -261,6 +265,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 @media(max-width:760px){.todo-split{grid-template-columns:1fr}.todo-col-right{display:grid;grid-template-columns:1fr 1fr;gap:14px}.todo-progress{margin:0;align-self:start}.search-wrapper{flex-basis:100%}.search-input{width:100%}}@media(max-width:480px){.todo-header h1{font-size:1.5rem}.todo-subtitle{font-size:.75rem}.add-task-btn{padding:8px 10px;font-size:.75rem}.todo-more summary{font-size:.7rem;padding:8px}.todo-col-right{grid-template-columns:1fr}.task-item{padding:14px 12px;gap:8px;flex-wrap:wrap}.task-actions{margin-left:25px}.task-content{flex-basis:calc(100% - 35px)}.archive-item-time{display:none}.batch-actions-panel{width:calc(100% - 24px);flex-wrap:wrap;justify-content:center}.stats-panel{gap:16px}.task-meta{gap:5px}.todo-filter{padding:7px 6px}}
 .calendar-subscription{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem;color:var(--todo-muted)}.calendar-subscription summary{cursor:pointer;color:var(--todo-accent)}.calendar-subscription label{display:block;margin-top:10px}.calendar-subscription input[type=text]{width:100%;font-size:.65rem;padding:7px;border:1px solid var(--todo-line);border-radius:5px;background:var(--todo-bg);color:var(--todo-text);margin:5px 0}.calendar-subscription button,.calendar-day-details button{padding:5px 7px;border:1px solid var(--todo-line);border-radius:5px;font-size:.65rem;margin:4px 0;color:var(--todo-accent)}.subscription-toggle{display:flex!important;gap:7px;align-items:center}.subscription-actions{display:flex;gap:7px}.calendar-subscription p{font-size:.6rem;margin-top:7px;overflow-wrap:anywhere}.calendar-day-details{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem}.calendar-day-details h3{font-weight:600;margin:0 0 7px}.calendar-day-details p{font-size:.65rem;color:var(--todo-muted);margin:4px 0}.cal-cell{position:relative;min-height:42px}.holiday-marker{font-size:8px;line-height:10px;border-radius:2px;padding:0 2px}.holiday-marker.holiday{color:#348365;background:#e8f5ed}.holiday-marker.workday{color:#9c711f;background:#fff4dd}.holiday-marker.event{color:var(--todo-accent)}.dark .holiday-marker.holiday{background:#1d3b32;color:#93d1b4}.dark .holiday-marker.workday{background:#3b3020;color:#e1c081}
 .sync-status{font-size:.75rem;color:var(--todo-muted);margin:12px 0 -6px}#syncStatus:empty{display:none}.sync-status a{color:var(--todo-accent);text-decoration:underline}.import-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0;padding:10px 14px;border:1px solid var(--todo-accent);border-radius:9px;background:var(--todo-tint);font-size:.85rem;color:var(--todo-text)}.import-banner[hidden]{display:none}.import-banner button{padding:6px 10px;border-radius:7px;font-size:.75rem}.import-banner .import-actions{display:flex;gap:8px}#importConfirmBtn{background:var(--todo-accent);border:0;color:#fff}.dark #importConfirmBtn{background:#3b82f6}
+#detailModal { padding: 0; }
+#detailModal > .modal { width: 100%; max-width: none; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; display: flex; flex-direction: column; }
+#detailModal .modal-body { flex: 1; overflow-y: auto; }
+.category-filter { font-size: .8rem; color: var(--todo-muted); }
+.category-filter select { padding: 8px; border: 1px solid var(--todo-line); border-radius: 8px; background: var(--todo-bg); color: var(--todo-text); max-width: 200px; }
 </style>
 
 <script>
@@ -504,12 +513,15 @@ function setDateMinToday() {
 function clearAddForm() {
   taskTitle.value = '';
   taskDesc.value = '';
-  taskDue.value = '';
+  taskDue.value = formatDateInput(Date.now());
+  (document.getElementById('taskCategory') as HTMLInputElement).value = '';
   currentQuadrant = 1;
   currentPriority = 'medium';
   updateQuadrantBtns(quadrantBtns, currentQuadrant);
   updatePriorityBtns(priorityBtns, currentPriority);
 }
+
+document.getElementById('categoryFilter')?.addEventListener('change', () => renderTasks());
 
 // DOM 元素
 const searchInput = document.getElementById('searchInput') as HTMLInputElement;
@@ -655,6 +667,12 @@ function createTaskElement(task: TodoItem): HTMLElement {
   quadrantSpan.textContent = { 1: '重要且紧急', 2: '重要不紧急', 3: '紧急不重要', 4: '暂缓处理' }[task.quadrant];
   metaDiv.appendChild(quadrantSpan);
   metaDiv.appendChild(prioritySpan);
+  if (task.category) {
+    const category = document.createElement('span');
+    category.className = 'task-category';
+    category.textContent = task.category;
+    metaDiv.appendChild(category);
+  }
 
   contentDiv.appendChild(metaDiv);
 
@@ -760,8 +778,15 @@ function createCompletionParticles(taskId: string) {
 function renderTasks(filter: string = searchInput.value) {
   const storage = getStorage();
   const query = filter.trim().toLowerCase();
+  const categoryFilter = document.getElementById('categoryFilter') as HTMLSelectElement;
+  const selectedCategory = categoryFilter.value;
+  const categories = [...new Set(storage.items.map(item => item.category).filter((value): value is string => !!value))].sort();
+  categoryFilter.replaceChildren(new Option('全部分类', ''), new Option('未分类', '__uncategorized__'), ...categories.map(category => new Option(category, category)));
+  categoryFilter.value = selectedCategory;
+  if (categoryFilter.selectedIndex < 0) categoryFilter.value = '';
+  document.getElementById('todoCategories')?.replaceChildren(...categories.map(category => new Option(category, category)));
   const pending = storage.items.filter(item => !item.completed);
-  const visible = pending.filter(item => (!activeQuadrant || item.quadrant === activeQuadrant) &&
+  const visible = pending.filter(item => (!categoryFilter.value || (categoryFilter.value === '__uncategorized__' ? !item.category : item.category === categoryFilter.value)) && (!activeQuadrant || item.quadrant === activeQuadrant) &&
     (!query || item.title.toLowerCase().includes(query) || item.description?.toLowerCase().includes(query)));
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -802,7 +827,8 @@ function renderArchive(filter?: string) {
   if (!listEl) return;
 
   const storage = getStorage();
-  let items = storage.items.filter(i => i.completed);
+  const category = (document.getElementById('categoryFilter') as HTMLSelectElement).value;
+  let items = storage.items.filter(i => i.completed && (!category || (category === '__uncategorized__' ? !i.category : i.category === category)));
 
   if (filter) {
     const lowerFilter = filter.toLowerCase();
@@ -996,6 +1022,7 @@ function addTask() {
     id: newTodoId(),
     title,
     description: taskDesc.value.trim() || undefined,
+    category: (document.getElementById('taskCategory') as HTMLInputElement).value.trim() || undefined,
     quadrant: currentQuadrant,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -1010,7 +1037,8 @@ function addTask() {
   // 重置表单
   taskTitle.value = '';
   taskDesc.value = '';
-  taskDue.value = '';
+  taskDue.value = formatDateInput(Date.now());
+  (document.getElementById('taskCategory') as HTMLInputElement).value = '';
   currentQuadrant = 1;
   currentPriority = 'medium';
   updateQuadrantBtns(quadrantBtns, currentQuadrant);
@@ -1031,6 +1059,7 @@ function openEditModal(taskId: string) {
   editTaskId.value = taskId;
   editTaskTitle.value = task.title;
   editTaskDesc.value = task.description || '';
+  (document.getElementById('editTaskCategory') as HTMLInputElement).value = task.category || '';
   editTaskDue.value = task.dueDate ? formatDateInput(task.dueDate) : '';
 
   currentQuadrant = task.quadrant;
@@ -1051,6 +1080,7 @@ function saveEdit() {
 
   task.title = title;
   task.description = editTaskDesc.value.trim() || undefined;
+  task.category = (document.getElementById('editTaskCategory') as HTMLInputElement).value.trim() || undefined;
   task.quadrant = currentQuadrant;
   task.priority = currentPriority;
   task.dueDate = dateToDeadline(editTaskDue.value);
@@ -1228,7 +1258,7 @@ function openDetailModal(taskId: string) {
 
   const quadrantNames = { 1: 'Q1 重要紧急', 2: 'Q2 重要规划', 3: 'Q3 紧急次要', 4: 'Q4 低优先' };
   if (detailQuadrant) {
-    detailQuadrant.textContent = quadrantNames[task.quadrant];
+    detailQuadrant.textContent = quadrantNames[task.quadrant] + ' · ' + (task.category || '未分类');
     detailQuadrant.className = `detail-badge q${task.quadrant}`;
   }
 
@@ -1721,7 +1751,7 @@ function initEvents() {
       }
 
       // 点击任务标题查看详情
-      if (target.classList.contains('task-title')) {
+      if (target.classList.contains('task-title') || (target.closest('.task-item') && !target.closest('button,input,a'))) {
         const taskItem = target.closest<HTMLElement>('.task-item');
         const taskId = taskItem?.dataset.id;
         if (taskId && !batchModeActive) openDetailModal(taskId);

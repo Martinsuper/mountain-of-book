@@ -12,6 +12,7 @@ export interface TodoItem {
   id: string;
   title: string;
   description?: string;
+  category?: string;
   quadrant: 1 | 2 | 3 | 4;
   createdAt: number;
   updatedAt: number;
@@ -39,6 +40,7 @@ export interface UserTodoRow {
   id: string;
   user_id: string;
   title: string;
+  category: string | null;
   description: string | null;
   quadrant: number;
   priority: 'high' | 'medium' | 'low';
@@ -50,7 +52,7 @@ export interface UserTodoRow {
 }
 
 export type TodoRowInsert = Omit<UserTodoRow, 'id'> & { id?: string };
-export type TodoRowUpdate = Partial<Pick<UserTodoRow, 'title' | 'description' | 'quadrant' | 'priority' | 'due_date' | 'completed' | 'completed_at' | 'updated_at'>>;
+export type TodoRowUpdate = Partial<Pick<UserTodoRow, 'title' | 'category' | 'description' | 'quadrant' | 'priority' | 'due_date' | 'completed' | 'completed_at' | 'updated_at'>>;
 
 export interface TodoDiff {
   inserts: TodoItem[];
@@ -98,6 +100,7 @@ export function isUuid(id: string): boolean {
 // ============ 行 <-> 条目 转换 ============
 
 type SelectedRow = Pick<UserTodoRow, 'id' | 'title' | 'completed' | 'created_at' | 'updated_at'> & {
+  category: string | null;
   description: string | null;
   quadrant: number | null;
   priority: string | null;
@@ -113,6 +116,7 @@ export function rowToTodoItem(row: SelectedRow): TodoItem {
   return {
     id: row.id,
     title: row.title,
+    category: row.category || undefined,
     description: row.description ?? undefined,
     quadrant: quadrant as TodoItem['quadrant'],
     priority,
@@ -129,6 +133,7 @@ export function todoItemToInsertRow(item: TodoItem, userId: string): TodoRowInse
     id: item.id,
     user_id: userId,
     title: item.title,
+    category: item.category ?? null,
     description: item.description ?? null,
     quadrant: item.quadrant,
     priority: item.priority,
@@ -143,6 +148,7 @@ export function todoItemToInsertRow(item: TodoItem, userId: string): TodoRowInse
 export function todoItemToPatchRow(item: TodoItem): TodoRowUpdate {
   return {
     title: item.title,
+    category: item.category ?? null,
     description: item.description ?? null,
     quadrant: item.quadrant,
     priority: item.priority,
@@ -157,7 +163,7 @@ export function todoItemToPatchRow(item: TodoItem): TodoRowUpdate {
 
 function todoKey(item: TodoItem): string {
   return JSON.stringify([
-    item.title, item.description ?? null, item.quadrant, item.priority,
+    item.title, item.category ?? null, item.description ?? null, item.quadrant, item.priority,
     item.dueDate ?? null, item.completed, item.completedAt ?? null,
   ]);
 }
@@ -185,7 +191,7 @@ export const remoteTodoSync = supabase ? {
   async fetch(userId: string): Promise<TodoItem[] | null> {
     const { data, error } = await supabase!
       .from('user_todos')
-      .select('id,title,description,quadrant,priority,due_date,completed,completed_at,created_at,updated_at')
+      .select('id,title,category,description,quadrant,priority,due_date,completed,completed_at,created_at,updated_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
     if (error || !data) return null;

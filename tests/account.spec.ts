@@ -667,6 +667,34 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(mock.requests.filter(request => new URL(request.url()).pathname === '/rest/v1/user_todos')).toHaveLength(0);
   });
 
+  test('待办默认当天、分类持久化筛选和全屏详情', async ({ page }) => {
+    await mockSupabase(page, { signedIn: true });
+    await page.goto('/todo/');
+    await page.locator('#addTaskBtn').click();
+    const today = await page.evaluate(() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
+    await expect(page.locator('#taskDue')).toHaveValue(today);
+    await page.locator('#btnCancel').click();
+    await page.locator('.focus-list .edit').first().click();
+    await page.locator('#editTaskCategory').fill('工作');
+    await page.locator('#editBtnSubmit').click();
+    await expect(page.locator('.task-category')).toHaveText('工作');
+    await page.locator('#categoryFilter').selectOption('__uncategorized__');
+    await expect(page.locator('.focus-list .task-item')).toHaveCount(0);
+    await page.locator('#categoryFilter').selectOption('工作');
+    await page.locator('.focus-list .task-title').click();
+    await expect(page.locator('#detailQuadrant')).toContainText('工作');
+    await expect(page.locator('#detailModal')).toHaveClass(/show/);
+    await page.waitForTimeout(350);
+    const box = await page.locator('#detailModal > .modal').boundingBox();
+    expect(box?.width).toBe(page.viewportSize()!.width);
+    expect(box?.height).toBe(page.viewportSize()!.height);
+    await page.reload();
+    await expect(page.locator('.task-category')).toHaveText('工作');
+  });
+
   test('待办仅登录可见，另一标签页退出后立即回到登录页', async ({ page }) => {
     const mock = await mockSupabase(page, { signedIn: true });
     await page.goto('/todo/');
