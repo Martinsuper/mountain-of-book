@@ -728,7 +728,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(mock.requests.filter(request => new URL(request.url()).pathname === '/rest/v1/user_todos')).toHaveLength(0);
   });
 
-  test('待办默认当天、分类持久化筛选和全屏详情', async ({ page }) => {
+  test('待办默认当天、分类持久化筛选和详情浮框', async ({ page }) => {
     await mockSupabase(page, { signedIn: true });
     await page.goto('/todo/');
     await page.locator('#addTaskBtn').click();
@@ -740,6 +740,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await page.locator('#btnCancel').click();
     await page.locator('.focus-list .edit').first().click();
     await page.locator('#editTaskCategory').fill('工作');
+    await page.locator('#editTaskDesc').fill('重点\n\n**立即行动** <script>alert(1)</script> [链接](https://example.invalid/a) ![图](https://img.example.invalid/a.png)');
     await page.locator('#editBtnSubmit').click();
     await expect(page.locator('.task-category')).toHaveText('工作');
     await page.locator('#categoryFilter').selectOption('__uncategorized__');
@@ -748,10 +749,25 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await page.locator('.focus-list .task-title').click();
     await expect(page.locator('#detailQuadrant')).toContainText('工作');
     await expect(page.locator('#detailModal')).toHaveClass(/show/);
-    await page.waitForTimeout(350);
+    // 描述按 Markdown 渲染：加粗生效，未渲染的部分保持纯文本（列表页不解析）
+    const bold = page.locator('#detailDesc strong');
+    await expect(bold).toHaveText('立即行动');
+    await page.locator('#detailBtnCancel').click();
+    await expect(page.locator('.focus-list .task-desc')).toContainText('**立即行动**');
+    await page.locator('.focus-list .task-item').click();
+    await page.locator('#detailQuadrant').waitFor();
+    // XSS 防护：script/图片被剥离，链接保留安全协议并强制 noreferrer
+    expect(await page.locator('#detailDesc script').count()).toBe(0);
+    expect(await page.locator('#detailDesc img').count()).toBe(0);
+    const link = page.locator('#detailDesc a');
+    await expect(link).toHaveText('链接');
+    await expect(link).toHaveAttribute('rel', /noreferrer/);
+    await page.locator('#detailBtnCancel').click();
+    const viewport = page.viewportSize()!;
     const box = await page.locator('#detailModal > .modal').boundingBox();
-    expect(box?.width).toBe(page.viewportSize()!.width);
-    expect(box?.height).toBe(page.viewportSize()!.height);
+    expect(box).not.toBeNull();
+    expect(Math.round(box!.width)).toBeLessThan(viewport.width);
+    expect(Math.round(box!.height)).toBeLessThan(viewport.height);
     await page.reload();
     await expect(page.locator('.task-category')).toHaveText('工作');
   });

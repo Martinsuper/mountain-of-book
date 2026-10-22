@@ -265,9 +265,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 @media(max-width:760px){.todo-split{grid-template-columns:1fr}.todo-col-right{display:grid;grid-template-columns:1fr 1fr;gap:14px}.todo-progress{margin:0;align-self:start}.search-wrapper{flex-basis:100%}.search-input{width:100%}}@media(max-width:480px){.todo-header h1{font-size:1.5rem}.todo-subtitle{font-size:.75rem}.add-task-btn{padding:8px 10px;font-size:.75rem}.todo-more summary{font-size:.7rem;padding:8px}.todo-col-right{grid-template-columns:1fr}.task-item{padding:14px 12px;gap:8px;flex-wrap:wrap}.task-actions{margin-left:25px}.task-content{flex-basis:calc(100% - 35px)}.archive-item-time{display:none}.batch-actions-panel{width:calc(100% - 24px);flex-wrap:wrap;justify-content:center}.stats-panel{gap:16px}.task-meta{gap:5px}.todo-filter{padding:7px 6px}}
 .calendar-subscription{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem;color:var(--todo-muted)}.calendar-subscription summary{cursor:pointer;color:var(--todo-accent)}.calendar-subscription label{display:block;margin-top:10px}.calendar-subscription input[type=text]{width:100%;font-size:.65rem;padding:7px;border:1px solid var(--todo-line);border-radius:5px;background:var(--todo-bg);color:var(--todo-text);margin:5px 0}.calendar-subscription button,.calendar-day-details button{padding:5px 7px;border:1px solid var(--todo-line);border-radius:5px;font-size:.65rem;margin:4px 0;color:var(--todo-accent)}.subscription-toggle{display:flex!important;gap:7px;align-items:center}.subscription-actions{display:flex;gap:7px}.calendar-subscription p{font-size:.6rem;margin-top:7px;overflow-wrap:anywhere}.calendar-day-details{border-top:1px solid var(--todo-line);margin-top:12px;padding-top:10px;font-size:.7rem}.calendar-day-details h3{font-weight:600;margin:0 0 7px}.calendar-day-details p{font-size:.65rem;color:var(--todo-muted);margin:4px 0}.cal-cell{position:relative;min-height:42px}.holiday-marker{font-size:8px;line-height:10px;border-radius:2px;padding:0 2px}.holiday-marker.holiday{color:#348365;background:#e8f5ed}.holiday-marker.workday{color:#9c711f;background:#fff4dd}.holiday-marker.event{color:var(--todo-accent)}.dark .holiday-marker.holiday{background:#1d3b32;color:#93d1b4}.dark .holiday-marker.workday{background:#3b3020;color:#e1c081}
 .sync-status{font-size:.75rem;color:var(--todo-muted);margin:12px 0 -6px}#syncStatus:empty{display:none}.sync-status a{color:var(--todo-accent);text-decoration:underline}.import-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0;padding:10px 14px;border:1px solid var(--todo-accent);border-radius:9px;background:var(--todo-tint);font-size:.85rem;color:var(--todo-text)}.import-banner[hidden]{display:none}.import-banner button{padding:6px 10px;border-radius:7px;font-size:.75rem}.import-banner .import-actions{display:flex;gap:8px}#importConfirmBtn{background:var(--todo-accent);border:0;color:#fff}.dark #importConfirmBtn{background:#3b82f6}
-#detailModal { padding: 0; }
-#detailModal > .modal { width: 100%; max-width: none; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; display: flex; flex-direction: column; }
-#detailModal .modal-body { flex: 1; overflow-y: auto; }
+/* 任务详情浮框：居中小卡片展示，不再全屏铺满 */
+#detailModal > .modal { max-width: 420px; }
+#detailModal .modal-body { max-height: 70vh; overflow-y: auto; }
+/* 详情描述的 Markdown 富文本紧凑排版 */
+#detailDesc.rich-desc p { margin: 6px 0; }
+#detailDesc.rich-desc :is(h1,h2,h3,h4,h5,h6) { font-size: .85rem; font-weight: 600; margin: 10px 0 4px; line-height: 1.5; }
+#detailDesc.rich-desc :first-child { margin-top: 0; }
+#detailDesc.rich-desc ul, #detailDesc.rich-desc ol { margin: 6px 0; padding-left: 18px; }
+#detailDesc.rich-desc li { margin: 3px 0; }
+#detailDesc.rich-desc code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: .8em; }
+#detailDesc.rich-desc pre { background: #f3f4f6; padding: 10px; border-radius: 7px; overflow-x: auto; margin: 6px 0; }
+#detailDesc.rich-desc pre code { background: transparent; padding: 0; }
+#detailDesc.rich-desc blockquote { border-left: 3px solid #e5e7eb; padding-left: 10px; color: #6b7280; margin: 6px 0; }
+#detailDesc.rich-desc hr { border: 0; border-top: 1px solid #e5e7eb; margin: 8px 0; }
+#detailDesc.rich-desc a { color: #2563eb; text-decoration: underline; }
+.dark #detailDesc.rich-desc code, .dark #detailDesc.rich-desc pre { background: #111827; }
+.dark #detailDesc.rich-desc blockquote { border-color: #374151; color: #9ca3af; }
+.dark #detailDesc.rich-desc hr { border-color: #374151; }
+.dark #detailDesc.rich-desc a { color: #60a5fa; }
 .category-filter { font-size: .8rem; color: var(--todo-muted); }
 .category-filter select { padding: 8px; border: 1px solid var(--todo-line); border-radius: 8px; background: var(--todo-bg); color: var(--todo-text); max-width: 200px; }
 </style>
@@ -1254,7 +1270,6 @@ function openDetailModal(taskId: string) {
 
   if (detailModalTitle) detailModalTitle.textContent = '任务详情';
   if (detailTitle) detailTitle.textContent = task.title;
-  if (detailDesc) detailDesc.textContent = task.description || '暂无描述';
 
   const quadrantNames = { 1: 'Q1 重要紧急', 2: 'Q2 重要规划', 3: 'Q3 紧急次要', 4: 'Q4 低优先' };
   if (detailQuadrant) {
@@ -1287,7 +1302,35 @@ function openDetailModal(taskId: string) {
     detailCreatedAt.textContent = `${formatDate(task.createdAt)} ${createdDate.getHours()}:${String(createdDate.getMinutes()).padStart(2, '0')}`;
   }
 
+  void renderDetailDesc(task.description || '');
+
   showModal(detailModal!);
+}
+
+// 描述以有限 Markdown 渲染；与 cloud-article.ts 同一套 marked + DOMPurify 白名单净化，防 XSS。
+async function renderDetailDesc(description: string): Promise<void> {
+  if (!detailDesc) return;
+  if (!description.trim()) {
+    detailDesc.classList.remove('rich-desc');
+    detailDesc.textContent = '暂无描述';
+    return;
+  }
+  const [{ marked }, { default: DOMPurify }] = await Promise.all([import('marked'), import('dompurify')]);
+  detailDesc.innerHTML = DOMPurify.sanitize(marked.parse(description, { async: false }), {
+    // 待办描述只需要基础富文本：标题、列表、强调、代码、引用；不开放图片/表格，避免外联资源
+    ALLOWED_TAGS: ['p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'strong', 'em', 'del', 'blockquote', 'pre', 'code', 'hr', 'a'],
+    ALLOWED_ATTR: ['href', 'title'],
+    ALLOW_DATA_ATTR: false,
+  });
+  // 链接只保留安全协议，并强制 noreferrer
+  detailDesc.querySelectorAll('a').forEach(link => {
+    const href = link.getAttribute('href') || '';
+    if (!/^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(href)) link.removeAttribute('href');
+    link.rel = 'noreferrer noopener';
+    link.referrerPolicy = 'no-referrer';
+    link.target = '_blank';
+  });
+  detailDesc.classList.add('rich-desc');
 }
 
 // Undo 功能
