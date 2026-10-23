@@ -28,7 +28,7 @@ async function expectNoPrivateUI(page: Page) {
   for (const selector of ['#account-private', '#private-article', '#admin-panel', '#grant-panel']) {
     await expect(page.locator(selector)).not.toBeVisible();
   }
-  for (const selector of ['#member-articles', '#user-todos', '#bookmarks', '#admin-articles', '#article-grants', '#private-title', '#private-body']) {
+  for (const selector of ['#member-articles', '#bookmarks', '#admin-articles', '#article-grants', '#private-title', '#private-body']) {
     if (await page.locator(selector).count()) await expect(page.locator(selector)).toBeEmpty();
   }
   await expect(page.getByRole('button', { name: /注册|sign up|signup/i })).toHaveCount(0);
@@ -94,7 +94,7 @@ test('账号静态 HTML 不包含用户记录、受限正文或编辑器预填�
     const shell = await page.evaluate(source => {
       const document = new DOMParser().parseFromString(source, 'text/html');
       return {
-        records: [...document.querySelectorAll('#member-articles, #user-todos, #bookmarks, #admin-articles, #article-grants, #private-title, #private-body')].map(element => element.textContent?.trim()),
+        records: [...document.querySelectorAll('#member-articles, #bookmarks, #admin-articles, #article-grants, #private-title, #private-body')].map(element => element.textContent?.trim()),
         panelsHidden: [...document.querySelectorAll('#account-private, #private-article, #admin-panel, #grant-panel, #login-form')].every(element => element.hasAttribute('hidden')),
         values: [...document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('.account-shell input:not([type="hidden"]), .account-shell textarea')].map(element => element.value),
       };
@@ -258,22 +258,18 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     }
   });
 
-  test('个人中心不再展示最近阅读，设置和待办按需展开且移动端不溢出', async ({ page }) => {
+  test('个人中心不再展示最近阅读，设置按需展开且移动端不溢出', async ({ page }) => {
     await mockSupabase(page, { signedIn: true });
     await page.goto('/account/');
     await expect(page.locator('#account-email')).toHaveText('reader@example.invalid');
-    await expect(page.locator('#user-todos li').first()).toBeAttached();
     await expect(page.getByRole('heading', { name: '最近阅读' })).toHaveCount(0);
     await expect(page.locator('#reading-history')).toHaveCount(0);
     await expect(page.locator('#password-form')).not.toBeVisible();
-    await expect(page.locator('#todo-form')).not.toBeVisible();
     await expect(page.locator('#account-status')).toBeEmpty();
     await page.getByText('账号设置', { exact: true }).click();
     await expect(page.locator('#password-form')).toBeVisible();
     await expect(page.locator('#passkey-heading')).toBeVisible();
     await expect(page.locator('#register-passkey')).toBeVisible();
-    await page.getByText('我的待办', { exact: true }).click();
-    await expect(page.locator('#todo-form')).toBeVisible();
     await page.setViewportSize({ width: 375, height: 812 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: 'test-results/account-mobile.png', fullPage: true });
@@ -396,33 +392,6 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__privateXss)).toBeUndefined();
     expect(externalImages).toEqual([]);
     await expect(page.locator('#private-save-status')).toHaveCount(0);
-    expect(mock.unexpected).toEqual([]);
-  });
-
-  test('个人待办新增、切换完成、删除均限定当前账号', async ({ page }) => {
-    const mock = await mockSupabase(page, { signedIn: true });
-    await page.goto('/account/');
-    await expect(page.locator('#user-todos li').first()).toBeAttached();
-    await page.getByText('我的待办', { exact: true }).click();
-    await page.getByLabel('新待办', { exact: true }).fill('Added synthetic task');
-    await page.getByRole('button', { name: '添加待办', exact: true }).click();
-    const item = page.locator('#user-todos li').filter({ hasText: 'Added synthetic task' });
-    await expect(item).toBeVisible();
-    await item.getByRole('button', { name: '标记完成', exact: true }).click();
-    await expect(item).toContainText('已完成：Added synthetic task');
-    await item.getByRole('button', { name: '标记未完成', exact: true }).click();
-    await expect(item).not.toContainText('已完成：');
-    await item.getByRole('button', { name: '删除', exact: true }).click();
-    await expect(item).toHaveCount(0);
-    await expect(page.locator('#user-todos')).toContainText('Synthetic personal task');
-    const writes = mock.requests.filter(request => new URL(request.url()).pathname === '/rest/v1/user_todos' && request.method() !== 'GET' && request.method() !== 'OPTIONS');
-    expect(writes.map(request => request.method())).toEqual(['POST', 'PATCH', 'PATCH', 'DELETE']);
-    expect(writes[0].postDataJSON()).toMatchObject({ user_id: userID, title: 'Added synthetic task' });
-    for (const request of writes.slice(1)) {
-      const url = new URL(request.url());
-      expect(url.searchParams.get('user_id')).toBe(`eq.${userID}`);
-      expect(url.searchParams.get('id')).toBe('eq.added-todo');
-    }
     expect(mock.unexpected).toEqual([]);
   });
 
@@ -974,7 +943,6 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     await expectNoPrivateUI(page);
     await page.goto('/account/');
     await expect(page.locator('#account-email')).toHaveText('reader@example.invalid');
-    await expect(page.locator('#user-todos')).toContainText('Synthetic personal task');
     await expect(page.locator('#bookmarks')).toHaveCount(0);
     await page.getByRole('button', { name: '退出登录' }).click();
     await expect(page.locator('#account-status')).toHaveText('');

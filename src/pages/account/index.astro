@@ -38,12 +38,6 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
       <button type="button" id="register-passkey">添加通行密钥</button>
       <p id="passkey-status" role="status" aria-live="polite"></p>
     </details>
-    <details id="todo-settings" class="todo-settings">
-      <summary>我的待办</summary>
-      <form id="todo-form"><label>新待办<input name="text" placeholder="记下一件要做的事" required maxlength="500" /></label><button>添加待办</button></form>
-      <ul id="user-todos"></ul>
-      <p class="todo-entry hint">这里的待办与 <a href="/todo/">待办清单页</a> 是同一份数据；象限、日历与进度视图在该页维护。</p>
-    </details>
   </div>
 </AccountShell><ConfirmDialog /></BaseLayout>
 <style is:global>
@@ -52,7 +46,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
   .account-shell:has(#account-private) #account-status:empty { display:none; }
   .account-shell #login-form { max-width:420px;gap:16px; }
   .account-shell .login-actions { display:flex;gap:12px;align-items:center; }
-  .account-shell .login-primary, .account-shell #password-form button, .account-shell #todo-form button { background:#2563eb;border-color:#2563eb;color:white;padding-inline:24px; }
+  .account-shell .login-primary, .account-shell #password-form button { background:#2563eb;border-color:#2563eb;color:white;padding-inline:24px; }
   .account-shell #forgot-password { border:0;color:var(--link-color); }
   .account-shell .email-fallback { border-top:1px solid var(--account-rule);padding-top:20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px; }
   .account-shell #email-login { border:0;color:var(--link-color);padding:6px 0; }
@@ -60,21 +54,15 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
   .account-shell #account-email { min-width:0;overflow-wrap:anywhere;font-size:.95rem; }
   .account-shell .quiet-action { border:0;color:var(--account-muted);font-size:.85rem;padding:6px 0;flex-shrink:0; }
   .account-shell .quiet-action:hover { color:var(--link-color);text-decoration:underline; }
-  .account-shell :is(.password-settings,.todo-settings) summary { width:fit-content;cursor:pointer;color:var(--account-muted);font-size:.9rem;padding:12px 0; }
+  .account-shell .password-settings summary { width:fit-content;cursor:pointer;color:var(--account-muted);font-size:.9rem;padding:12px 0; }
   .account-shell details[open] > summary { color:var(--link-color); }
   .account-shell .password-settings { margin-top:4px; }
   .account-shell #password-form { max-width:420px; }
   .account-shell #password-status { font-size:14px; }
   .account-shell #password-status:empty { display:none; }
-  .account-shell .todo-entry { margin-top:12px; }
-  .account-shell .todo-entry a { color:var(--link-color); }
-  .account-shell .todo-settings { border-top:1px solid var(--account-rule);margin-top:32px;padding-top:8px; }
-  .account-shell #todo-form { grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px; }
-  .account-shell #user-todos li { border-color:var(--account-rule);line-height:1.8; }
   .account-shell:has(#account-private) :is(button,summary,input):focus-visible { outline:2px solid #2563eb;outline-offset:4px; }
   @media(max-width:520px) {
     .account-shell .account-identity { align-items:baseline;gap:12px; }
-    .account-shell #todo-form { grid-template-columns:1fr; }
   }
 
   /* Keep the signed-out experience focused without changing account tools. */
@@ -170,7 +158,6 @@ let generation = 0;
 const passwordForm = document.getElementById('password-form') as HTMLFormElement;
 const passwordStatus = document.getElementById('password-status')!;
 const settings = document.getElementById('account-settings') as HTMLDetailsElement;
-const todos = document.getElementById('todo-settings') as HTMLDetailsElement;
 const passwordInput = login.elements.namedItem('password') as HTMLInputElement;
 const passkeyLoginRow = document.getElementById('passkey-login-row') as HTMLDivElement;
 const passkeyList = document.getElementById('passkey-list')!;
@@ -183,11 +170,11 @@ async function render() {
   const current = ++generation;
   panel.hidden = true;
   document.getElementById('account-email')!.textContent = '';
-  for (const id of ['user-todos', 'passkey-list']) document.getElementById(id)!.replaceChildren();
+  passkeyList.replaceChildren();
   if (!supabase) { status.textContent = configurationMessage; return; }
   const { data: { user }, error } = await supabase.auth.getUser();
   if (current !== generation) return;
-  if (!user) { settings.open = false; todos.open = false; login.hidden = false; status.textContent = error && !error.message.includes('Auth session missing') ? '登录已失效，请重新登录。' : ''; return; }
+  if (!user) { settings.open = false; login.hidden = false; status.textContent = error && !error.message.includes('Auth session missing') ? '登录已失效，请重新登录。' : ''; return; }
   if (returnTo && !resetFlow && !recoveryMode) { location.replace(returnTo); return; }
   login.hidden = true; passwordInput.value = ''; panel.hidden = false;
   if (recoveryMode) {
@@ -199,25 +186,7 @@ async function render() {
     passwordForm.querySelector('input')?.focus();
   }
   document.getElementById('account-email')!.textContent = user.email || '已登录';
-  status.textContent = '正在加载个人数据…';
-  const result = await supabase.from('user_todos').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-  if (current !== generation) return;
-  status.textContent = result.error ? '个人数据加载失败，请检查网络后刷新重试。' : '';
-  const list = document.getElementById('user-todos')!;
-  if (!result.data?.length) {
-    const item = document.createElement('li'); item.className = 'empty-state';
-    item.textContent = result.error ? '暂时无法加载，请刷新重试。' : '还没有待办。';
-    list.append(item);
-  }
-  result.data?.forEach(row => {
-    const item = document.createElement('li');
-    const toggle = document.createElement('button'); toggle.textContent = row.completed ? '标记未完成' : '标记完成';
-    item.append(document.createTextNode((row.completed ? '已完成：' : '') + row.title), toggle);
-    toggle.onclick = () => mutate(() => supabase!.from('user_todos').update({ completed: !row.completed }).eq('id', row.id).eq('user_id', user.id));
-    const remove = document.createElement('button'); remove.textContent = '删除';
-    remove.onclick = () => mutate(() => supabase!.from('user_todos').delete().eq('user_id', user.id).eq('id', row.id));
-    item.append(remove); list.append(item);
-  });
+  status.textContent = '';
   if (webauthnAvailable) await renderPasskeys(current);
 }
 type PasskeyItem = { id: string; friendly_name?: string; created_at: string; last_used_at?: string };
@@ -360,16 +329,6 @@ document.getElementById('sign-out')!.onclick = () => mutate(async () => {
   const result = await supabase!.auth.signOut();
   if (!result.error) { panel.hidden = true; passwordForm.reset(); passwordStatus.textContent = ''; await render(); }
   return result;
-});
-document.getElementById('todo-form')!.addEventListener('submit', event => {
-  event.preventDefault(); const form = event.currentTarget as HTMLFormElement;
-  const text = String(new FormData(form).get('text')).trim(); if (!text) return;
-  void mutate(async () => {
-    const { data: { user } } = await supabase!.auth.getUser();
-    if (!user) throw new Error('请登录');
-    const result = await supabase!.from('user_todos').insert({ user_id: user.id, title: text });
-    if (!result.error) form.reset(); return result;
-  });
 });
 // Defer Supabase calls out of the auth callback to avoid auth-lock deadlocks.
 supabase?.auth.onAuthStateChange((event) => {
