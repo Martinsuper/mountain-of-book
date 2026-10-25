@@ -43,3 +43,6 @@ docs/diagrams/
 # 本地 agent 生成物
 .commandcode/
 
+
+# ZCode local session config
+.zcode/

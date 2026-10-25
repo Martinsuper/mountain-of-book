@@ -159,7 +159,7 @@ Secrets 不进配置文件：`wrangler secret put SUPABASE_URL` 与 `wrangler se
 | 401 | `missing_token` / `invalid_token` | 无头 / 哈希查不到或已吊销 |
 | 400 | `bad_request` | body 非法、limit 越界、路径参数非 UUID |
 | 404 | `not_found` | id 不存在或不属于该用户（两者不区分，避免探测） |
-| 429 | `rate_limited` | 超出限流 |
+| 429 | `rate_limited` | 超出限流（响应带 `Retry-After: 60` 头） |
 | 500 | `server_error` | 上游 Supabase 失败 |
 
 ### 实现要点（安全关键）
@@ -189,12 +189,58 @@ const hash = hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(
 await supabase.from('device_tokens').insert({ name, token_hash: hash, token_prefix: token.slice(0, 10) });
 ```
 
+## 客户端对接契约
+
+本节是给任何客户端（ESP32 固件、脚本、第三方接入）的对接事实标准，与 `workers/device-api/worker.mjs` 及其测试保持一致；如有冲突，以代码和测试为准。
+
+### 字段与类型
+
+响应中的 todo 对象**恒有下列全部键**，可空字段一律显式 `null`，不会缺省：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string (UUID) | 待办 id，PATCH 路径参数用同一个值 |
+| `title` | string | 标题 |
+| `description` | string \| null | 描述原文（可能含 Markdown 语法，设备端按纯文本展示即可） |
+| `category` | string \| null | 自定义分类 |
+| `quadrant` | int 1-4 | 1=重要紧急（立即处理）、2=重要规划（计划安排）、3=紧急次要（委托简化）、4=低优先（暂缓处理） |
+| `priority` | `"high"` \| `"medium"` \| `"low"` | 优先级 |
+| `dueDate` | ISO 8601 \| null | 截止时间；保留写入端时区偏移（网页端按本地日末写入，如 `+08:00`）。展示时转本地日期，勿假设恒为 UTC |
+| `completed` | boolean | 完成状态 |
+| `completedAt` | ISO 8601 \| null | 完成时刻，未完成为 `null` |
+| `updatedAt` | ISO 8601 | 最后修改时刻，UTC（`Z` 结尾） |
+
+顶层字段：`ok`（恒 `true`）、`serverTime`（响应生成时刻，UTC `Z` 结尾，可用于设备粗对时，无精度保证）、`count`（本次返回条数）、`todos`（数组）。
+
+时间统一为 ISO 8601：`completedAt` / `updatedAt` / `serverTime` 恒为 UTC；`dueDate` 可能带 `+08:00` 类偏移。用标准解析器解析，不要对时间字符串做字典序比较。
+
+### 限流（软限制）
+
+- GET 60 次/分钟/设备，PATCH 30 次/分钟/设备；按 Cache API 每 PoP 尽力而为计数，跨 PoP 有偏差，**不是**精确硬限制。
+- 超限返回 429，响应带 `Retry-After: 60` 头：按该头等待后重试；立即重试可能仍被拒。
+- 正常用法（1–5 分钟轮询 + 按键触发 PATCH）距离额度很远，无需客户端主动节流到更低频率。
+
+### 幂等与排序副作用
+
+- PATCH 对同一状态重复发送（如对已完成的待办再发 `{"completed": true}`）也会成功，并**重写 `updatedAt`**，排序随之变化。客户端应只在状态真正变化时发送 PATCH。
+
+### 错误处理约定（设备端）
+
+| 响应 | 设备端行为 |
+| --- | --- |
+| 401 `invalid_token` | 令牌无效或已吊销：**停止轮询**，屏显"待重新配置"，等待用户在账号页重新生成令牌。401 不是暂时性错误，不要退避重试。 |
+| 429 `rate_limited` | 按 `Retry-After` 等待后重试。 |
+| 5xx `server_error` | 上游故障：保留上次成功数据，按分钟级间隔重试。 |
+| 网络失败 | 同 5xx 处理。 |
+
+其他：无 CORS（非浏览器客户端直连即可，无需预检）；PATCH 请求须 `Content-Type: application/json`；响应一律 UTF-8 JSON。
+
 ## ESP32 对接约定
 
 - **地址**：`https://todo-api.younote.top/api/todos`，认证仅 `Authorization: Bearer <token>` 头，不提供 query 参数形式（token 不进日志）。
 - **轮询**：1–5 分钟一次 GET；按键交互时 PATCH。限流余量足够。
 - **无需实现 JWT 刷新**——这是设备 token 相对直连 Supabase 的主要收益。
-- **TLS**：`WiFiClientSecure` 预置 Cloudflare 证书链的根证书（`GTS Root R4` / `GTS Root R1`，部署后从实际证书确认），不要关闭证书校验。
+- **TLS**：`WiFiClientSecure` 预置根证书 `GTS Root R4`（2026-10-25 实测线上链路：`younote.top` → `WE1` → `GTS Root R4`），不要关闭证书校验。
 - **存储**：token 存 NVS（Preferences）；JSON 用 ArduinoJson，50 条紧凑 JSON 约 5–8 KB，filter 只留需要的字段可再省一半。
 - **屏显建议**：只渲染 `title` + quadrant/priority 图标 + dueDate（转本地日），completed 的移入底部或直接过滤。
 
@@ -215,6 +261,14 @@ curl -s -X PATCH https://todo-api.younote.top/api/todos/<id> \
 ```
 
 6. 本文档随实施补全实际部署信息（最终域名、secrets 名称）。
+
+### 部署状态（2026-10-25）
+
+- ✅ 迁移已应用（`device_tokens` 表在线可查）
+- ✅ 账号页设备管理已上线：`https://fblog.younote.top/account/` →「设备接入」
+- ✅ Worker 已部署并绑定 `todo-api.younote.top`，secrets `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` 已配置
+- ✅ 服务端验证通过：无头 401 `missing_token`、坏格式 401 `invalid_token`、格式正确未签发令牌 401（查库链路正常）、域名证书链确认为 `GTS Root R4`
+- ⬜ 待完成：签发真实设备令牌并完成 GET/PATCH 端到端验证；ESP32 固件对接
 
 ## 风险与边界
 
