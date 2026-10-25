@@ -1,0 +1,5 @@
+name = "mountain-of-book-device-api"
+main = "worker.mjs"
+compatibility_date = "2026-01-01"
+account_id = "aca40f02c77ec86bd4e9855887b9ee15"
+routes = [{ pattern = "todo-api.younote.top", custom_domain = true }]

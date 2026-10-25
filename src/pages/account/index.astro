@@ -38,6 +38,20 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
       <button type="button" id="register-passkey">添加通行密钥</button>
       <p id="passkey-status" role="status" aria-live="polite"></p>
     </details>
+    <details id="device-access" class="password-settings">
+      <summary>设备接入</summary>
+      <h2>待办设备令牌</h2>
+      <p class="hint">为 ESP32 等外部设备生成长效令牌：设备只能读取待办列表和翻转完成状态，不能创建、删除或访问其他账号。令牌可随时吊销，明文只在生成时显示一次。</p>
+      <ul id="device-list"></ul>
+      <form id="device-form">
+        <label>设备名称<input name="device-name" type="text" required maxlength="40" placeholder="例如：ESP32 桌面屏" /></label>
+        <button type="submit">生成令牌</button><p id="device-status" role="status" aria-live="polite"></p>
+      </form>
+      <div id="device-reveal" hidden>
+        <p class="hint">请立即复制保存，关闭后将无法再次查看：</p>
+        <p class="device-token-row"><code id="device-token-value"></code><button type="button" id="device-copy">复制</button><button type="button" id="device-done">我已保存</button></p>
+      </div>
+    </details>
   </div>
 </AccountShell><ConfirmDialog /></BaseLayout>
 <style is:global>
@@ -46,7 +60,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
   .account-shell:has(#account-private) #account-status:empty { display:none; }
   .account-shell #login-form { max-width:420px;gap:16px; }
   .account-shell .login-actions { display:flex;gap:12px;align-items:center; }
-  .account-shell .login-primary, .account-shell #password-form button { background:#2563eb;border-color:#2563eb;color:white;padding-inline:24px; }
+  .account-shell .login-primary, .account-shell #password-form button, .account-shell #device-form button { background:#2563eb;border-color:#2563eb;color:white;padding-inline:24px; }
   .account-shell #forgot-password { border:0;color:var(--link-color); }
   .account-shell .email-fallback { border-top:1px solid var(--account-rule);padding-top:20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px; }
   .account-shell #email-login { border:0;color:var(--link-color);padding:6px 0; }
@@ -128,6 +142,23 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
   .account-shell #register-passkey { margin: 14px 0 0; }
   .account-shell #passkey-status { font-size: 14px; }
   .account-shell #passkey-status:empty { display: none; }
+  /* 设备接入：列表与令牌展示沿用通行密钥段落的风格。 */
+  .account-shell #device-form { max-width: 420px; }
+  .account-shell #device-list { gap: 0; }
+  .account-shell #device-list li {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    border: 0; border-bottom: 1px solid var(--account-rule); border-radius: 0; padding: 14px 0;
+  }
+  .account-shell #device-list li .device-label { min-width: 0; overflow-wrap: anywhere; font-size: .9rem; }
+  .account-shell #device-list li button { margin: 0; border: 0; padding: 4px 0; color: var(--account-muted); font-size: .8rem; flex-shrink: 0; }
+  .account-shell #device-list li button:hover { color: var(--link-color); text-decoration: underline; }
+  .account-shell #device-list .empty-state { justify-content: center; color: var(--account-muted); padding: 20px 0; font-size: .9rem; }
+  .account-shell .device-badge { font-size: .7rem; color: var(--account-muted); border: 1px solid var(--account-rule); border-radius: 4px; padding: 1px 6px; flex-shrink: 0; }
+  .account-shell #device-reveal { margin-top: 14px; }
+  .account-shell .device-token-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .account-shell #device-token-value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; overflow-wrap: anywhere; user-select: all; }
+  .account-shell #device-status { font-size: 14px; }
+  .account-shell #device-status:empty { display: none; }
   .dark .account-shell:has(#login-form:not([hidden])) { background: #151e2d; border-color: #2b3749; --account-rule: #2b3749; --account-muted: #a0aec0; }
   .dark .account-shell .login-mark { background: #203354; color: #93b9ff; }
   .dark .account-shell #login-form input { background: #111a28; border-color: #3a475b; }
@@ -163,6 +194,12 @@ const passkeyLoginRow = document.getElementById('passkey-login-row') as HTMLDivE
 const passkeyList = document.getElementById('passkey-list')!;
 const passkeyStatus = document.getElementById('passkey-status')!;
 const passkeyRegister = document.getElementById('register-passkey') as HTMLButtonElement;
+const deviceList = document.getElementById('device-list')!;
+const deviceForm = document.getElementById('device-form') as HTMLFormElement;
+const deviceStatus = document.getElementById('device-status')!;
+const deviceReveal = document.getElementById('device-reveal')!;
+const deviceTokenValue = document.getElementById('device-token-value')!;
+const deviceAccess = document.getElementById('device-access') as HTMLDetailsElement;
 const webauthnAvailable = typeof window.PublicKeyCredential !== 'undefined';
 if (supabase && webauthnAvailable) passkeyLoginRow.hidden = false;
 let recoveryMode = new URLSearchParams(location.search).get('reset') === '1';
@@ -171,6 +208,9 @@ async function render() {
   panel.hidden = true;
   document.getElementById('account-email')!.textContent = '';
   passkeyList.replaceChildren();
+  deviceList.replaceChildren();
+  deviceReveal.hidden = true;
+  deviceTokenValue.textContent = '';
   if (!supabase) { status.textContent = configurationMessage; return; }
   const { data: { user }, error } = await supabase.auth.getUser();
   if (current !== generation) return;
@@ -188,6 +228,8 @@ async function render() {
   document.getElementById('account-email')!.textContent = user.email || '已登录';
   status.textContent = '';
   if (webauthnAvailable) await renderPasskeys(current);
+  // 设备列表懒加载：只在段落展开时请求。
+  if (deviceAccess.open) await renderDevices(current);
 }
 type PasskeyItem = { id: string; friendly_name?: string; created_at: string; last_used_at?: string };
 function passkeyDescription(passkey: PasskeyItem): string {
@@ -307,6 +349,85 @@ async function registerPasskeyCredential() {
   finally { passkeyBusy = false; passkeyRegister.disabled = false; }
 }
 passkeyRegister.onclick = () => void registerPasskeyCredential();
+type DeviceToken = { id: string; name: string; token_prefix: string; created_at: string; last_used_at: string | null; revoked_at: string | null };
+deviceAccess.addEventListener('toggle', () => { if (deviceAccess.open) void renderDevices(generation); });
+function deviceDescription(device: DeviceToken): string {
+  const created = new Date(device.created_at).toLocaleDateString();
+  const lastUsed = device.last_used_at ? `，最近使用 ${new Date(device.last_used_at).toLocaleString()}` : '，尚未使用';
+  return `${device.name}（${device.token_prefix}…，添加于 ${created}${lastUsed}）`;
+}
+async function renderDevices(generationAtCall: number) {
+  if (!supabase) return;
+  const { data, error } = await supabase.from('device_tokens')
+    .select('id,name,token_prefix,created_at,last_used_at,revoked_at')
+    .order('created_at', { ascending: false });
+  if (generationAtCall !== generation) return;
+  deviceList.replaceChildren();
+  const items = error ? null : (data as DeviceToken[] | null);
+  if (!items?.length) {
+    const item = document.createElement('li'); item.className = 'empty-state';
+    item.textContent = error ? '设备令牌暂时无法加载，请刷新重试。' : '尚未添加设备。';
+    deviceList.append(item); return;
+  }
+  items.forEach(device => {
+    const item = document.createElement('li');
+    const label = document.createElement('span'); label.className = 'device-label';
+    label.textContent = deviceDescription(device);
+    item.append(label);
+    if (device.revoked_at) {
+      const badge = document.createElement('span'); badge.className = 'device-badge'; badge.textContent = '已吊销';
+      item.append(badge);
+    } else {
+      const revoke = document.createElement('button'); revoke.textContent = '吊销';
+      revoke.onclick = () => void (async () => {
+        if (!(await confirmDialog({ title: '吊销设备令牌', message: `将吊销「${deviceDescription(device)}」，该设备将立即无法访问你的待办。`, confirmText: '吊销' }))) return;
+        // 只更新 revoked_at，不物理删除，保留审计记录。
+        const { error: revokeError } = await supabase!.from('device_tokens').update({ revoked_at: new Date().toISOString() }).eq('id', device.id);
+        if (revokeError) { deviceStatus.textContent = '吊销失败，请稍后重试。'; return; }
+        deviceStatus.textContent = '';
+        await renderDevices(generation);
+      })();
+      item.append(revoke);
+    }
+    deviceList.append(item);
+  });
+}
+// 令牌是 256 位随机数：bk_ 前缀 + base64url(32 字节)；库中只存 SHA-256 哈希。
+async function generateDeviceToken(): Promise<{ token: string; hash: string }> {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  let binary = '';
+  bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+  const token = 'bk_' + btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  const hash = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  return { token, hash };
+}
+let deviceBusy = false;
+deviceForm.addEventListener('submit', async event => {
+  event.preventDefault(); if (!supabase || deviceBusy) return;
+  const name = String(new FormData(deviceForm).get('device-name') ?? '').trim();
+  if (!name) return;
+  deviceBusy = true;
+  const button = deviceForm.querySelector('button')!; button.disabled = true;
+  try {
+    const { token, hash } = await generateDeviceToken();
+    const { error } = await supabase.from('device_tokens').insert({ name, token_hash: hash, token_prefix: token.slice(0, 10) });
+    if (error) { deviceStatus.textContent = '令牌生成失败，请稍后重试。'; return; }
+    deviceForm.reset();
+    deviceStatus.textContent = '';
+    deviceTokenValue.textContent = token;
+    deviceReveal.hidden = false;
+    await renderDevices(generation);
+  } catch { deviceStatus.textContent = '网络异常，令牌未能生成，请重试。'; }
+  finally { deviceBusy = false; button.disabled = false; }
+});
+document.getElementById('device-copy')!.onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(deviceTokenValue.textContent || '');
+    deviceStatus.textContent = '已复制到剪贴板，请妥善保存。';
+  } catch { deviceStatus.textContent = '复制失败，请手动选中令牌复制。'; }
+};
+document.getElementById('device-done')!.onclick = () => { deviceReveal.hidden = true; deviceTokenValue.textContent = ''; };
 let passwordBusy = false;
 passwordForm.addEventListener('submit', async event => {
   event.preventDefault(); if (!supabase || passwordBusy) return;

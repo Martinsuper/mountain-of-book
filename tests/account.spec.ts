@@ -111,6 +111,7 @@ async function mockSupabase(page: Page, options: MockOptions = {}) {
   const unexpected: string[] = [];
   let todos = [{ id: 'synthetic-todo', title: 'Synthetic personal task', completed: false, quadrant: 1, priority: 'medium' }];
   let grants: { user_id: string }[] = [];
+  let deviceTokens: { id: string; name: string; token_hash: string; token_prefix: string; created_at: string; last_used_at: string | null; revoked_at: string | null }[] = [];
   let articles = [{ id: articleID, title: privateTitle, status: options.draft ? 'draft' : 'published', visibility: options.visibility || 'restricted', created_at: '2099-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z', body: `## Test section\n\n${privateText}\n\n<script>window.__privateXss = true</script>\n\n<img src="https://private-image.invalid/secret.png" onerror="window.__privateXss = true">\n\n[unsafe](javascript:alert(1))\n\n[safe](https://example.invalid/reference)` }];
   const user = { id: userID, aud: 'authenticated', role: 'authenticated', email: 'reader@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
   if (options.signedIn) {
@@ -186,6 +187,19 @@ async function mockSupabase(page: Page, options: MockOptions = {}) {
       if (url.searchParams.has('article_path')) return respond(null);
       return respond([{ article_path: 'javascript:alert(1)', title: 'Unsafe personal link' }, { article_path: `/members/read/?id=${articleID}`, title: privateTitle }]);
     }
+    if (path === '/rest/v1/device_tokens') {
+      if (request.method() === 'GET') return respond(deviceTokens);
+      if (request.method() === 'POST') {
+        const row = { ...request.postDataJSON(), id: 'device-token-1', created_at: '2026-10-24T00:00:00Z', last_used_at: null, revoked_at: null };
+        deviceTokens = [row, ...deviceTokens];
+        return respond([row], 201);
+      }
+      if (request.method() === 'PATCH') {
+        const id = url.searchParams.get('id')?.replace(/^eq\./, '');
+        deviceTokens = deviceTokens.map(row => row.id === id ? { ...row, ...request.postDataJSON() } : row);
+        return respond(null);
+      }
+    }
     unexpected.push(`${request.method()} ${url.pathname}`);
     return respond({ message: 'Unexpected mock request' }, 500);
   });
@@ -256,6 +270,33 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
       await expect(page.locator('#account-private')).toBeVisible();
       expect(new URL(page.url()).pathname).toBe('/account/');
     }
+  });
+
+  test('设备接入：令牌仅生成时可见一次，吊销后立即失效', async ({ page }) => {
+    const mock = await mockSupabase(page, { signedIn: true });
+    await page.goto('/account/');
+    await page.locator('#device-access summary').click();
+    await expect(page.locator('#device-list')).toContainText('尚未添加设备。');
+    await page.getByLabel('设备名称').fill('ESP32 桌面屏');
+    await page.getByRole('button', { name: '生成令牌' }).click();
+    await expect(page.locator('#device-reveal')).toBeVisible();
+    const token = await page.locator('#device-token-value').textContent();
+    expect(token).toMatch(/^bk_[A-Za-z0-9_-]{43}$/);
+    // 库里只存 SHA-256 哈希与前 10 位前缀，明文不落库。
+    const insert = mock.requests.find(request => request.method() === 'POST' && new URL(request.url()).pathname === '/rest/v1/device_tokens');
+    const payload = insert?.postDataJSON();
+    expect(payload?.token_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(payload?.token_prefix).toHaveLength(10);
+    expect(JSON.stringify(payload)).not.toContain(token!);
+    await page.locator('#device-done').click();
+    await expect(page.locator('#device-reveal')).toBeHidden();
+    await expect(page.locator('#device-list')).toContainText('ESP32 桌面屏');
+    await page.locator('#device-list').getByRole('button', { name: '吊销' }).click();
+    await expect(page.locator('#app-confirm')).toBeVisible();
+    await page.locator('#app-confirm-ok').click();
+    await expect(page.locator('#device-list')).toContainText('已吊销');
+    await expect(page.locator('#device-list').getByRole('button', { name: '吊销' })).toHaveCount(0);
+    expect(mock.unexpected).toEqual([]);
   });
 
   test('个人中心不再展示最近阅读，设置按需展开且移动端不溢出', async ({ page }) => {
