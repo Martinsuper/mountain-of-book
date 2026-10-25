@@ -8,12 +8,14 @@
 |----|-----|
 | MCP 源码位置 | `<仓库根>/mcp/` |
 | 入口文件 | `<仓库根>/mcp/dist/index.js`（构建产物） |
-| 传输方式 | stdio（本地进程，零网络依赖） |
-| 数据源 | `src/content/posts/*.md`（本地 markdown 源文件） |
+| 传输方式 | stdio（本地进程；云端工具访问 Supabase） |
+| 数据源 | `src/content/posts/*.md`（本地 Markdown）+ Supabase `articles` 表（云端文章） |
 | Node.js 要求 | ≥ 20 |
-| 工具数量 | 10 个 |
+| 工具数量 | 19 个 |
 
 ### 工具一览
+
+**Markdown 文章（名称不含 cloud）：**
 
 | 工具 | 功能 |
 |------|------|
@@ -25,15 +27,36 @@
 | `set_draft` | 发布（draft: false）/ 转回草稿（draft: true） |
 | `delete_post` | 删除文章，必须显式传 `confirm: true` |
 | `check_plantuml` | 用本地 PlantUML JAR 校验文章中的 PlantUML 语法 |
-| `get_style_guide` | 返回写作规范（分类白名单、命名规则、5 类文章骨架） |
+| `get_style_guide` | 返回写作规范（内容源选择、分类白名单、命名规则、5 类文章骨架） |
 | `site_stats` | 站点统计：总数、草稿数、分类分布、热门标签 |
 
-内置约束（与 `src/content/config.ts` 的 zod schema 和 `src/lib/categories.ts` 一致，后者是唯一事实来源）：
+**云端文章（`*_cloud_*` 工具族，需配置站长凭据，见下文「云端凭据配置」）：**
 
-- 分类白名单：`AI 工程` / `开发工具` / `软件工程` / `应用开发`；设置 `category` 时 `subcategory` 必填且须属于分类树
-- slug 只允许小写英文/数字 + 连字符；含中文的标题必须显式提供 slug
-- 标题 50 字、标签 1-5 个等均为建议项（工具会提示，不阻塞保存）；新文章默认 `draft: true`
-- 写入采用「临时文件 + rename」原子写，防并发损坏；slug 路径穿越校验与 astro.config.mjs 一致
+| 工具 | 功能 |
+|------|------|
+| `list_cloud_posts` | 列出云端文章，按状态/可见范围/标题关键词过滤 |
+| `search_cloud_posts` | 检索云端文章（标题权重最高），返回分数与摘要 |
+| `read_cloud_post` | 按 UUID 读取全文，阅读地址为 `/posts/read/?id=<uuid>` |
+| `create_cloud_post` | 创建云端文章，默认草稿 + 登录可见，保存即生效无需部署 |
+| `update_cloud_post` | 更新标题和/或正文 |
+| `set_cloud_status` | 发布（立即生效）/ 转回草稿（立即下线） |
+| `set_cloud_visibility` | 设置可见范围（登录可见 / 公开） |
+| `delete_cloud_post` | 永久删除数据库行，必须显式传 `confirm: true` |
+| `grant_cloud_post` | 给历史 restricted 文章按邮箱追加授权用户 |
+
+内置约束：
+
+- Markdown 侧与 `src/content/config.ts` 的 zod schema 和 `src/lib/categories.ts` 一致（后者是唯一事实来源）：
+  - 分类白名单：`AI 工程` / `开发工具` / `软件工程` / `应用开发`；设置 `category` 时 `subcategory` 必填且须属于分类树
+  - slug 只允许小写英文/数字 + 连字符；含中文的标题必须显式提供 slug
+  - 标题 50 字、标签 1-5 个等均为建议项（工具会提示，不阻塞保存）；新文章默认 `draft: true`
+  - 写入采用「临时文件 + rename」原子写，防并发损坏；slug 路径穿越校验与 astro.config.mjs 一致
+- 云端侧与 `supabase/migrations/` 的 RLS 策略和 `/account/admin` 管理页语义一致：
+  - 凭据未配置时云端工具返回配置指引，Markdown 工具不受影响
+  - 写入用站长账号（`site_admins` 成员）登录，RLS 仍然生效；新文章默认草稿 + 登录可见
+  - `restricted`（指定账号可见）是历史存量专用：不可新建，只能对存量文章用 `grant_cloud_post` 授权
+  - 云端阅读页不渲染 PlantUML/Mermaid，正文含相关代码块时工具会返回 styleWarnings
+- 两个内容源互不同步，同一篇内容不要两边重复维护
 
 > 注意：MCP 只修改本地文件。**发布 = 自行 `git commit` + `push` 到 main**，由 GitHub Actions 构建部署，MCP 不做任何 git 操作。
 
@@ -70,7 +93,41 @@ curl -L -o bin/plantuml.jar https://github.com/plantuml/plantuml/releases/downlo
 java -jar bin/plantuml.jar -version   # 验证
 ```
 
-### 4. 注册到 agent
+### 4.（仅需要云端工具时）配置站长凭据
+
+`*_cloud_*` 工具族需要 Supabase 站长账号凭据；不配置时只有云端工具不可用，其余 10 个工具照常工作。
+
+凭据解析优先级：**MCP 配置的 env > `BLOG_ROOT/.env.local` > `BLOG_ROOT/.env`**（后两个文件已被 gitignore）。
+
+| 变量 | 说明 |
+|------|------|
+| `BLOG_SUPABASE_URL` | 项目 URL（缺省回退站点同名 `PUBLIC_SUPABASE_URL`） |
+| `BLOG_SUPABASE_ANON_KEY` | anon key（缺省回退 `PUBLIC_SUPABASE_ANON_KEY`；两者本就是公开值） |
+| `BLOG_SUPABASE_ADMIN_EMAIL` | 站长账号邮箱（须在 `site_admins` 表中） |
+| `BLOG_SUPABASE_ADMIN_PASSWORD` | 站长账号密码 |
+
+推荐写进 MCP 配置的 `env` 字段（以 Cursor 为例，其他 agent 的 JSON 结构相同）：
+
+```json
+{
+  "mcpServers": {
+    "book-blog": {
+      "command": "node",
+      "args": ["/新电脑路径/mountain-of-book/mcp/dist/index.js"],
+      "env": {
+        "BLOG_SUPABASE_URL": "https://xxx.supabase.co",
+        "BLOG_SUPABASE_ANON_KEY": "eyJ...",
+        "BLOG_SUPABASE_ADMIN_EMAIL": "you@example.com",
+        "BLOG_SUPABASE_ADMIN_PASSWORD": "..."
+      }
+    }
+  }
+}
+```
+
+凭据只留在本机 MCP 进程内；写入权限由 Supabase RLS 的站长策略把关，与浏览器管理页 `/account/admin` 等价。
+
+### 5. 注册到 agent
 
 路径必须指向**这台电脑**上的 clone 位置（每台电脑的绝对路径不同）。
 
@@ -111,7 +168,7 @@ command = "node"
 args = ["/新电脑路径/mountain-of-book/mcp/dist/index.js"]
 ```
 
-### 5. 验证连接
+### 6. 验证连接
 
 ```bash
 opencode mcp list        # 应显示 ✓ book-blog  connected
@@ -133,7 +190,10 @@ Claude Code 在会话内输入 `/mcp` 确认；OpenCode 用 `/mcps` 查看。
 | 「搜一下关于 mcp 的文章」 | `search_posts` |
 | 「写一篇原理解析型的《xxx 入门》，存成草稿」 | `get_style_guide` → `create_post`（自动生成合规 frontmatter + 骨架） |
 | 「这篇里的 PlantUML 都能渲染吗？」 | `check_plantuml` |
-| 「把 xxx 发布」 | `update_post(draft: false)`，之后仍需自行 push |
+| 「把 xxx 发布」 | `set_draft(draft: false)`，之后仍需自行 push |
+| 「记一条登录后才能看的学习笔记：……」 | `create_cloud_post`（保存即生效，无需 push） |
+| 「把我上次那篇云端笔记发布」 | `list_cloud_posts` → `set_cloud_status(published)` |
+| 「删掉那篇云端草稿」 | `delete_cloud_post(confirm: true)` |
 
 在 OpenCode Code Mode 下工具名形如 `tools.book_blog.create_post(...)`；agent 会自行处理。
 
@@ -143,7 +203,7 @@ Claude Code 在会话内输入 `/mcp` 确认；OpenCode 用 `/mcps` 查看。
 
 ## 多机注意事项
 
-1. **内容不自动同步**：MCP 只改本机 clone 的文件。多台电脑都写作时，写作前先 `git pull`，写完尽快 `git push`，避免分叉。
+1. **Markdown 内容不自动同步**：Markdown 工具只改本机 clone 的文件。多台电脑都写作时，写作前先 `git pull`，写完尽快 `git push`，避免分叉。云端文章存在 Supabase，各电脑读写的是同一份数据，无此问题。
 2. **不要手动改 `dist/`**：改了也会在下次构建时被覆盖。改逻辑请改 `mcp/src/` 后重新构建。
 3. `check_plantuml` 依赖 Java 11+；macOS 上如果报 `libfontmanager`/`libglib` 加载错误，执行 `brew link glib` 可修复（Homebrew 符号链接丢失导致的已知问题）。
 
@@ -151,10 +211,16 @@ Claude Code 在会话内输入 `/mcp` 确认；OpenCode 用 `/mcps` 查看。
 
 ## 冒烟测试（可选但推荐）
 
-新电脑装完建议跑一遍自检，共 21 项，会临时创建一篇测试文章并在结束后删除：
+新电脑装完建议跑一遍自检。Markdown 用例共 21 项，会临时创建一篇测试文章并在结束后删除；探测到云端凭据时会自动追加云端用例（临时创建云端文章并在结束后删除）：
 
 ```bash
 cd mcp
 npm run smoke 2>&1 | grep -v '^\[server\]'
-# 预期最后一行：全部通过
+# 预期最后一行：全部通过（未配置云端凭据时中间会有 SKIP 提示，属正常）
+```
+
+云端工具另有无需真实凭据的本地联调（内嵌最小 Supabase mock，覆盖配置回退、登录失败、CRUD 全链路 22 项）：
+
+```bash
+npm run smoke:cloud 2>&1 | grep -v '^\[server\]'
 ```

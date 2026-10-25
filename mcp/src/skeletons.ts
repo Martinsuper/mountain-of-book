@@ -60,6 +60,12 @@ export function renderSkeleton(name: string): string {
 export function styleGuideText(): string {
   return `# 书山有路写作规范速查
 
+## 内容源选择（先读）
+博客内容有两个互相独立的来源，写之前先选对工具族：
+- 本地 Markdown（list_posts / create_post 等，名称不含 cloud）：公开的正式博客文章。有 frontmatter（分类/标签/slug/draft），发布 = 自行 git commit + push 到 main，由 Actions 构建部署；支持 PlantUML 图（写完调用 check_plantuml）
+- 云端文章（list_cloud_posts / create_cloud_post 等 *_cloud_* 工具族）：登录可见或指定账号可见的私密随笔/记录。存 Supabase，只有标题 + Markdown 正文（没有分类/标签/slug），保存即生效无需部署；云端阅读页不渲染 PlantUML/Mermaid 图表
+- 两边不同步：同一篇内容不要在两边重复维护；云端文章删除用 delete_cloud_post（需 confirm: true）
+
 ## Frontmatter（必读）
 - title: 双引号包裹，不超过 50 字
 - description: 双引号包裹，建议 100-200 字，用于 SEO 和列表展示

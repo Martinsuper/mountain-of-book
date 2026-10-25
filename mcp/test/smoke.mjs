@@ -63,7 +63,11 @@ check('initialize', init.result?.serverInfo?.name === 'book-blog');
 await rpc('notifications/initialized', {});
 const tools = await rpc('tools/list', {});
 const names = tools.result?.tools?.map((t) => t.name) ?? [];
-check('tools/list 有 10 个工具', names.length === 10, names.join(', '));
+check('tools/list 有 19 个工具', names.length === 19, names.join(', '));
+check(
+  'tools/list 含云端工具族',
+  ['list_cloud_posts', 'create_cloud_post', 'update_cloud_post', 'set_cloud_status', 'set_cloud_visibility', 'delete_cloud_post', 'grant_cloud_post', 'read_cloud_post', 'search_cloud_posts'].every((n) => names.includes(n)),
+);
 
 async function callTool(name, args) {
   const r = await rpc('tools/call', { name, arguments: args });
@@ -201,6 +205,93 @@ check(
     if (issues.length > 0) offenders.push(`${f}: ${issues[0].message}`);
   }
   check('全部现有文章通过 frontmatter 校验', offenders.length === 0, offenders.length ? offenders[0] : `${files.length} 篇`);
+}
+
+// 22. 云端文章工具（Supabase）：探测到凭据才执行完整用例，未配置则跳过
+{
+  const probe = await callTool('list_cloud_posts', {});
+  if (probe.error && /未配置/.test(probe.error)) {
+    console.log('SKIP - 云端文章测试（未配置 BLOG_SUPABASE_* 站长凭据，不影响 Markdown 工具）');
+  } else if (probe.error) {
+    check('云端文章测试', false, probe.error.slice(0, 120));
+  } else {
+    const cloudIds = [];
+    try {
+      // c1. create_cloud_post：restricted 被拒绝（zod enum 校验）
+      r = await callTool('create_cloud_post', {
+        title: 'MCP cloud smoke',
+        visibility: 'restricted',
+      });
+      check('create_cloud_post restricted 拒绝', !!r.error);
+
+      // c2. 默认创建：草稿 + 登录可见；含 PlantUML 块应返回图表警告
+      r = await callTool('create_cloud_post', {
+        title: 'MCP cloud smoke',
+        body: '正文第一段。\n\n```plantuml\n@startuml\nA -> B\n@enduml\n```\n',
+      });
+      check(
+        'create_cloud_post 默认草稿+登录可见',
+        !r.error && r.data?.id && r.data?.status === 'draft' && r.data?.visibility === 'authenticated',
+        r.data?.id,
+      );
+      const cloudId = r.data?.id;
+      cloudIds.push(cloudId);
+      check('create_cloud_post 图表警告', (r.data?.styleWarnings ?? []).some((w) => w.includes('PlantUML')));
+
+      // c3. read_cloud_post 读回
+      r = await callTool('read_cloud_post', { id: cloudId });
+      check('read_cloud_post 读回', !r.error && r.data?.title === 'MCP cloud smoke' && r.data?.body?.includes('@startuml') && r.data?.readUrl?.includes(cloudId));
+
+      // c4. update_cloud_post 更新标题和正文
+      r = await callTool('update_cloud_post', {
+        id: cloudId,
+        title: 'MCP cloud smoke v2',
+        body: '云端冒烟关键词 xyzzy-smoke\n更新后的正文\n',
+      });
+      check('update_cloud_post 更新', !r.error && r.data?.title === 'MCP cloud smoke v2');
+
+      // c5. set_cloud_status 发布
+      r = await callTool('set_cloud_status', { id: cloudId, status: 'published' });
+      check('set_cloud_status 发布', !r.error && r.data?.status === 'published');
+
+      // c6. list_cloud_posts 状态过滤 + 标题关键词
+      r = await callTool('list_cloud_posts', { status: 'published', keyword: 'cloud smoke' });
+      check('list_cloud_posts 过滤', !r.error && Array.isArray(r.data) && r.data.some((p) => p.id === cloudId));
+
+      // c7. search_cloud_posts 正文命中
+      r = await callTool('search_cloud_posts', { query: 'xyzzy-smoke' });
+      check('search_cloud_posts 命中', !r.error && Array.isArray(r.data) && r.data.some((h) => h.id === cloudId && h.matchedIn?.includes('body')));
+
+      // c8. set_cloud_visibility 公开
+      r = await callTool('set_cloud_visibility', { id: cloudId, visibility: 'public' });
+      check('set_cloud_visibility public', !r.error && r.data?.visibility === 'public');
+
+      // c9. set_cloud_visibility restricted 拒绝（历史存量专用）
+      r = await callTool('set_cloud_visibility', { id: cloudId, visibility: 'restricted' });
+      check('set_cloud_visibility restricted 拒绝', !!r.error && /历史/.test(r.error));
+
+      // c10. 非法 UUID
+      r = await callTool('read_cloud_post', { id: 'not-a-uuid' });
+      check('read_cloud_post 非法 UUID 拒绝', !!r.error);
+
+      // c11. grant_cloud_post：未注册邮箱 → 可读错误
+      r = await callTool('grant_cloud_post', { id: cloudId, email: 'nobody-unknown@example.com' });
+      check('grant_cloud_post 未注册邮箱报错', !!r.error && /未找到/.test(r.error));
+
+      // c12. delete：不传 confirm 拒绝
+      r = await callTool('delete_cloud_post', { id: cloudId });
+      check('delete_cloud_post 需 confirm', !!r.error);
+
+      // c13. delete 后读取报错
+      r = await callTool('delete_cloud_post', { id: cloudId, confirm: true });
+      check('delete_cloud_post 删除成功', !r.error && r.data?.deleted === true);
+      cloudIds.length = 0;
+      r = await callTool('read_cloud_post', { id: cloudId });
+      check('delete_cloud_post 删除后不可读', !!r.error && /不存在/.test(r.error));
+    } finally {
+      for (const id of cloudIds) await callTool('delete_cloud_post', { id, confirm: true });
+    }
+  }
 }
 
 child.kill();

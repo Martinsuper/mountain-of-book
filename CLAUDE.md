@@ -480,13 +480,14 @@ Astro 开发服务器默认绑定 localhost，只接受本机连接，导致通�
 
 ### 2.13 通过 book-blog MCP 写作（agent 可选）
 
-仓库自带 `mcp/` 目录（stdio MCP server），任何支持 MCP 的 agent 接入后可直接读写/检索博客文章。安装说明见 `mcp/INSTALL.md`。
+仓库自带 `mcp/` 目录（stdio MCP server），任何支持 MCP 的 agent 接入后可直接读写/检索博客文章，共 19 个工具、两个内容源。安装与云端凭据说明见 `mcp/INSTALL.md`。
 
-- 工具：`list_posts` / `search_posts` / `read_post` / `create_post` / `update_post` / `set_draft` / `delete_post` / `check_plantuml` / `get_style_guide` / `site_stats`
+- Markdown 工具：`list_posts` / `search_posts` / `read_post` / `create_post` / `update_post` / `set_draft` / `delete_post` / `check_plantuml` / `get_style_guide` / `site_stats`
 - `create_post` 会自动校验 frontmatter（含分类树）并生成合规文件；接入 MCP 的 agent 建议优先用它，而不是手写文件
 - `get_style_guide` 返回本规范的速查版（含 5 类骨架），其他会话/项目里的 agent 先调它再动笔
 - MCP 只改本地文件；发布仍由 agent 自行 `git commit` + push 到 main
 - 文章发布到线上后，远程 agent 只读内容可直接 fetch `https://fblog.younote.top/api/search-index.json` 与 `/posts/{slug}/`，无需 MCP
+- 云端工具（`list_cloud_posts` / `create_cloud_post` / `update_cloud_post` / `set_cloud_status` / `set_cloud_visibility` / `delete_cloud_post` / `grant_cloud_post` / `read_cloud_post` / `search_cloud_posts`）读写 Supabase `articles` 表（云端文章功能，表结构与 RLS 见 `supabase/migrations/`，阅读页 `/posts/read/?id=<uuid>`），保存即生效无需部署；需配置站长凭据环境变量（见 `mcp/INSTALL.md`），`restricted` 为历史存量专用不可新建
 
 ---
 
