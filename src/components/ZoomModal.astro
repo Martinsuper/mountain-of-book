@@ -157,6 +157,7 @@
   // 打开 PlantUML 远程图片
   function openImg(sourceImg: HTMLImageElement) {
     const img = new Image();
+    img.referrerPolicy = sourceImg.referrerPolicy;
     img.src = sourceImg.currentSrc || sourceImg.src;
     img.alt = sourceImg.alt || 'PlantUML diagram';
     img.draggable = false;
@@ -261,6 +262,13 @@
   }
   prepareTriggers();
   document.addEventListener('mermaid-rendered', prepareTriggers);
+  document.addEventListener('article:rendered', prepareTriggers);
+  document.addEventListener('article:cleared', () => {
+    closeModal();
+    stage?.replaceChildren();
+    stageEl = null;
+    returnFocus = null;
+  });
   modal?.addEventListener('cancel', event => { event.preventDefault(); closeModal(); });
   modal?.addEventListener('close', () => {
     modal.classList.remove('active');

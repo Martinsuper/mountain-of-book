@@ -53,7 +53,7 @@ const server = new McpServer(
   {
     instructions:
       '「书山有路」博客（Astro 静态站）的文章读写 MCP。内容源有两个：本地 Markdown 文章（list_posts / create_post 等，无 cloud 字样；有分类/标签/slug，发布 = 调用方自行 git commit + push 到 main 触发部署）和云端文章（*_cloud_* 工具族；存 Supabase，保存即生效，无分类/标签/slug，适合登录可见的私人内容）。' +
-      '写新文章请先调用 get_style_guide 了解规范与内容源选择；包含 PlantUML 代码块的 Markdown 文章写完后必须调用 check_plantuml 验证（云端阅读页不渲染图表）。',
+      '写新文章请先调用 get_style_guide 了解规范与内容源选择；包含 PlantUML 代码块的 Markdown 文章写完后必须调用 check_plantuml 验证。云端支持 PlantUML，非公开内容和编辑预览须确认后向外部服务发送图表源码；暂不支持 Mermaid。',
   },
 );
 
@@ -299,7 +299,7 @@ server.registerTool(
     description:
       '创建云端文章：保存即生效（浏览器运行时读取），无需 git 部署，适合登录可见/私密的随笔与记录。' +
       '默认 draft 草稿、authenticated 登录可见。没有 slug/分类/标签字段；restricted 为历史存量专用，创建时不可选。' +
-      '返回 styleWarnings 供自查（云端阅读页不渲染 PlantUML/Mermaid）',
+      '返回 styleWarnings 供自查（云端支持 PlantUML，非公开内容渲染须确认外发；暂不支持 Mermaid）',
     inputSchema: {
       title: z.string().min(1).max(200).describe('文章标题'),
       body: z.string().optional().describe('正文 Markdown，默认空'),

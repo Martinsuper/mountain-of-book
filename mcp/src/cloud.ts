@@ -131,14 +131,17 @@ const META_FIELDS = 'id,title,status,visibility,created_at,updated_at';
 const FULL_FIELDS = `${META_FIELDS},body`;
 
 /**
- * 云端阅读页用 marked + DOMPurify 渲染，不执行 PlantUML/Mermaid；
+ * 云端阅读页支持 PlantUML（非公开内容须确认外发），Mermaid 仍显示源码；
  * 加上 CLAUDE.md 通用正文风格检查，全部为软警告（styleWarnings）。
  */
 function bodyWarnings(body: string): string[] {
   const warnings: string[] = [];
-  if (/```[ \t]*(plantuml|mermaid)/i.test(body)) {
+  if (/```[ \t]*plantuml/i.test(body)) {
+    warnings.push('PlantUML 使用 www.plantuml.com 渲染；已发布公开文章自动加载，非公开文章和编辑预览须读者确认后发送图表源码，请勿在图表中包含敏感信息');
+  }
+  if (/```[ \t]*mermaid/i.test(body)) {
     warnings.push(
-      '云端阅读页不渲染 PlantUML/Mermaid 图表，相关代码块会显示为纯文本；如需图表请发布为 Markdown 文章',
+      '云端阅读页暂不渲染 Mermaid 图表，相关代码块会显示为纯文本；如需 Mermaid 图表请发布为 Markdown 文章',
     );
   }
   return [...warnings, ...checkBodyStyle(body)];

@@ -9,6 +9,15 @@
 ## 特性
 
 - Shiki 代码高亮（GitHub Dark 主题）/ PlantUML 与 Mermaid 图表
+
+### 云端文章的 PlantUML
+
+云端阅读页和管理页预览均支持 `plantuml` 围栏代码块，与普通文章共用 SVG 服务和点击/键盘放大交互。图片加载失败时保留源码，不影响其他正文。
+
+- 已发布的公开文章自动加载图表。
+- 登录可见、指定账号可见、草稿及编辑预览默认显示源码；逐图点击「同意并加载 PlantUML 图表」后才请求外部服务。
+- **PlantUML 编码不是加密**，渲染会将图表源码发送至 `www.plantuml.com`，请勿加载包含敏感信息的图表。
+- 任意 Markdown 图片、嵌入和原始 SVG 仍被过滤；云端 Mermaid 暂时保持源码展示。
 - 暗色模式、分类与标签归档、时间线、阅读时长、目录自动生成
 - 搜索（`search-index.json`）、RSS、sitemap、草稿/发布工作流
 - `mcp/` 内置 **book-blog MCP server**——agent 可通过 MCP 直接读写/检索文章（见 `mcp/INSTALL.md`）

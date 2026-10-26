@@ -6,6 +6,7 @@ const title = document.getElementById('private-title')!;
 const toc = document.querySelector('#cloud-toc ul')!;
 let generation = 0;
 function clear() {
+  document.dispatchEvent(new Event('article:cleared'));
   generation++; article.hidden = true; body.replaceChildren(); title.textContent = ''; toc.replaceChildren();
   status.hidden = false;
   document.title = '文章 | 书山有路';
@@ -24,15 +25,9 @@ async function load() {
     if (current !== generation) return;
     if (error) throw error;
     if (!data) { status.textContent = user ? '文章不存在或当前账号无权访问。' : '文章不存在或需要登录后访问，请先到个人中心登录。'; return; }
-    const [{ marked }, { default: DOMPurify }] = await Promise.all([import('marked'), import('dompurify')]);
+    const { renderCloudMarkdown } = await import('./cloud-markdown');
     if (current !== generation) return;
-    // No embeds/images/remote diagrams: confidential Markdown must not contact third parties.
-    body.innerHTML = DOMPurify.sanitize(marked.parse(data.body, { async: false }), { ALLOWED_TAGS: ['p','br','h2','h3','h4','h5','h6','ul','ol','li','strong','em','del','blockquote','pre','code','hr','table','thead','tbody','tr','th','td','a'], ALLOWED_ATTR: ['href','title'], ALLOW_DATA_ATTR: false });
-    body.querySelectorAll('a').forEach(link => {
-      const href = link.getAttribute('href') || '';
-      if (!/^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(href)) link.removeAttribute('href');
-      link.rel = 'noreferrer noopener'; link.referrerPolicy = 'no-referrer';
-    });
+    body.replaceChildren(renderCloudMarkdown(data.body, { allowRemoteDiagrams: data.visibility === 'public' && data.status === 'published' }));
     body.querySelectorAll('h2,h3,h4').forEach((heading, index) => {
       heading.id = `section-${index}`;
       const item = document.createElement('li'); const link = document.createElement('a');

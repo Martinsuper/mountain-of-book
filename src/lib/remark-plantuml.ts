@@ -1,14 +1,7 @@
 // src/lib/remark-plantuml.ts
 import type { Plugin } from 'unified';
 import type { Root } from 'mdast';
-import plantumlEncoder from 'plantuml-encoder';
-
-const PLANTUML_SVG_URL = 'https://www.plantuml.com/plantuml/svg/';
-
-function encodePlantUml(code: string): string {
-  const encoded = plantumlEncoder.encode(code);
-  return `${PLANTUML_SVG_URL}${encoded}`;
-}
+import { encodePlantUml } from './plantuml';
 
 export default function remarkPlantUml(): Plugin<void[], Root> {
   return function (tree: any) {

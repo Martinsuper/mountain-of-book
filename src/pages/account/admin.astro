@@ -185,16 +185,16 @@ document.getElementById('discard-draft')!.onclick = removeDraft;
 matchMedia('(max-width:767px)').addEventListener('change', event => { if (event.matches && canvas.dataset.view === 'split') setView('write'); });
 window.addEventListener('resize', resizeTitle);
 // Preview is optional: a failed/stale Vite dependency must not prevent auth or editing.
-let previewModules: Promise<[typeof import('marked'), typeof import('dompurify')]> | undefined;
+let previewModules: Promise<typeof import('../../lib/cloud-markdown')> | undefined;
 let previewSequence = 0;
 async function renderPreview(text: string, sequence: number) {
   const preview = document.getElementById('preview-content')!;
   try {
-    previewModules ??= Promise.all([import('marked'), import('dompurify')]);
-    const [{ marked }, { default: DOMPurify }] = await previewModules;
+    previewModules ??= import('../../lib/cloud-markdown');
+    const { renderCloudMarkdown } = await previewModules;
     if (sequence !== previewSequence) return;
-    preview.innerHTML = DOMPurify.sanitize(marked.parse(text, { async: false }), { ALLOWED_TAGS: ['p','br','h2','h3','h4','h5','h6','ul','ol','li','strong','em','del','blockquote','pre','code','hr','table','thead','tbody','tr','th','td','a'], ALLOWED_ATTR: ['href','title'], ALLOW_DATA_ATTR: false });
-    preview.querySelectorAll('a').forEach(link => { const href = link.getAttribute('href') || ''; if (!/^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(href)) link.removeAttribute('href'); link.rel = 'noreferrer noopener'; });
+    preview.replaceChildren(renderCloudMarkdown(text, { allowRemoteDiagrams: false }));
+    document.dispatchEvent(new Event('article:rendered'));
   } catch {
     previewModules = undefined;
     if (sequence !== previewSequence) return;
