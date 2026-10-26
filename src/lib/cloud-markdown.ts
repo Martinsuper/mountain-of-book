@@ -2,8 +2,8 @@ import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { encodePlantUml } from './plantuml';
 
-/** Render cloud Markdown safely; private diagrams require per-diagram external-service consent. */
-export function renderCloudMarkdown(markdown: string, options: { allowRemoteDiagrams: boolean }): DocumentFragment {
+/** Render cloud Markdown safely and load PlantUML diagrams automatically. */
+export function renderCloudMarkdown(markdown: string): DocumentFragment {
   const diagrams: string[] = [];
   const marker = `plantuml-${crypto.randomUUID()}`;
   const parser = new Marked({ renderer: {
@@ -48,15 +48,7 @@ export function renderCloudMarkdown(markdown: string, options: { allowRemoteDiag
       document.dispatchEvent(new Event('article:rendered'));
     };
     placeholder.replaceWith(container);
-    if (options.allowRemoteDiagrams) load();
-    else {
-      const notice = document.createElement('p');
-      notice.textContent = '渲染此图表会将图表源码发送至 www.plantuml.com。仅在确认不含敏感信息后加载。';
-      const button = document.createElement('button'); button.type = 'button';
-      button.className = 'text-blue-600 dark:text-blue-400 underline'; button.textContent = '同意并加载 PlantUML 图表';
-      button.addEventListener('click', load, { once: true });
-      container.append(notice, button, source);
-    }
+    load();
   });
   return fragment;
 }

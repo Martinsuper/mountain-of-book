@@ -27,7 +27,7 @@ async function load() {
     if (!data) { status.textContent = user ? '文章不存在或当前账号无权访问。' : '文章不存在或需要登录后访问，请先到个人中心登录。'; return; }
     const { renderCloudMarkdown } = await import('./cloud-markdown');
     if (current !== generation) return;
-    body.replaceChildren(renderCloudMarkdown(data.body, { allowRemoteDiagrams: data.visibility === 'public' && data.status === 'published' }));
+    body.replaceChildren(renderCloudMarkdown(data.body));
     body.querySelectorAll('h2,h3,h4').forEach((heading, index) => {
       heading.id = `section-${index}`;
       const item = document.createElement('li'); const link = document.createElement('a');

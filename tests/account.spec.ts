@@ -438,7 +438,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
   });
 
   for (const visibility of ['public', 'authenticated', 'restricted']) {
-    test(`PlantUML ${visibility}：嵌套图表、隐私确认及键盘放大`, async ({ page }) => {
+    test(`PlantUML ${visibility}：嵌套图表、自动加载及键盘放大`, async ({ page }) => {
       await mockSupabase(page, { signedIn: visibility !== 'public', visibility, body: '## Diagram\n\n> ```plantuml\n> @startuml\n> Alice -> Bob: 你好\n> @enduml\n> ```\n\n```js\nconst answer = 42;\n```\n\n<img class="plantuml-img" src="https://private-image.invalid/secret">' });
       const images: Request[] = [];
       await page.route('https://www.plantuml.com/plantuml/svg/**', async route => {
@@ -447,12 +447,7 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
       });
       await page.goto(`/posts/read/?id=${articleID}`);
       await expect(page.locator('#private-title')).toHaveText(privateTitle);
-      if (visibility !== 'public') {
-        await expect(page.locator('#private-body img')).toHaveCount(0);
-        expect(images).toHaveLength(0);
-        await expect(page.locator('#private-body')).toContainText('Alice -> Bob: 你好');
-        await page.getByRole('button', { name: '同意并加载 PlantUML 图表' }).click();
-      }
+      await expect(page.getByRole('button', { name: '同意并加载 PlantUML 图表' })).toHaveCount(0);
       const diagram = page.locator('#private-body .plantuml-img');
       await expect(diagram.locator('img')).toHaveAttribute('referrerpolicy', 'no-referrer');
       await expect(diagram).toHaveAttribute('tabindex', '0');
@@ -466,25 +461,21 @@ test.describe('账号页面：模拟 Supabase HTTP 集成（无需云凭据）',
     });
   }
 
-  test('PlantUML 草稿与编辑预览不自动外发，失败回退源码', async ({ page }) => {
+  test('PlantUML 草稿与编辑预览自动加载，失败回退源码', async ({ page }) => {
     const body = '```plantuml\n@startuml\nA -> B: secret\n@enduml\n```';
     await mockSupabase(page, { signedIn: true, admin: true, visibility: 'public', draft: true, body });
     let requests = 0;
     await page.route('https://www.plantuml.com/plantuml/svg/**', async route => { requests++; await route.abort(); });
     await page.goto(`/members/read/?id=${articleID}`);
-    await expect(page.getByRole('button', { name: '同意并加载 PlantUML 图表' })).toBeVisible();
-    expect(requests).toBe(0);
-    await page.getByRole('button', { name: '同意并加载 PlantUML 图表' }).click();
+    await expect(page.getByRole('button', { name: '同意并加载 PlantUML 图表' })).toHaveCount(0);
     await expect(page.locator('#private-body')).toContainText('PlantUML 图表加载失败');
     await expect(page.locator('#private-body pre')).toContainText('A -> B: secret');
     await page.goto('/account/admin/');
     await page.getByRole('button', { name: '编辑', exact: true }).click();
     await page.getByRole('button', { name: '分栏', exact: true }).click();
-    await expect(page.locator('#preview-content button')).toHaveText('同意并加载 PlantUML 图表');
-    const before = requests;
-    await page.locator('#preview-content button').click();
+    await expect(page.locator('#preview-content button')).toHaveCount(0);
     await expect(page.locator('#preview-content')).toContainText('PlantUML 图表加载失败');
-    expect(requests).toBe(before + 1);
+    expect(requests).toBeGreaterThanOrEqual(2);
   });
 
   test('预览依赖加载失败不阻断登录、文章加载和保存', async ({ page }) => {

@@ -193,7 +193,7 @@ async function renderPreview(text: string, sequence: number) {
     previewModules ??= import('../../lib/cloud-markdown');
     const { renderCloudMarkdown } = await previewModules;
     if (sequence !== previewSequence) return;
-    preview.replaceChildren(renderCloudMarkdown(text, { allowRemoteDiagrams: false }));
+    preview.replaceChildren(renderCloudMarkdown(text));
     document.dispatchEvent(new Event('article:rendered'));
   } catch {
     previewModules = undefined;
