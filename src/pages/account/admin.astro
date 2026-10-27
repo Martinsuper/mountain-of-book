@@ -236,14 +236,14 @@ function renderList() {
   list.replaceChildren(); const query = (document.getElementById('article-search') as HTMLInputElement).value.trim().toLowerCase();
   const visible = articles.filter(row => (filter === 'all' || row.status === filter) && row.title.toLowerCase().includes(query));
   for (const row of visible) {
-    const item = document.createElement('li'); item.classList.toggle('selected', row.id === selected);
-    const title = document.createElement('button'); title.className = 'article-title'; title.type = 'button'; title.textContent = row.title; title.onclick = () => selectArticle(row);
+    const item = document.createElement('li'); item.classList.toggle('selected', row.id === selected); item.classList.toggle('is-draft', row.status === 'draft');
+    const title = document.createElement('button'); title.className = 'article-title'; title.type = 'button'; title.textContent = row.title; title.title = row.title; title.onclick = () => selectArticle(row);
     const meta = document.createElement('div'); meta.className = 'article-meta';
     const badge = document.createElement('span'); badge.className = row.status === 'draft' ? 'badge draft' : 'badge published'; badge.textContent = row.status === 'draft' ? '草稿' : '已发布';
     const scope = document.createElement('span'); scope.textContent = row.visibility === 'restricted' ? '指定账号' : row.visibility === 'public' ? '公开' : '登录可见'; meta.append(badge, scope);
     const actions = document.createElement('div'); actions.className = 'article-actions';
     const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = '编辑'; edit.setAttribute('aria-current', String(row.id === selected)); edit.onclick = () => selectArticle(row);
-    const read = document.createElement('a'); read.textContent = row.status === 'draft' ? '预览草稿 ↗' : '阅读 ↗'; read.href = `/posts/read/?id=${row.id}`;
+    const read = document.createElement('a'); read.textContent = '查看'; read.href = `/posts/read/?id=${row.id}`;
     const del = document.createElement('button'); del.type = 'button'; del.textContent = '删除'; del.className = 'delete'; del.onclick = async () => {
       if (busy || !(await confirmDialog({ title: '删除文章', message: `永久删除《${row.title}》及其授权，此操作无法撤销。`, confirmText: '永久删除' }))) return;
       void run(async () => {
@@ -253,7 +253,13 @@ function renderList() {
         await load();
       });
     };
-    const date = document.createElement('time'); date.className = 'updated-date'; date.dateTime = row.updated_at; date.textContent = new Date(row.updated_at).toLocaleDateString('zh-CN');
+    const date = document.createElement('time'); date.className = 'updated-date'; date.dateTime = row.updated_at;
+    const updated = new Date(row.updated_at); const now = new Date();
+    const dayDiff = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(updated.getFullYear(), updated.getMonth(), updated.getDate())) / 86400000);
+    const day = dayDiff === 0 ? '今天' : dayDiff === 1 ? '昨天' : updated.toLocaleDateString('zh-CN');
+    const clock = updated.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    date.textContent = `更新于 ${day} ${clock}`;
+    date.title = `更新时间：${updated.toLocaleString('zh-CN', { hour12: false })}`;
     actions.append(edit, read, del); item.append(title, meta, date, actions); list.append(item);
   }
   document.getElementById('list-count')!.textContent = `${visible.length} 篇`;
@@ -652,6 +658,20 @@ void load();
 .studio .metadata select { border:1px solid var(--st-line);padding:4px 8px; }
 .studio #back-to-list:hover { color:var(--st-accent); }
 .studio #preview-content h2 { font-family:inherit; }
+/* 固定列表列宽与标题行高，让状态、范围和更新时间保持对齐。 */
+.studio #admin-articles li { grid-template-columns:minmax(0,1fr) 140px 170px max-content; }
+.studio #admin-articles li.is-draft { background:var(--st-bg); }
+.studio #admin-articles li.is-draft .article-title { color:var(--st-muted); }
+.studio #admin-articles li.is-draft .article-title:hover { color:var(--st-accent); }
+.studio button.article-title { display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.studio .article-meta { display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px; }
+.studio .badge { text-align:center; }
+.studio .badge.draft { background:var(--st-line);color:var(--st-ink); }
+.studio .updated-date { white-space:nowrap; }
+@media(max-width:767px) {
+  .studio #admin-articles li { grid-template-columns:minmax(0,1fr) auto; }
+  .studio .article-meta { grid-template-columns:52px auto;justify-content:start; }
+}
 .studio .body-label textarea:focus-visible { outline:2px solid var(--st-accent);outline-offset:-2px; }
 @media(max-width:767px) {
   .studio .editor-toolbar { gap:8px 12px; }
