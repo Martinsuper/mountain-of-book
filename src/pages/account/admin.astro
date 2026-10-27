@@ -5,6 +5,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
 ---
 <BaseLayout title="文章管理"><div class="studio"><AccountShell title="文章管理">
   <button slot="actions" id="new-article" class="primary" aria-label="新建文章" hidden>＋ 新建文章</button>
+  <button id="retry-load" type="button" hidden>重试加载</button>
   <div id="admin-panel" hidden>
     <div class="studio-grid">
       <section id="article-library" class="library" aria-label="文章库">
@@ -13,11 +14,11 @@ import ConfirmDialog from '../../components/ConfirmDialog.astro';
           <label class="search-label"><span class="sr-only">搜索文章</span><input id="article-search" type="search" placeholder="搜索文章标题…" /></label>
         </div>
         <div class="library-heading"><h2>在线文章</h2><span id="list-count" class="muted"></span></div>
-        <ul id="admin-articles"></ul><p id="list-empty" class="empty" hidden>还没有文章。<br />从一篇新的草稿开始吧。</p>
+        <ul id="admin-articles"></ul><div id="empty-state" class="empty" hidden><p id="list-empty" role="status"></p><button id="clear-filters" type="button" hidden>清除筛选</button></div>
         <p class="library-note">此处管理在线编辑的文章，仓库 Markdown 文章仍沿用原发布流程。</p>
       </section>
       <div id="writing-view" class="writing-column" hidden>
-        <div class="editor-top"><button id="back-to-list" type="button">← 返回文章列表</button><span id="save-state" role="status">尚未保存</span></div>
+        <div class="editor-top"><nav aria-label="当前位置"><button id="back-to-list" type="button">← 返回文章列表</button><span class="editor-location" aria-current="page"> / 编辑文章</span></nav><span id="save-state" role="status">尚未保存</span></div>
         <div id="draft-recovery" role="status" hidden><span>发现此文章的本机未保存草稿。</span><button id="restore-draft" type="button">恢复草稿</button><button id="discard-draft" type="button">丢弃草稿</button></div>
         <form id="article-editor" class="card editor-card" novalidate>
           <label class="title-label"><span class="sr-only">标题</span><textarea name="title" rows="1" required maxlength="200" placeholder="给这篇文章起个标题"></textarea></label>
@@ -89,9 +90,14 @@ const library = document.getElementById('article-library')!;
 const writing = document.getElementById('writing-view')!;
 const studioRoot = document.querySelector('.studio')!;
 let editing = false;
+let listScroll = 0;
+let returnArticle: string | null = null;
 function showEditor(open: boolean) {
   closeMoreActions();
+  const returning = editing && !open;
+  if (open && !editing) listScroll = window.scrollY;
   editing = open; library.hidden = open; writing.hidden = !open;
+  if (returning) requestAnimationFrame(() => { window.scrollTo(0, listScroll); const target = [...list.querySelectorAll<HTMLButtonElement>('.article-title')].find(button => button.dataset.articleId === returnArticle); (target ?? document.getElementById('article-search'))?.focus({ preventScroll: true }); });
   newArticle.hidden = panel.hidden || open;
   studioRoot.classList.toggle('editor-open', open);
   if (open) requestAnimationFrame(updateWritingHeight);
@@ -237,12 +243,12 @@ function renderList() {
   const visible = articles.filter(row => (filter === 'all' || row.status === filter) && row.title.toLowerCase().includes(query));
   for (const row of visible) {
     const item = document.createElement('li'); item.classList.toggle('selected', row.id === selected); item.classList.toggle('is-draft', row.status === 'draft');
-    const title = document.createElement('button'); title.className = 'article-title'; title.type = 'button'; title.textContent = row.title; title.title = row.title; title.onclick = () => selectArticle(row);
+    const title = document.createElement('button'); title.className = 'article-title'; title.type = 'button'; title.textContent = row.title; title.title = row.title; title.dataset.articleId = row.id; title.onclick = () => { returnArticle = row.id; void selectArticle(row); };
     const meta = document.createElement('div'); meta.className = 'article-meta';
     const badge = document.createElement('span'); badge.className = row.status === 'draft' ? 'badge draft' : 'badge published'; badge.textContent = row.status === 'draft' ? '草稿' : '已发布';
     const scope = document.createElement('span'); scope.textContent = row.visibility === 'restricted' ? '指定账号' : row.visibility === 'public' ? '公开' : '登录可见'; meta.append(badge, scope);
     const actions = document.createElement('div'); actions.className = 'article-actions';
-    const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = '编辑'; edit.setAttribute('aria-current', String(row.id === selected)); edit.onclick = () => selectArticle(row);
+    const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = '编辑'; edit.setAttribute('aria-label', `编辑 ${row.title}`); edit.onclick = () => { returnArticle = row.id; void selectArticle(row); };
     const read = document.createElement('a'); read.textContent = '查看'; read.href = `/posts/read/?id=${row.id}`;
     const del = document.createElement('button'); del.type = 'button'; del.textContent = '删除'; del.className = 'delete'; del.onclick = async () => {
       if (busy || !(await confirmDialog({ title: '删除文章', message: `永久删除《${row.title}》及其授权，此操作无法撤销。`, confirmText: '永久删除' }))) return;
@@ -260,23 +266,29 @@ function renderList() {
     const clock = updated.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
     date.textContent = `更新于 ${day} ${clock}`;
     date.title = `更新时间：${updated.toLocaleString('zh-CN', { hour12: false })}`;
-    actions.append(edit, read, del); item.append(title, meta, date, actions); list.append(item);
+    const more = document.createElement('details'); more.className = 'list-more';
+    const summary = document.createElement('summary'); summary.textContent = '更多'; summary.setAttribute('aria-label', `${row.title} 的更多操作`);
+    const menu = document.createElement('div'); menu.className = 'list-more-panel'; menu.append(del); more.append(summary, menu);
+    del.addEventListener('click', () => { more.open = false; });
+    actions.append(edit, read, more); item.append(title, meta, date, actions); list.append(item);
   }
   document.getElementById('list-count')!.textContent = `${visible.length} 篇`;
-  const empty = document.getElementById('list-empty')!; empty.hidden = visible.length > 0; empty.textContent = articles.length ? '没有符合条件的文章，试试其他关键词。' : '还没有文章，从一篇新的草稿开始吧。';
+  const empty = document.getElementById('list-empty')!; document.getElementById('empty-state')!.hidden = visible.length > 0;
+  empty.textContent = articles.length ? '没有符合条件的文章，试试其他关键词或筛选条件。' : '还没有文章，从一篇新的草稿开始吧。';
+  document.getElementById('clear-filters')!.hidden = !articles.length || (!query && filter === 'all');
   for (const state of ['all','published','draft']) document.getElementById(`count-${state}`)!.textContent = String(state === 'all' ? articles.length : articles.filter(row => row.status === state).length);
 }
 async function load() {
-  const current = ++generation; setPanelVisible(false); showEditor(false); status.hidden = false; articles = []; list.replaceChildren(); resetEditor();
+  const current = ++generation; setPanelVisible(false); showEditor(false); status.hidden = false; status.textContent = '正在加载文章…'; document.getElementById('retry-load')!.hidden = true; articles = []; list.replaceChildren(); resetEditor();
   if (!supabase) { status.textContent = configurationMessage; return; }
   const { data: { user } } = await supabase.auth.getUser(); if (current !== generation) return;
   if (!user) { status.textContent = '请先到个人中心登录。'; return; }
   activeUser = user.id;
   const { data: admin, error } = await supabase.rpc('is_site_admin'); if (current !== generation) return;
-  if (error || !admin) { status.textContent = error ? '无法验证管理权限，请检查配置。' : '当前账号没有管理权限。'; return; }
+  if (error || !admin) { status.textContent = error ? '无法验证管理权限，请检查配置。' : '当前账号没有管理权限。'; document.getElementById('retry-load')!.hidden = !error; return; }
   const result = await supabase.from('articles').select('id,title,body,visibility,status,updated_at').order('created_at', { ascending: false });
   if (current !== generation) return;
-  if (result.error) { status.textContent = '文章加载失败，请重试。'; return; }
+  if (result.error) { status.textContent = '文章加载失败，请重试。'; document.getElementById('retry-load')!.hidden = false; return; }
   articles = result.data; renderList(); setPanelVisible(true); status.textContent = '已验证站长权限。'; status.hidden = true;
 }
 async function loadGrants(id: string) {
@@ -346,6 +358,14 @@ document.getElementById('unpublish-article')!.onclick = async () => {
 };
 document.getElementById('delete-article')!.onclick = async () => { const id = selected; if (!id || !(await confirmDialog({ title: '删除文章', message: '永久删除此文章及其授权，此操作无法撤销。', confirmText: '永久删除' }))) return; void run(async () => { const { error } = await supabase!.from('articles').delete().eq('id', id); if (error) throw error; dirty = false; await load(); }); };
 document.getElementById('article-search')!.addEventListener('input', renderList);
+document.getElementById('retry-load')!.onclick = () => void load();
+document.getElementById('clear-filters')!.onclick = () => {
+  (document.getElementById('article-search') as HTMLInputElement).value = ''; filter = 'all';
+  document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === 'all')));
+  renderList(); document.getElementById('article-search')!.focus();
+};
+document.addEventListener('click', event => { list.querySelectorAll<HTMLDetailsElement>('.list-more[open]').forEach(menu => { if (!menu.contains(event.target as Node)) menu.open = false; }); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') list.querySelectorAll<HTMLDetailsElement>('.list-more[open]').forEach(menu => { menu.open = false; menu.querySelector('summary')?.focus(); }); });
 document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(button => { button.onclick = () => { filter = button.dataset.filter!; document.querySelectorAll('[data-filter]').forEach(tab => tab.setAttribute('aria-pressed', String(tab === button))); renderList(); }; });
 async function toggleFullscreen() {
   const doc = document as Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> | void };
@@ -659,7 +679,7 @@ void load();
 .studio #back-to-list:hover { color:var(--st-accent); }
 .studio #preview-content h2 { font-family:inherit; }
 /* 固定列表列宽与标题行高，让状态、范围和更新时间保持对齐。 */
-.studio #admin-articles li { grid-template-columns:minmax(0,1fr) 140px 170px max-content; }
+.studio #admin-articles li { grid-template-columns:minmax(0,1fr) 140px 170px max-content; padding:20px 16px; border-radius:6px; }
 .studio #admin-articles li.is-draft { background:var(--st-bg); }
 .studio #admin-articles li.is-draft .article-title { color:var(--st-muted); }
 .studio #admin-articles li.is-draft .article-title:hover { color:var(--st-accent); }
@@ -668,9 +688,26 @@ void load();
 .studio .badge { text-align:center; }
 .studio .badge.draft { background:var(--st-line);color:var(--st-ink); }
 .studio .updated-date { white-space:nowrap; }
+.studio .editor-location { color:var(--st-muted);font-size:13px; }
+.studio .empty p { margin:0 0 12px; }
+.studio .list-more { position:relative; }
+.studio .list-more summary { cursor:pointer;list-style:none;color:var(--st-muted);font-size:12px;padding:6px 0; }
+.studio .list-more summary::-webkit-details-marker { display:none; }
+.studio .list-more summary:hover { color:var(--st-accent); }
+.studio .list-more-panel { position:absolute;right:0;top:100%;z-index:20;min-width:120px;padding:6px;background:var(--st-card);border:1px solid var(--st-line);border-radius:8px;box-shadow:0 8px 24px rgb(0 0 0 / .12); }
+.studio .article-actions .list-more-panel button { width:100%;padding:8px;text-align:left;font-size:13px; }
+.studio button.article-title:focus-visible { white-space:normal;overflow:visible; }
 @media(max-width:767px) {
-  .studio #admin-articles li { grid-template-columns:minmax(0,1fr) auto; }
-  .studio .article-meta { grid-template-columns:52px auto;justify-content:start; }
+  .studio #admin-articles li { grid-template-columns:minmax(0,1fr) auto;gap:10px; }
+  .studio .article-meta { grid-column:1;grid-row:2;grid-template-columns:52px auto;justify-content:start; }
+  .studio .updated-date { grid-column:2;grid-row:2;text-align:right; }
+  .studio .article-actions { grid-row:3; }
+  .studio button.article-title { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal; }
+  .studio button.article-title:focus-visible { display:block; }
+}
+@media(max-width:400px) {
+  .studio .updated-date { grid-column:1/-1;grid-row:3;text-align:left; }
+  .studio .article-actions { grid-row:4; }
 }
 .studio .body-label textarea:focus-visible { outline:2px solid var(--st-accent);outline-offset:-2px; }
 @media(max-width:767px) {
