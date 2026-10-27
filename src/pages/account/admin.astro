@@ -635,4 +635,26 @@ void load();
   .studio #fullscreen-editor { width:34px;padding:0; }
   .studio #fullscreen-editor span { display:none; }
 }
+/* 与文章阅读页共用字体、蓝色强调和明暗主题，保留编辑器的布局与交互。 */
+.studio { --st-accent:var(--link-color);--st-serif:system-ui,-apple-system,sans-serif; }
+.dark .studio { --st-line:#30363d;--st-bg:#161b22;--st-soft:rgba(88,166,255,.12); }
+.studio .title-label textarea { font-weight:700;letter-spacing:-.01em; }
+.studio .body-label textarea { font-family:system-ui,-apple-system,sans-serif;line-height:1.8;letter-spacing:normal; }
+.studio .body-label textarea::placeholder,.studio .title-label textarea::placeholder { color:var(--st-muted);opacity:.75; }
+.studio .editor-toolbar { padding:8px 0;border-top:1px solid var(--st-line); }
+.studio .format-tools { flex-wrap:wrap; }
+.studio .format-tools button { min-height:34px; }
+.studio .view-tools { border-radius:8px; }
+.studio .view-tools button { border-radius:6px; }
+.studio .editor-bottom { padding:8px 0;border-top:1px solid var(--st-line); }
+.studio .editor-notice { color:var(--st-muted); }
+.studio .editor-actions { border-top:0; }
+.studio .metadata select { border:1px solid var(--st-line);padding:4px 8px; }
+.studio #back-to-list:hover { color:var(--st-accent); }
+.studio #preview-content h2 { font-family:inherit; }
+.studio .body-label textarea:focus-visible { outline:2px solid var(--st-accent);outline-offset:-2px; }
+@media(max-width:767px) {
+  .studio .editor-toolbar { gap:8px 12px; }
+  .studio .workspace-tools { margin-left:0; }
+}
 </style>
